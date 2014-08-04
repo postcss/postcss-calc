@@ -1,0 +1,41 @@
+{
+  "name": "postcss-calc",
+  "version": "0.0.0",
+  "description": "Reduce calc() plugin for PostCSS",
+  "keywords": [
+    "css",
+    "postcss",
+    "postcss-plugins",
+    "calculation",
+    "calc"
+  ],
+  "author": "MoOx",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/postcss/postcss-calc.git"
+  },
+  "files": [
+    "CHANGELOG.md",
+    "LICENSE",
+    "README.md",
+    "index.js"
+  ],
+  "dependencies": {
+    "reduce-css-calc": "^1.0.0"
+  },
+  "devDependencies": {
+    "jscs": "^1.5.9",
+    "jshint": "^2.5.2",
+    "jshint-stylish": "^0.4.0",
+    "postcss": "^2.1.0",
+    "postcss-custom-properties": "~0.1.0",
+    "tap-colorize": "^1.2.0",
+    "tape": "^2.13.4"
+  },
+  "scripts": {
+    "jscs": "jscs *.js **/*.js",
+    "jshint": "jshint . --exclude node_modules --reporter node_modules/jshint-stylish/stylish.js",
+    "test": "npm run jscs && npm run jshint && tape test | tap-colorize"
+  }
+}
