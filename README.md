@@ -1,6 +1,6 @@
 # postcss-calc [![Build Status](https://travis-ci.org/postcss/postcss-calc.png)](https://travis-ci.org/postcss/postcss-calc)
 
-A [PostCSS](https://github.com/postcss/postcss) plugin to reduce `calc()` usage.
+> [PostCSS](https://github.com/postcss/postcss) plugin to reduce `calc()`.
 
 Particularly useful with the [postcss-custom-properties](https://github.com/postcss/postcss-custom-properties)
 
