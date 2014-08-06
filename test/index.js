@@ -13,7 +13,7 @@ function fixture(name) {
 test("resolve what is possible in complex calc", function(t) {
   var actual = postcss()
     .use(customProperties())
-    .use(calc)
+    .use(calc())
     .process(fixture("calc"))
     .css
     .trim()

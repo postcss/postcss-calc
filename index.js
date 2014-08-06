@@ -1,7 +1,7 @@
 /**
  * Module dependencies.
  */
-var reduceCssCalc = require("reduce-css-calc")
+var reduceCSSCalc = require("reduce-css-calc")
 
 /**
  * Expose `plugin`.
@@ -10,47 +10,31 @@ var reduceCssCalc = require("reduce-css-calc")
 module.exports = plugin
 
 /**
- * Plugin to convert CSS color functions.
+ * Plugin to convert all function calls.
  *
  * @param {Object} stylesheet
  */
 
-function plugin(style) {
-  style.eachRule(rule)
-}
+function plugin() {
+  return function(style) {
+    style.eachDecl(function declaration(dec) {
+      if (!dec.value) {
+        return
+      }
 
-/**
- * Convert an entire `rule`.
- *
- * @param {Object} rule
- */
-
-function rule(obj) {
-  obj.each(declaration)
-}
-
-/**
- * Convert a declaration.
- *
- * @param {Object} dec
- */
-
-function declaration(dec) {
-  if (!dec.value) {
-    return
-  }
-
-  try {
-    dec.value = convert(dec.value)
-  }
-  catch (err) {
-    err.position = dec.position
-    throw err
+      try {
+        dec.value = convert(dec.value)
+      }
+      catch (err) {
+        err.position = dec.position
+        throw err
+      }
+    })
   }
 }
 
 /**
- * Reduce css calc()
+ * Reduce CSS calc()
  *
  * @param {String} string
  * @return {String}
@@ -61,5 +45,5 @@ function convert(string) {
     return string
   }
 
-  return reduceCssCalc(string)
+  return reduceCSSCalc(string)
 }

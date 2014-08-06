@@ -17,7 +17,10 @@ npm install postcss-calc
 var postcss = require("postcss")
 var calc = require("postcss-calc")
 
-var css = postcss(calc).process(cssString).css;
+var css = postcss()
+  .use(calc())
+  .process(cssString)
+  .css
 ```
 
 ## Supported feature
@@ -41,7 +44,7 @@ var css = fs.readFileSync("style.css", "utf8")
 
 var output = postcss()
   .use(customProperties())
-  .use(calc)
+  .use(calc())
   .process(css)
   .css
 ```
