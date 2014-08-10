@@ -12,6 +12,7 @@
 
 stuff {
   dont: care;
+  ignore: calc(new(blah));
   resolved: calc(var(--gutter-y) - 1rem) otherfn(blah);
   unresolved: calc(var(--gutter-y) - 1px);
   prefixed-unresolved: -webkit-calc(var(--gutter-y) - 1px);

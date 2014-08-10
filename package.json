@@ -22,7 +22,7 @@
     "index.js"
   ],
   "dependencies": {
-    "reduce-css-calc": "^1.0.0"
+    "reduce-css-calc": "^1.1.2"
   },
   "devDependencies": {
     "jscs": "^1.5.9",
