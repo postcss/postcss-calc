@@ -17,7 +17,7 @@ module.exports = function plugin() {
         dec.value = transform(dec.value)
       }
       catch (err) {
-        err.position = dec.position
+        err.message = gnuMessage(err.message, dec.source)
         throw err
       }
     })
@@ -36,4 +36,14 @@ function transform(string) {
   }
 
   return reduceCSSCalc(string)
+}
+
+/**
+ * return GNU style message
+ *
+ * @param {String} message
+ * @param {Object} source
+ */
+function gnuMessage(message, source) {
+  return (source ? (source.file ? source.file : "<css input>") + ":" + source.start.line + ":" + source.start.column : "") + " " + message
 }
