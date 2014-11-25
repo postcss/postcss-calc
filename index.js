@@ -7,7 +7,9 @@ var helpers = require("postcss-message-helpers")
 /**
  * PostCSS plugin to reduce calc() function calls.
  */
-module.exports = function plugin() {
+module.exports = function plugin(options) {
+  options = options || {}
+
   return function(style) {
     style.eachDecl(function transformDecl(decl) {
       if (!decl.value) {
@@ -19,7 +21,7 @@ module.exports = function plugin() {
           return decl.value
         }
 
-        return reduceCSSCalc(decl.value)
+        return reduceCSSCalc(decl.value, options.precision)
       })
     })
   }

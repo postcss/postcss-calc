@@ -9,7 +9,9 @@ This can be particularly useful with the [postcss-custom-properties](https://git
 
 ## Installation
 
-    $ npm install postcss-calc
+```console
+$ npm install postcss-calc
+```
 
 ## Usage
 
@@ -81,16 +83,31 @@ h1 {
 
 Checkout [tests](test) for more examples.
 
+### Options
+
+#### `precision` (default: `5`)
+
+Allow you to definine the precision for decimal numbers.
+
+```js
+var out = postcss()
+  .use(calc({precision: 10}))
+  .process(css)
+  .css
+```
+
 ---
 
 ## Contributing
 
 Work on a branch, install dev-dependencies, respect coding style & run tests before submitting a bug fix or a feature.
 
-    $ git clone https://github.com/postcss/postcss-calc.git
-    $ git checkout -b patch-1
-    $ npm install
-    $ npm test
+```console
+$ git clone https://github.com/postcss/postcss-calc.git
+$ git checkout -b patch-1
+$ npm install
+$ npm test
+```
 
 ## [Changelog](CHANGELOG.md)
 

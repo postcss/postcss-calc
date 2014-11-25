@@ -21,8 +21,8 @@
     "index.js"
   ],
   "dependencies": {
-    "reduce-css-calc": "^1.1.2"
     "postcss-message-helpers": "^1.1.0",
+    "reduce-css-calc": "^1.2.0"
   },
   "devDependencies": {
     "jscs": "^1.6.2",
