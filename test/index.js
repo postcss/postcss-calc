@@ -31,5 +31,7 @@ test("calc", function(t) {
 
   compareFixtures(t, "precision", {precision: 3}, "should have a precision option that allow to control decimal precision of calcuations")
 
+  compareFixtures(t, "preserve", {preserve: true}, "should have a preserve option that allow to keep original calc() usage")
+
   t.end()
 })

@@ -96,6 +96,17 @@ var out = postcss()
   .css
 ```
 
+#### `preserve` (default: `false`)
+
+Allow you to preserve calc() usage in output so browsers will handle decimal precision themselves.
+
+```js
+var out = postcss()
+  .use(calc({preserve: true}))
+  .process(css)
+  .css
+```
+
 ---
 
 ## Contributing

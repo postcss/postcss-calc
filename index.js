@@ -9,20 +9,27 @@ var helpers = require("postcss-message-helpers")
  */
 module.exports = function plugin(options) {
   options = options || {}
+  var precision = options.precision
+  var preserve = options.preserve
 
   return function(style) {
     style.eachDecl(function transformDecl(decl) {
-      if (!decl.value) {
+      if (!decl.value || decl.value.indexOf("calc(") === -1) {
         return
       }
 
-      decl.value = helpers.try(function transformCSSCalc() {
-        if (decl.value.indexOf("calc(") === -1) {
-          return decl.value
+      helpers.try(function transformCSSCalc() {
+        var value = reduceCSSCalc(decl.value, precision)
+
+        if (!preserve) {
+          decl.value = value
+          return
         }
 
-        return reduceCSSCalc(decl.value, options.precision)
-      })
+        var clone = decl.clone()
+        clone.value = value
+        decl.parent.insertBefore(decl, clone)
+      }, decl.source)
     })
   }
 }

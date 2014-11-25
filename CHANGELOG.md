@@ -1,7 +1,9 @@
-# HEAD
+# 3.0.0 - 2014-11-24
 
 - New gnu like exceptions ([ref](https://github.com/postcss/postcss-calc/issues/4))
 - New `precision` option ([ref](https://github.com/postcss/postcss-calc/issues/5))
+- New `preserve` option ([ref](https://github.com/postcss/postcss-calc/issues/6))
+
 # 2.1.0 - 2014-10-15
 
 - Add source of the error (gnu like message) (fix [#3](https://github.com/postcss/postcss-calc/issues/3))

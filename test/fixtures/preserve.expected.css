@@ -1,0 +1,4 @@
+calc {
+  value: 0.33333;
+  value: calc(1/3);
+}
