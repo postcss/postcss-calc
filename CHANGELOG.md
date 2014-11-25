@@ -1,3 +1,6 @@
+# HEAD
+
+- New gnu like exceptions ([ref](https://github.com/postcss/postcss-calc/issues/4))
 # 2.1.0 - 2014-10-15
 
 - Add source of the error (gnu like message) (fix [#3](https://github.com/postcss/postcss-calc/issues/3))
