@@ -21,14 +21,14 @@
     "index.js"
   ],
   "dependencies": {
-    "postcss-message-helpers": "^1.1.0",
+    "postcss-message-helpers": "^2.0.0",
     "reduce-css-calc": "^1.2.0"
   },
   "devDependencies": {
     "jscs": "^1.6.2",
     "jshint": "^2.5.6",
-    "postcss": "^3.0.0",
-    "postcss-custom-properties": "^2.0.0",
+    "postcss": "^4.0.2",
+    "postcss-custom-properties": "^3.0.0",
     "tape": "^3.0.0"
   },
   "scripts": {
