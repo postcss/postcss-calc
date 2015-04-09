@@ -26,9 +26,11 @@ module.exports = function plugin(options) {
           return
         }
 
-        var clone = decl.clone()
-        clone.value = value
-        decl.parent.insertBefore(decl, clone)
+        if (value != decl.value) {
+          var clone = decl.clone()
+          clone.value = value
+          decl.parent.insertBefore(decl, clone)
+        }
       }, decl.source)
     })
   }
