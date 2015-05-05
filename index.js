@@ -12,26 +12,36 @@ module.exports = function plugin(options) {
   var precision = options.precision
   var preserve = options.preserve
 
-  return function(style) {
-    style.eachDecl(function transformDecl(decl) {
-      if (!decl.value || decl.value.indexOf("calc(") === -1) {
+  function transformRule(rule, prop) {
+    if (!rule[prop] || rule[prop].indexOf("calc(") === -1) {
+      return
+    }
+    helpers.try(function transformCSSCalc() {
+      var value = reduceCSSCalc(rule[prop], precision)
+
+      if (!preserve) {
+        rule[prop] = value
         return
       }
 
-      helpers.try(function transformCSSCalc() {
-        var value = reduceCSSCalc(decl.value, precision)
-
-        if (!preserve) {
-          decl.value = value
-          return
-        }
-
-        if (value != decl.value) {
-          var clone = decl.clone()
-          clone.value = value
-          decl.parent.insertBefore(decl, clone)
-        }
-      }, decl.source)
+      if (value != rule[prop]) {
+        var clone = rule.clone()
+        clone[prop] = value
+        rule.parent.insertBefore(rule, clone)
+      }
+    }, rule.source)
+  }
+  
+  return function(style) {
+    style.eachInside(function (rule) {
+      switch (rule.type) {
+        case "decl":
+          transformRule(rule, "value")
+          break;
+        case "atrule":
+          transformRule(rule, "params")
+          break;
+      }
     })
   }
 }
