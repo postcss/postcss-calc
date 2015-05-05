@@ -31,9 +31,9 @@ module.exports = function plugin(options) {
       }
     }, rule.source)
   }
-  
+
   return function(style) {
-    style.eachInside(function (rule) {
+    style.eachInside(function(rule) {
       switch (rule.type) {
         case "decl":
           transformRule(rule, "value")
