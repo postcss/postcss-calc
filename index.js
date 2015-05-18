@@ -14,7 +14,7 @@ module.exports = function plugin(options) {
 
   return function(style) {
     style.eachDecl(function transformDecl(decl) {
-      if (!decl.value || decl.value.indexOf("calc(") === -1) {
+      if (!decl.value || (decl.value.indexOf && decl.value.indexOf("calc(") === -1)) {
         return
       }
 
