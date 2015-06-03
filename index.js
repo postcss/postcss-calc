@@ -3,11 +3,12 @@
  */
 var reduceCSSCalc = require("reduce-css-calc")
 var helpers = require("postcss-message-helpers")
+var postcss = require("postcss");
 
 /**
  * PostCSS plugin to reduce calc() function calls.
  */
-module.exports = function plugin(options) {
+module.exports = postcss.plugin("postcss-calc", function(options) {
   options = options || {}
   var precision = options.precision
   var preserve = options.preserve
@@ -34,4 +35,4 @@ module.exports = function plugin(options) {
       }, decl.source)
     })
   }
-}
+});
