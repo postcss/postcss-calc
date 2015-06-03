@@ -1,3 +1,7 @@
+# 4.1.0 - 2015-04-09
+
+- Added: compatibility with postcss v4.1.x ([#12](https://github.com/postcss/postcss-calc/pull/12))
+
 # 4.0.1 - 2015-04-09
 
 - Fixed: `preserve` option does not create duplicated values ([#7](https://github.com/postcss/postcss-calc/issues/7))
