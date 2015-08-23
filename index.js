@@ -14,7 +14,7 @@ module.exports = postcss.plugin("postcss-calc", function(options) {
   var preserve = options.preserve
 
   return function(style) {
-    style.eachDecl(function transformDecl(decl) {
+    style.walkDecls(function transformDecl(decl) {
       if (!decl.value || decl.value.indexOf("calc(") === -1) {
         return
       }
