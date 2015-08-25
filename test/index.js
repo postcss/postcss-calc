@@ -23,15 +23,37 @@ function compareFixtures(t, name, options, message) {
   // handy thing: checkout actual in the *.actual.css file
   fs.writeFile(fixturePath(name + ".actual"), actual)
 
-  return t.equal(actual, fixture(name + ".expected"), message ? message : "processed fixture '" + name + "' should be equal to expected output")
+  return t.equal(
+    actual,
+    fixture(name + ".expected"),
+    message
+      ? message
+      : "processed fixture '" + name + "' should be equal to expected output"
+  )
 }
 
 test("calc", function(t) {
-  compareFixtures(t, "calc", {}, "should resolve what is possible in complex calc")
+  compareFixtures(
+    t,
+    "calc",
+    {},
+    "should resolve what is possible in complex calc"
+  )
 
-  compareFixtures(t, "precision", {precision: 3}, "should have a precision option that allow to control decimal precision of calcuations")
+  compareFixtures(
+    t,
+    "precision",
+    {precision: 3},
+    "should have a precision option that allow to control decimal precision " +
+      "of calcuations"
+  )
 
-  compareFixtures(t, "preserve", {preserve: true}, "should have a preserve option that allow to keep original calc() usage")
+  compareFixtures(
+    t,
+    "preserve",
+    {preserve: true},
+    "should have a preserve option that allow to keep original calc() usage"
+  )
 
   t.end()
 })

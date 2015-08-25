@@ -1,3 +1,8 @@
+# 5.0.0 - 2015-08-25
+
+- Removed: compatibility with postcss v4.x
+- Added: compatibility with postcss v5.x
+
 # 4.1.0 - 2015-04-09
 
 - Added: compatibility with postcss v4.1.x ([#12](https://github.com/postcss/postcss-calc/pull/12))
