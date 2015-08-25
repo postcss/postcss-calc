@@ -23,7 +23,7 @@
   "dependencies": {
     "postcss-message-helpers": "^2.0.0",
     "reduce-css-calc": "^1.2.0",
-    "postcss": "^4.1.11"
+    "postcss": "^5.0.2"
   },
   "devDependencies": {
     "jscs": "^1.6.2",
