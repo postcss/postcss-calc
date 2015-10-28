@@ -10,7 +10,7 @@ This can be particularly useful with the [postcss-custom-properties](https://git
 ## Installation
 
 ```console
-$ npm install postcss-calc
+$ npm install -D postcss-calc
 ```
 
 ## Usage
