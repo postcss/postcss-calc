@@ -29,6 +29,7 @@
     "tape": "^3.0.0"
   },
   "scripts": {
-    "test": "npm install && eslint . && tape test"
+    "test": "npm run setup && eslint . && tape test",
+    "setup": "npm install"
   }
 }
