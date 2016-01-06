@@ -14,22 +14,24 @@ function fixture(name) {
 }
 
 function compareFixtures(t, name, options, message) {
-  var actual = postcss()
+  var result = postcss()
     .use(customProperties())
     .use(calc(options))
     .process(fixture(name), {from: fixturePath(name)})
-    .css.trim()
+  var actual = result.css.trim()
 
   // handy thing: checkout actual in the *.actual.css file
   fs.writeFile(fixturePath(name + ".actual"), actual)
 
-  return t.equal(
+  t.equal(
     actual,
     fixture(name + ".expected"),
     message
       ? message
       : "processed fixture '" + name + "' should be equal to expected output"
   )
+
+  return result
 }
 
 test("calc", function(t) {
@@ -53,6 +55,17 @@ test("calc", function(t) {
     "preserve",
     {preserve: true},
     "should have a preserve option that allow to keep original calc() usage"
+  )
+
+  var result = compareFixtures(
+    t,
+    "warnWhenCannotResolve",
+    {warnWhenCannotResolve: true}
+  )
+
+  t.ok(
+    result.messages[0].text.match(/^Could not reduce expression:/),
+    "should add a warning for unreduced calc() "
   )
 
   t.end()
