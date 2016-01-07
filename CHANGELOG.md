@@ -1,3 +1,5 @@
+# 5.1.0 - 2016-01-07
+
 - Added: "warnWhenCannotResolve" option to warn when calc() are not reduced to a single value
 
 # 5.0.0 - 2015-08-25
