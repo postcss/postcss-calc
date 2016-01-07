@@ -45,12 +45,13 @@ module.exports = postcss.plugin("postcss-calc", function(options) {
       }, node.source)
     }
 
-    style.walkAtRules(function transformAtRule(atRule) {
-      transformValue(atRule, 'params')
-    })
-
-    style.walkDecls(function transformDecl(decl) {
-      transformValue(decl, 'value')
+    style.walk(function(rule) {
+      if (rule.type === "atrule") {
+        return transformValue(rule, "params")
+      }
+      else if (rule.type === "decl") {
+        return transformValue(rule, "value")
+      }
     })
   }
 })
