@@ -1,0 +1,10 @@
+@media (min-width: 20px) {
+  .test {
+    display: block;
+  }
+}
+@media (min-width: calc(10px + 10px)) {
+  .test {
+    display: block;
+  }
+}
