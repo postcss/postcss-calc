@@ -107,6 +107,17 @@ var out = postcss()
   .css
 ```
 
+#### `warnWhenCannotResolve` (default: `false`)
+
+Adds warnings when calc() are not reduced to a single value.
+
+```js
+var out = postcss()
+  .use(calc({warnWhenCannotResolve: true}))
+  .process(css)
+  .css
+```
+
 ---
 
 ## Contributing

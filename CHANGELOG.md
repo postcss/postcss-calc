@@ -1,3 +1,5 @@
+- Added: "warnWhenCannotResolve" option to warn when calc() are not reduced to a single value
+
 # 5.0.0 - 2015-08-25
 
 - Removed: compatibility with postcss v4.x
