@@ -18,3 +18,7 @@ stuff {
   prefixed-unresolved: -webkit-calc(var(--gutter-y) - 1px);
   z-index: calc(var(--zIndexThing) + 1);
 }
+
+@media (min-width: calc(10px + 10px)) {
+  .mediaQueriesShouldBeDisabledByDefault {}
+}

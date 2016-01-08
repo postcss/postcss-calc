@@ -15,33 +15,44 @@ module.exports = postcss.plugin("postcss-calc", function(options) {
   var precision = options.precision
   var preserve = options.preserve
   var warnWhenCannotResolve = options.warnWhenCannotResolve
+  var mediaQueries = options.mediaQueries
 
   return function(style, result) {
+    function transformValue(node, property) {
+      var value = node[property]
 
-    style.walkDecls(function transformDecl(decl) {
-      if (!decl.value || decl.value.indexOf("calc(") === -1) {
+      if (!value || !CONTAINS_CALC.test(value)) {
         return
       }
 
       helpers.try(function transformCSSCalc() {
-        var value = reduceCSSCalc(decl.value, precision)
+        var reducedValue = reduceCSSCalc(value, precision)
 
-        if (warnWhenCannotResolve && CONTAINS_CALC.test(value)) {
-          result.warn("Could not reduce expression: " + decl.value,
-            {plugin: "postcss-calc", node: decl})
+        if (warnWhenCannotResolve && CONTAINS_CALC.test(reducedValue)) {
+          result.warn("Could not reduce expression: " + value,
+            {plugin: "postcss-calc", node: node})
         }
 
         if (!preserve) {
-          decl.value = value
+          node[property] = reducedValue
           return
         }
 
-        if (value != decl.value) {
-          var clone = decl.clone()
-          clone.value = value
-          decl.parent.insertBefore(decl, clone)
+        if (reducedValue != value) {
+          var clone = node.clone()
+          clone[property] = reducedValue
+          node.parent.insertBefore(node, clone)
         }
-      }, decl.source)
+      }, node.source)
+    }
+
+    style.walk(function(rule) {
+      if (mediaQueries && rule.type === "atrule") {
+        return transformValue(rule, "params")
+      }
+      else if (rule.type === "decl") {
+        return transformValue(rule, "value")
+      }
     })
   }
 })

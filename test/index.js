@@ -44,6 +44,13 @@ test("calc", function(t) {
 
   compareFixtures(
     t,
+    "media",
+    {mediaQueries: true},
+    "should resolve media queries"
+  )
+
+  compareFixtures(
+    t,
     "precision",
     {precision: 3},
     "should have a precision option that allow to control decimal precision " +
@@ -55,6 +62,14 @@ test("calc", function(t) {
     "preserve",
     {preserve: true},
     "should have a preserve option that allow to keep original calc() usage"
+  )
+
+  compareFixtures(
+    t,
+    "preserve-media",
+    {preserve: true, mediaQueries: true},
+    "should have a preserve option that allow to keep original calc() usage" +
+    "with media"
   )
 
   var result = compareFixtures(

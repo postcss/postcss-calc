@@ -1,3 +1,5 @@
+- Added: "mediaQueries" option for `@media` support
+
 # 5.1.0 - 2016-01-07
 
 - Added: "warnWhenCannotResolve" option to warn when calc() are not reduced to a single value
