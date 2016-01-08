@@ -45,7 +45,7 @@ test("calc", function(t) {
   compareFixtures(
     t,
     "media",
-    {},
+    {mediaQueries: true},
     "should resolve media queries"
   )
 
@@ -67,7 +67,7 @@ test("calc", function(t) {
   compareFixtures(
     t,
     "preserve-media",
-    {preserve: true},
+    {preserve: true, mediaQueries: true},
     "should have a preserve option that allow to keep original calc() usage" +
     "with media"
   )

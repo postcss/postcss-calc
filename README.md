@@ -118,6 +118,17 @@ var out = postcss()
   .css
 ```
 
+#### `mediaQueries` (default: `false`)
+
+Allows calc() usage as part of media query declarations.
+
+```js
+var out = postcss()
+  .use(calc({mediaQueries: true}))
+  .process(css)
+  .css
+```
+
 ---
 
 ## Contributing

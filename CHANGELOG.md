@@ -1,4 +1,4 @@
-- Added: support for `@media` queries
+- Added: "mediaQueries" option for `@media` support
 
 # 5.1.0 - 2016-01-07
 

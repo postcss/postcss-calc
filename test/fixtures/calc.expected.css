@@ -6,3 +6,7 @@ stuff {
   prefixed-unresolved: -webkit-calc(1.125rem - 1px);
   z-index: 111;
 }
+
+@media (min-width: calc(10px + 10px)) {
+  .mediaQueriesShouldBeDisabledByDefault {}
+}
