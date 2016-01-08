@@ -1,8 +1,12 @@
+# 5.2.0 - 2016-01-08
+
 - Added: "mediaQueries" option for `@media` support
+([#22](https://github.com/postcss/postcss-calc/pull/22))
 
 # 5.1.0 - 2016-01-07
 
 - Added: "warnWhenCannotResolve" option to warn when calc() are not reduced to a single value
+([#20](https://github.com/postcss/postcss-calc/pull/20))
 
 # 5.0.0 - 2015-08-25
 
