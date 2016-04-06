@@ -5,7 +5,7 @@ var reduceCSSCalc = require("reduce-css-calc")
 var helpers = require("postcss-message-helpers")
 var postcss = require("postcss")
 
-var CONTAINS_CALC = /calc\(.*\)/
+var CONTAINS_CALC = /\bcalc\([\s\S]*?\)/
 
 /**
  * PostCSS plugin to reduce calc() function calls.
