@@ -65,6 +65,10 @@ body {
 h1 {
   font-size: calc(var(--main-font-size) * 2);
   height: calc(100px - 2em);
+  margin-bottom: calc(
+      var(--main-font-size)
+      * 1.5
+    )
 }
 ```
 
@@ -77,7 +81,8 @@ body {
 
 h1 {
   font-size: 32px;
-  height: calc(100px - 2em)
+  height: calc(100px - 2em);
+  margin-bottom: 24px
 }
 ```
 
