@@ -72,6 +72,13 @@ test("calc", function(t) {
     "with media"
   )
 
+  compareFixtures(
+    t,
+    "multiline",
+    {},
+    "should resolve multiline calc value"
+  )
+
   var result = compareFixtures(
     t,
     "warnWhenCannotResolve",
