@@ -1,6 +1,6 @@
 {
   "name": "postcss-calc",
-  "version": "5.2.0",
+  "version": "5.2.1",
   "description": "PostCSS plugin to reduce calc()",
   "keywords": [
     "css",
@@ -22,10 +22,12 @@
   },
   "devDependencies": {
     "eslint": "^1.0.0",
+    "npmpub": "^3.1.0",
     "postcss-custom-properties": "^5.0.0",
     "tape": "^3.0.0"
   },
   "scripts": {
-    "test": "eslint . && tape test"
+    "test": "eslint . && tape test",
+    "release": "npmpub"
   }
 }

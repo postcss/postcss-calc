@@ -1,3 +1,8 @@
+# 5.2.1 - 2016-04-10
+
+- Fixed: support for multiline value
+  ([#27](https://github.com/postcss/postcss-calc/pull/27)) 
+
 # 5.2.0 - 2016-01-08
 
 - Added: "mediaQueries" option for `@media` support
