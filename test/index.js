@@ -51,6 +51,13 @@ test("calc", function(t) {
 
   compareFixtures(
     t,
+    "selector",
+    {selectors: true},
+    "should resolve selectors"
+  )
+
+  compareFixtures(
+    t,
     "precision",
     {precision: 3},
     "should have a precision option that allow to control decimal precision " +
