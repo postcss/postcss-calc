@@ -1,3 +1,8 @@
+# 5.3.0 - 2016-07-11
+
+- Added: support for selector transformation via `selectors` option.
+  ([#29](https://github.com/postcss/postcss-calc/pull/29) - @uniquegestaltung)
+
 # 5.2.1 - 2016-04-10
 
 - Fixed: support for multiline value
