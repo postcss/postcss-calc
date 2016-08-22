@@ -1,3 +1,4 @@
+# 5.3.1 - 2016-08-22
 
 - Fixed: avoid security issue related to ``reduce-css-calc@< 1.2.4``.
 
