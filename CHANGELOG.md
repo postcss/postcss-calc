@@ -1,3 +1,6 @@
+
+- Fixed: avoid security issue related to ``reduce-css-calc@< 1.2.4``.
+
 # 5.3.0 - 2016-07-11
 
 - Added: support for selector transformation via `selectors` option.
