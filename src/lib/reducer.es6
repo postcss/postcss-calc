@@ -48,12 +48,12 @@ function reduceMathExpression(node, precision) {
   let right = node.right;
 
   if (op === "+" || op === "-") {
-    // something + 0 => value
-    // value - 0 => value
+    // something + 0 => something
+    // something - 0 => something
     if (right.value === 0)
       return left;
 
-    // 0 + value => value
+    // 0 + something => something
     if (left.value === 0 && op === "+")
       return right;
 
