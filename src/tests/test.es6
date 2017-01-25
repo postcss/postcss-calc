@@ -18,6 +18,7 @@ test('foo{bar:calc(\n1rem \n* 2 \n* 1.5)}', 'foo{bar:3rem}');
 test('foo{bar:calc(1rem * 1.5)}', 'foo{bar:1.5rem}');
 test('foo{bar:calc(100% + 1px)}', 'foo{bar:calc(100% + 1px)}');
 test('foo{bar:calc((100px - 1em) + (-50px + 1em))}', 'foo{bar:50px}');
+test('foo{bar:calc(50% + (5em + 5%))}', 'foo{bar:calc(55% + 5em)}');
 test('foo{bar:calc(500px - 0px)}', 'foo{bar:500px}');
 test('foo{bar:calc(100vw / 2 - 6px + 0px)}', 'foo{bar:calc(50vw - 6px)}');
 test('foo{bar:calc(1s - 50ms)}', 'foo{bar:0.95s}');
@@ -56,5 +57,5 @@ assert.ok(
 );
 test(
   'foo{font-size: calc(14px + 6 * ((100vw - 320px) / 448))}',
-  'foo{font-size: calc(1.34vw + 9.71px)}',
+  'foo{font-size: calc(9.71px + 1.34vw)}',
   { precision: 2 });
