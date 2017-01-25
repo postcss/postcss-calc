@@ -52,3 +52,7 @@ assert.ok(
   ).messages[0].text.match(/^Could not reduce expression:/),
   "should add a warning for unreduced calc() "
 );
+test(
+  'foo{font-size: calc(14px + 6 * ((100vw - 320px) / 448))}',
+  'foo{font-size: calc(1.34vw + 9.71px)}',
+  { precision: 2 });

@@ -61,25 +61,94 @@ function reduceMathExpression(node, precision) {
       else
         node.value = left.value - right.value;
     }
+    if (left.type !== 'MathExpression' && right.type === 'MathExpression') {
+      if (left.type === right.left.type) {
+        node = assign({ }, node);
+        node.left = reduce({
+          type: 'MathExpression',
+          operator: op,
+          left: left,
+          right: right.left
+        }, precision);
+        node.right = right.right;
+        return reduce(node, precision);
+      }
+      else if (left.type === right.right.type) {
+        node = assign({ }, node);
+        node.left = right.left;
+        node.right = reduce({
+          type: 'MathExpression',
+          operator: right.operator,
+          left: left,
+          right: right.right
+        }, precision);
+        return reduce(node, precision);
+      }
+    }
+    if (left.type === 'MathExpression' && right.type !== 'MathExpression') {
+      if (right.type === left.left.type) {
+        node = assign({ }, left);
+        node.left = reduce({
+          type: 'MathExpression',
+          operator: op,
+          left: left.left,
+          right: right
+        }, precision);
+        return reduce(node, precision);
+      }
+      else if (right.type === left.right.type) {
+        node = assign({ }, left);
+        node.right = reduce({
+          type: 'MathExpression',
+          operator: op,
+          left: left.right,
+          right: right
+        }, precision);
+        return reduce(node, precision);
+      }
+    }
   }
 
-  if (left.type === 'MathExpression' || right.type === 'MathExpression')
-    return node;
-
   if (op === '/' && right.type === 'Value' && right.value !== 0) {
-    node = assign({ }, left);
-    let prec = Math.pow(10, precision);
-    node.value = Math.round((left.value / right.value) * prec) / prec;
+    if (left.type === 'MathExpression') {
+      if (left.left.type !== 'MathExpression' && left.right.type !== 'MathExpression') {
+        left.left.value /= right.value;
+        left.right.value /= right.value;
+        node = left;
+      }
+    }
+    else {
+      node = assign({ }, left);
+      node.value /= right.value;
+    }
   }
 
   if (op === '*') {
     if (right.type === 'Value') {
-      node = assign({ }, left);
-      node.value *= right.value;
+      if (left.type === 'MathExpression') {
+        if (left.left.type !== 'MathExpression' && left.right.type !== 'MathExpression') {
+          left.left.value *= right.value;
+          left.right.value *= right.value;
+          node = left;
+        }
+      }
+      else {
+        node = assign({ }, left);
+        node.value *= right.value;
+      }
     }
     else if (left.type === 'Value') {
-      node = assign({ }, right);
-      node.value *= left.value;
+      if (right.type === 'MathExpression') {
+        if (right.left.type !== 'MathExpression' && right.right.type !== 'MathExpression') {
+          right.left.value *= left.value;
+          right.right.value *= left.value;
+          node = right;
+        }
+      }
+      else {
+        node = assign({ }, right);
+        node.value *= left.value;
+      }
     }
   }
 

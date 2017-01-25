@@ -5,7 +5,12 @@ const order = {
   "-": 1
 };
 
-function stringify(node) {
+function round(value, prec) {
+  let precision = Math.pow(10, prec);
+  return Math.round(value * precision) / precision;
+}
+
+function stringify(node, prec) {
   switch (node.type) {
     case "MathExpression":
       let op = node.operator;
@@ -14,16 +19,16 @@ function stringify(node) {
       let str = "";
 
       if (left.type === 'MathExpression' && order[op] < order[left.operator])
-        str += "(" + stringify(left) + ")";
+        str += "(" + stringify(left, prec) + ")";
       else
-        str += stringify(left);
+        str += stringify(left, prec);
 
       str += " " + node.operator + " ";
 
       if (right.type === 'MathExpression' && order[op] < order[right.operator])
-        str += "(" + stringify(right) + ")";
+        str += "(" + stringify(right, prec) + ")";
       else
-        str += stringify(right);
+        str += stringify(right, prec);
 
       return str;
     case "LengthValue":
@@ -31,27 +36,27 @@ function stringify(node) {
     case "TimeValue":
     case "FrequencyValue":
     case "ResolutionValue":
-      return node.value + node.unit;
+      return round(node.value, prec) + node.unit;
     case "EmValue":
-      return node.value + "em";
+      return round(node.value, prec) + "em";
     case "ExValue":
-      return node.value + "ex";
+      return round(node.value, prec) + "ex";
     case "ChValue":
-      return node.value + "ch";
+      return round(node.value, prec) + "ch";
     case "RemValue":
-      return node.value + "rem";
+      return round(node.value, prec) + "rem";
     case "VhValue":
-      return node.value + "vh";
+      return round(node.value, prec) + "vh";
     case "VwValue":
-      return node.value + "vw";
+      return round(node.value, prec) + "vw";
     case "VminValue":
-      return node.value + "vmin";
+      return round(node.value, prec) + "vmin";
     case "VmaxValue":
-      return node.value + "vmax";
+      return round(node.value, prec) + "vmax";
     case "PercentageValue":
-      return node.value + "%";
+      return round(node.value, prec) + "%";
     case "Value":
-      return node.value;
+      return round(node.value, prec);
   }
 }
 
@@ -59,10 +64,10 @@ export default function (
     calc,
     node,
     originalValue,
-    warnWhenCannotResolve,
+    options,
     result,
     item) {
-  let str = stringify(node);
+  let str = stringify(node, options.precision);
 
   if (node.type === "MathExpression") {
     // if calc expression couldn't be resolved to a single value, re-wrap it as
@@ -70,8 +75,8 @@ export default function (
     str = calc + "(" + str + ")";
 
     // if the warnWhenCannotResolve option is on, inform the user that the calc
-    // expression could not be resolved to a single value 
-    if (warnWhenCannotResolve) {
+    // expression could not be resolved to a single value
+    if (options.warnWhenCannotResolve) {
       result.warn(
         "Could not reduce expression: " + originalValue,
         { plugin: 'postcss-calc', node: item });

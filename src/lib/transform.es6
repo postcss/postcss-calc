@@ -26,7 +26,7 @@ function transformValue(value, options, result, item) {
       node.value,
       reducedAst,
       value,
-      options.warnWhenCannotResolve,
+      options,
       result,
       item);
 
