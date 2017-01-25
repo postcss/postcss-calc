@@ -48,12 +48,17 @@ function reduceMathExpression(node, precision) {
   let right = node.right;
 
   if (op === "+" || op === "-") {
-    if (left.value === 0)
-      return right;
-
+    // something + 0 => value
+    // value - 0 => value
     if (right.value === 0)
       return left;
 
+    // 0 + value => value
+    if (left.value === 0 && op === "+")
+      return right;
+
+    // value + value
+    // value - value
     if (left.type === right.type && left.type !== 'MathExpression') {
       node = assign({ }, left);
       if (op === "+")
@@ -61,7 +66,13 @@ function reduceMathExpression(node, precision) {
       else
         node.value = left.value - right.value;
     }
+
+    // value + (expr)
     if (left.type !== 'MathExpression' && right.type === 'MathExpression') {
+      // value + (value + something) => (value + value) + something
+      // value + (value - something) => (value + value) - something
+      // value - (value + something) => (value - value) + something
+      // value - (value - something) => (value - value) - something
       if (left.type === right.left.type) {
         node = assign({ }, node);
         node.left = reduce({
@@ -73,19 +84,29 @@ function reduceMathExpression(node, precision) {
         node.right = right.right;
         return reduce(node, precision);
       }
+      // value + (something + value) => (value + value) + something
+      // value + (something - value) => (value - value) + something
+      // value - (something + value) => (value + value) - something
+      // value - (something - value) => (value - value) - something
       else if (left.type === right.right.type) {
         node = assign({ }, node);
-        node.left = right.left;
-        node.right = reduce({
+        node.left = reduce({
           type: 'MathExpression',
           operator: right.operator,
           left: left,
           right: right.right
         }, precision);
+        node.right = right.left;
         return reduce(node, precision);
       }
     }
+
+    // (expr) + value
     if (left.type === 'MathExpression' && right.type !== 'MathExpression') {
+      // (value + something) + value => (value + value) + something
+      // (value - something) + value => (value + value) - something
+      // (value + something) - value => (value - value) + something
+      // (value - something) - value => (value - value) - something
       if (right.type === left.left.type) {
         node = assign({ }, left);
         node.left = reduce({
@@ -96,6 +117,10 @@ function reduceMathExpression(node, precision) {
         }, precision);
         return reduce(node, precision);
       }
+      // (something + value) + value => something + (value + value)
+      // (something - value) + value => something - (value + value)
+      // (something + value) - value => something + (value - value)
+      // (something - value) - value => something - (value - value)
       else if (right.type === left.right.type) {
         node = assign({ }, left);
         node.right = reduce({
