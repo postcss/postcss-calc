@@ -92,7 +92,7 @@ Checkout [tests](test) for more examples.
 
 #### `precision` (default: `5`)
 
-Allow you to definine the precision for decimal numbers.
+Allow you to define the precision for decimal numbers.
 
 ```js
 var out = postcss()

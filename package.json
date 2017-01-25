@@ -1,6 +1,6 @@
 {
   "name": "postcss-calc",
-  "version": "5.3.1",
+  "version": "6.0.0",
   "description": "PostCSS plugin to reduce calc()",
   "keywords": [
     "css",
@@ -9,25 +9,31 @@
     "calculation",
     "calc"
   ],
+  "main": "index.js",
+  "scripts": {
+    "test": "eslint src/**/*.es6 && npm run build && node tests/test.js",
+    "build": "babel src -d . && jison parser.jison"
+  },
   "author": "Maxime Thirouin",
   "license": "MIT",
   "repository": "https://github.com/postcss/postcss-calc.git",
-  "files": [
-    "index.js"
-  ],
-  "dependencies": {
-    "postcss-message-helpers": "^2.0.0",
-    "reduce-css-calc": "^1.2.6",
-    "postcss": "^5.0.2"
-  },
   "devDependencies": {
-    "eslint": "^1.0.0",
-    "npmpub": "^3.1.0",
-    "postcss-custom-properties": "^5.0.0",
-    "tape": "^3.0.0"
+    "babel-cli": "^6.18.0",
+    "babel-core": "^6.21.0",
+    "babel-eslint": "^7.1.1",
+    "babel-plugin-add-module-exports": "^0.2.1",
+    "babel-preset-es2015": "^6.18.0",
+    "babel-register": "^6.18.0",
+    "eslint": "^3.12.2",
+    "eslint-plugin-babel": "^4.0.0",
+    "eslint-plugin-import": "^2.2.0",
+    "jison": "^0.4.17"
   },
-  "scripts": {
-    "test": "eslint . && tape test",
-    "release": "npmpub"
+  "dependencies": {
+    "css-unit-converter": "^1.1.1",
+    "object-assign": "^4.1.0",
+    "postcss": "^5.2.6",
+    "postcss-selector-parser": "^2.2.2",
+    "postcss-value-parser": "^3.3.0"
   }
 }
