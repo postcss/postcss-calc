@@ -21,6 +21,8 @@ test('foo{bar:calc((100px - 1em) + (-50px + 1em))}', 'foo{bar:50px}');
 test('foo{bar:calc(500px - 0px)}', 'foo{bar:500px}');
 test('foo{bar:calc(100vw / 2 - 6px + 0px)}', 'foo{bar:calc(50vw - 6px)}');
 test('foo{bar:calc(1s - 50ms)}', 'foo{bar:0.95s}');
+test('foo{bar:calc(99.99% * 1/1 - 0rem)}', 'foo{bar:99.99%}');
+test('foo{bar:calc(1px + 1)}', 'foo{bar:calc(1px + 1)}');
 test('foo{bar:calc(1/100)}', 'foo{bar:0.01}');
 test('foo{bar:calc(5/1000000)}', 'foo{bar:0.00001}');
 test('foo{bar:calc(5/1000000)}', 'foo{bar:0.000005}', { precision: 6 });
