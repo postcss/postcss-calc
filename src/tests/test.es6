@@ -34,6 +34,7 @@ test('div:nth-child(2n + calc(3*3)){}', 'div:nth-child(2n + calc(3*3)){}');
 test('div[data-size="calc(3*3)"]{}', 'div[data-size="9"]{}', { selectors: true});
 test('div:nth-child(2n + calc(3*3)){}', 'div:nth-child(2n + 9){}', { selectors: true});
 test('foo{bar:calc(1rem * 1.5)}', 'foo{bar:1.5rem;bar:calc(1rem * 1.5)}', { preserve: true });
+test('foo:nth-child(2n + $var-calc){}', 'foo:nth-child(2n + $var-calc){}');
 assert.equal(0, test(
   'foo{bar:calc(500px - 0px)}',
   'foo{bar:500px}',
