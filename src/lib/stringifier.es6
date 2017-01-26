@@ -31,32 +31,10 @@ function stringify(node, prec) {
         str += stringify(right, prec);
 
       return str;
-    case "LengthValue":
-    case "AngleValue":
-    case "TimeValue":
-    case "FrequencyValue":
-    case "ResolutionValue":
-      return round(node.value, prec) + node.unit;
-    case "EmValue":
-      return round(node.value, prec) + "em";
-    case "ExValue":
-      return round(node.value, prec) + "ex";
-    case "ChValue":
-      return round(node.value, prec) + "ch";
-    case "RemValue":
-      return round(node.value, prec) + "rem";
-    case "VhValue":
-      return round(node.value, prec) + "vh";
-    case "VwValue":
-      return round(node.value, prec) + "vw";
-    case "VminValue":
-      return round(node.value, prec) + "vmin";
-    case "VmaxValue":
-      return round(node.value, prec) + "vmax";
-    case "PercentageValue":
-      return round(node.value, prec) + "%";
     case "Value":
       return round(node.value, prec);
+    default:
+      return round(node.value, prec) + node.unit;
   }
 }
 

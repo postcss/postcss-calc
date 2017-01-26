@@ -78,14 +78,14 @@ expression
   	| TIME { $$ = { type: 'TimeValue', value: parseFloat($1), unit: /[a-z]+/.exec($1)[0] }; }
   	| FREQ { $$ = { type: 'FrequencyValue', value: parseFloat($1), unit: /[a-z]+/.exec($1)[0] }; }
   	| RES { $$ = { type: 'ResolutionValue', value: parseFloat($1), unit: /[a-z]+/.exec($1)[0] }; }
-  	| EMS { $$ = { type: 'EmValue', value: parseFloat($1) }; }
-  	| EXS { $$ = { type: 'ExValue', value: parseFloat($1) }; }
-  	| CHS { $$ = { type: 'ChValue', value: parseFloat($1) }; }
-  	| REMS { $$ = { type: 'RemValue', value: parseFloat($1) }; }
-  	| VHS { $$ = { type: 'VhValue', value: parseFloat($1) }; }
-  	| VWS { $$ = { type: 'VwValue', value: parseFloat($1) }; }
-  	| VMINS { $$ = { type: 'VminValue', value: parseFloat($1) }; }
-  	| VMAXS { $$ = { type: 'VmaxValue', value: parseFloat($1) }; }
-  	| PERCENTAGE { $$ = { type: 'PercentageValue', value: parseFloat($1) }; }
+  	| EMS { $$ = { type: 'EmValue', value: parseFloat($1), unit: 'em' }; }
+  	| EXS { $$ = { type: 'ExValue', value: parseFloat($1), unit: 'ex' }; }
+  	| CHS { $$ = { type: 'ChValue', value: parseFloat($1), unit: 'ch' }; }
+  	| REMS { $$ = { type: 'RemValue', value: parseFloat($1), unit: 'rem' }; }
+  	| VHS { $$ = { type: 'VhValue', value: parseFloat($1), unit: 'vh' }; }
+  	| VWS { $$ = { type: 'VwValue', value: parseFloat($1), unit: 'vw' }; }
+  	| VMINS { $$ = { type: 'VminValue', value: parseFloat($1), unit: 'vmin' }; }
+  	| VMAXS { $$ = { type: 'VmaxValue', value: parseFloat($1), unit: 'vmax' }; }
+  	| PERCENTAGE { $$ = { type: 'PercentageValue', value: parseFloat($1), unit: '%' }; }
   	| SUB css_value { var prev = $2; prev.value *= -1; $$ = prev; }
     ;
