@@ -18,7 +18,7 @@ function transformValue(value, options, result, item) {
 
     // reduce AST to its simplest form, that is, either to a single value
     // or a simplified calc expression
-    let reducedAst = reducer(ast, options.precision);
+    let reducedAst = reducer(ast, options.precision, item);
 
     // stringify AST and write it back
     node.type = 'word';

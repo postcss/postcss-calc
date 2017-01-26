@@ -1,9 +1,9 @@
 import assign from 'object-assign';
 import convert from './convert';
 
-function reduce(node, precision) {
+function reduce(node, precision, item) {
   if (node.type === "MathExpression")
-    return reduceMathExpression(node, precision);
+    return reduceMathExpression(node, precision, item);
 
   return node;
 }
@@ -12,10 +12,10 @@ function isEqual(left, right) {
   return left.type === right.type && left.value === right.value;
 }
 
-function convertMathExpression(node, precision) {
+function convertMathExpression(node, precision, item) {
   let nodes = convert(node.left, node.right, precision);
-  let left = reduce(nodes.left, precision);
-  let right = reduce(nodes.right, precision);
+  let left = reduce(nodes.left, precision, item);
+  let right = reduce(nodes.right, precision, item);
 
   if (left.type === "MathExpression" && right.type === "MathExpression") {
 
@@ -30,8 +30,8 @@ function convertMathExpression(node, precision) {
       else if (isEqual(left.right, right.left))
         nodes = convert(left.left, right.right, precision);
 
-      left = reduce(nodes.left, precision);
-      right = reduce(nodes.right, precision);
+      left = reduce(nodes.left, precision, item);
+      right = reduce(nodes.right, precision, item);
 
     }
   }
@@ -41,7 +41,7 @@ function convertMathExpression(node, precision) {
   return node;
 }
 
-function reduceAddSubExpression(node, precision) {
+function reduceAddSubExpression(node, precision, item) {
   let op = node.operator;
   let left = node.left;
   let right = node.right;
@@ -78,9 +78,9 @@ function reduceAddSubExpression(node, precision) {
         operator: op,
         left: left,
         right: right.left
-      }, precision);
+      }, precision, item);
       node.right = right.right;
-      return reduce(node, precision);
+      return reduce(node, precision, item);
     }
     // value + (something + value) => (value + value) + something
     // value + (something - value) => (value - value) + something
@@ -93,9 +93,9 @@ function reduceAddSubExpression(node, precision) {
         operator: right.operator,
         left: left,
         right: right.right
-      }, precision);
+      }, precision, item);
       node.right = right.left;
-      return reduce(node, precision);
+      return reduce(node, precision, item);
     }
   }
 
@@ -112,8 +112,8 @@ function reduceAddSubExpression(node, precision) {
         operator: op,
         left: left.left,
         right: right
-      }, precision);
-      return reduce(node, precision);
+      }, precision, item);
+      return reduce(node, precision, item);
     }
     // (something + value) + value => something + (value + value)
     // (something - value) + value => something - (value + value)
@@ -126,19 +126,22 @@ function reduceAddSubExpression(node, precision) {
         operator: op,
         left: left.right,
         right: right
-      }, precision);
-      return reduce(node, precision);
+      }, precision, item);
+      return reduce(node, precision, item);
     }
   }
   return node;
 }
 
-function reduceDivisionExpression(node) {
-  if (node.right.type !== 'Value')
+function reduceDivisionExpression(node, item) {
+  if (node.right.type === 'MathExpression')
     return node;
 
+  if (node.right.type !== 'Value')
+    throw item.error(`Cannot divide by "${node.right.unit}", number expected`);
+
   if (node.right.value === 0)
-    return node; // throw error?
+    throw item.error('Cannot divide by zero');
 
   // (expr) / value
   if (node.left.type === 'MathExpression') {
@@ -194,15 +197,15 @@ function reduceMultiplicationExpression(node) {
   return node;
 }
 
-function reduceMathExpression(node, precision) {
-  node = convertMathExpression(node, precision);
+function reduceMathExpression(node, precision, item) {
+  node = convertMathExpression(node, precision, item);
 
   switch (node.operator) {
     case "+":
     case "-":
-      return reduceAddSubExpression(node, precision);
+      return reduceAddSubExpression(node, precision, item);
     case "/":
-      return reduceDivisionExpression(node);
+      return reduceDivisionExpression(node, item);
     case "*":
       return reduceMultiplicationExpression(node);
   }

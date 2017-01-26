@@ -59,3 +59,5 @@ test(
   'foo{font-size: calc(14px + 6 * ((100vw - 320px) / 448))}',
   'foo{font-size: calc(9.71px + 1.34vw)}',
   { precision: 2 });
+assert.throws(() => test('foo{bar:calc(500px/0)}'), /Cannot divide by zero/);
+assert.throws(() => test('foo{bar:calc(500px/2px)}'), /Cannot divide by "px", number expected/);
