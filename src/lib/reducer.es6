@@ -13,7 +13,7 @@ function isEqual(left, right) {
 }
 
 function convertMathExpression(node, precision) {
-  let nodes = convert(node.left, node.right);
+  let nodes = convert(node.left, node.right, precision);
   let left = reduce(nodes.left, precision);
   let right = reduce(nodes.right, precision);
 
@@ -25,10 +25,10 @@ function convertMathExpression(node, precision) {
       (left.operator === '+' && right.operator === '-'))) {
 
       if (isEqual(left.right, right.right))
-        nodes = convert(left.left, right.left);
+        nodes = convert(left.left, right.left, precision);
 
       else if (isEqual(left.right, right.left))
-        nodes = convert(left.left, right.right);
+        nodes = convert(left.left, right.right, precision);
 
       left = reduce(nodes.left, precision);
       right = reduce(nodes.right, precision);
