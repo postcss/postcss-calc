@@ -65,7 +65,7 @@ function reduceAddSubExpression(node, precision) {
       node.value = left.value - right.value;
   }
 
-  // value + (expr)
+  // value <op> (expr)
   if (left.type !== 'MathExpression' && right.type === 'MathExpression') {
     // value + (value + something) => (value + value) + something
     // value + (value - something) => (value + value) - something
@@ -99,7 +99,7 @@ function reduceAddSubExpression(node, precision) {
     }
   }
 
-  // (expr) + value
+  // (expr) <op> value
   if (left.type === 'MathExpression' && right.type !== 'MathExpression') {
     // (value + something) + value => (value + value) + something
     // (value - something) + value => (value + value) - something
