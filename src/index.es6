@@ -12,11 +12,10 @@ export default plugin('postcss-calc', (opts) => {
   }, opts);
 
   return (css, result) => {
-    css.walkDecls(node => transform(node, "value", options, result));
-    if (options.mediaQueries)
-      css.walkAtRules(node => transform(node, "params", options, result));
-
-    if (options.selectors)
-      css.walkRules(node => transform(node, "selector", options, result));
+    css.walk(node => {
+      if (node.type === 'decl') transform(node, "value", options, result);
+      if (node.type === 'atrule' && options.mediaQueries) transform(node, "params", options, result);
+      if (node.type === 'rule' && options.selectors) transform(node, "selector", options, result);
+    });
   };
 });
