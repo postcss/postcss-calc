@@ -3,44 +3,44 @@
 /* lexical grammar */
 %lex
 %%
-\s+                            /* skip whitespace */
-"*"                            return 'MUL';
-"/"                            return 'DIV';
-"+"                            return 'ADD';
-"-"                            return 'SUB';
+\s+                                    /* skip whitespace */
+"*"                                    return 'MUL';
+"/"                                    return 'DIV';
+"+"                                    return 'ADD';
+"-"                                    return 'SUB';
 
-[0-9]+("."[0-9]+)?px\b         return 'LENGTH';
-[0-9]+("."[0-9]+)?cm\b         return 'LENGTH';
-[0-9]+("."[0-9]+)?mm\b         return 'LENGTH';
-[0-9]+("."[0-9]+)?in\b         return 'LENGTH';
-[0-9]+("."[0-9]+)?pt\b         return 'LENGTH';
-[0-9]+("."[0-9]+)?pc\b         return 'LENGTH';
-[0-9]+("."[0-9]+)?deg\b        return 'ANGLE';
-[0-9]+("."[0-9]+)?grad\b       return 'ANGLE';
-[0-9]+("."[0-9]+)?rad\b        return 'ANGLE';
-[0-9]+("."[0-9]+)?turn\b       return 'ANGLE';
-[0-9]+("."[0-9]+)?s\b          return 'TIME';
-[0-9]+("."[0-9]+)?ms\b         return 'TIME';
-[0-9]+("."[0-9]+)?Hz\b         return 'FREQ';
-[0-9]+("."[0-9]+)?kHz\b        return 'FREQ';
-[0-9]+("."[0-9]+)?dpi\b        return 'RES';
-[0-9]+("."[0-9]+)?dpcm\b       return 'RES';
-[0-9]+("."[0-9]+)?dppx\b       return 'RES';
-[0-9]+("."[0-9]+)?em\b         return 'EMS';
-[0-9]+("."[0-9]+)?ex\b         return 'EXS';
-[0-9]+("."[0-9]+)?ch\b         return 'CHS';
-[0-9]+("."[0-9]+)?rem\b        return 'REMS';
-[0-9]+("."[0-9]+)?vw\b         return 'VWS';
-[0-9]+("."[0-9]+)?vh\b         return 'VHS';
-[0-9]+("."[0-9]+)?vmin\b       return 'VMINS';
-[0-9]+("."[0-9]+)?vmax\b       return 'VMAXS';
-[0-9]+("."[0-9]+)?\%           return 'PERCENTAGE';
-[0-9]+("."[0-9]+)?\b           return 'NUMBER';
+([0-9]+("."[0-9]+)?|"."[0-9]+)px\b     return 'LENGTH';
+([0-9]+("."[0-9]+)?|"."[0-9]+)cm\b     return 'LENGTH';
+([0-9]+("."[0-9]+)?|"."[0-9]+)mm\b     return 'LENGTH';
+([0-9]+("."[0-9]+)?|"."[0-9]+)in\b     return 'LENGTH';
+([0-9]+("."[0-9]+)?|"."[0-9]+)pt\b     return 'LENGTH';
+([0-9]+("."[0-9]+)?|"."[0-9]+)pc\b     return 'LENGTH';
+([0-9]+("."[0-9]+)?|"."[0-9]+)deg\b    return 'ANGLE';
+([0-9]+("."[0-9]+)?|"."[0-9]+)grad\b   return 'ANGLE';
+([0-9]+("."[0-9]+)?|"."[0-9]+)rad\b    return 'ANGLE';
+([0-9]+("."[0-9]+)?|"."[0-9]+)turn\b   return 'ANGLE';
+([0-9]+("."[0-9]+)?|"."[0-9]+)s\b      return 'TIME';
+([0-9]+("."[0-9]+)?|"."[0-9]+)ms\b     return 'TIME';
+([0-9]+("."[0-9]+)?|"."[0-9]+)Hz\b     return 'FREQ';
+([0-9]+("."[0-9]+)?|"."[0-9]+)kHz\b    return 'FREQ';
+([0-9]+("."[0-9]+)?|"."[0-9]+)dpi\b    return 'RES';
+([0-9]+("."[0-9]+)?|"."[0-9]+)dpcm\b   return 'RES';
+([0-9]+("."[0-9]+)?|"."[0-9]+)dppx\b   return 'RES';
+([0-9]+("."[0-9]+)?|"."[0-9]+)em\b     return 'EMS';
+([0-9]+("."[0-9]+)?|"."[0-9]+)ex\b     return 'EXS';
+([0-9]+("."[0-9]+)?|"."[0-9]+)ch\b     return 'CHS';
+([0-9]+("."[0-9]+)?|"."[0-9]+)rem\b    return 'REMS';
+([0-9]+("."[0-9]+)?|"."[0-9]+)vw\b     return 'VWS';
+([0-9]+("."[0-9]+)?|"."[0-9]+)vh\b     return 'VHS';
+([0-9]+("."[0-9]+)?|"."[0-9]+)vmin\b   return 'VMINS';
+([0-9]+("."[0-9]+)?|"."[0-9]+)vmax\b   return 'VMAXS';
+([0-9]+("."[0-9]+)?|"."[0-9]+)\%       return 'PERCENTAGE';
+([0-9]+("."[0-9]+)?|"."[0-9]+)\b       return 'NUMBER';
 
-"("                            return 'LPAREN';
-")"                            return 'RPAREN';
+"("                                    return 'LPAREN';
+")"                                    return 'RPAREN';
 
-<<EOF>>                        return 'EOF';
+<<EOF>>                                return 'EOF';
 
 /lex
 
