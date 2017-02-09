@@ -24,10 +24,7 @@ function convertAbsoluteLength(left, right, precision) {
       unit: left.unit
     };
   }
-  return {
-    left: left,
-    right: right
-  };
+  return { left, right };
 }
 
 export default convertNodes;
