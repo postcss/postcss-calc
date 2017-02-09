@@ -9,10 +9,7 @@ function convertNodes(left, right, precision) {
     case 'ResolutionValue':
       return convertAbsoluteLength(left, right, precision);
     default:
-      return {
-        left: left,
-        right: right
-      };
+      return { left, right };
   }
 }
 
