@@ -27,6 +27,7 @@ test('foo{bar:calc(1px + 1)}', 'foo{bar:calc(1px + 1)}');
 test('foo{bar:calc(1/100)}', 'foo{bar:0.01}');
 test('foo{bar:calc(5/1000000)}', 'foo{bar:0.00001}');
 test('foo{bar:calc(5/1000000)}', 'foo{bar:0.000005}', { precision: 6 });
+test('foo{bar:calc(23/853124)}', 'foo{bar:0.00002695973856086571}', { precision: false });
 test('@media (min-width:calc(10px+10px)){}', '@media (min-width:calc(10px+10px)){}');
 test('@media (min-width:calc(10px+10px)){}', '@media (min-width:20px){}', { mediaQueries: true });
 test('div[data-size="calc(3*3)"]{}', 'div[data-size="calc(3*3)"]{}');

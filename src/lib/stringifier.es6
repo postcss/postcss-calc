@@ -6,8 +6,11 @@ const order = {
 };
 
 function round(value, prec) {
-  let precision = Math.pow(10, prec);
-  return Math.round(value * precision) / precision;
+  if (prec !== false) {
+    let precision = Math.pow(10, prec);
+    return Math.round(value * precision) / precision;
+  }
+  return value;
 }
 
 function stringify(node, prec) {
