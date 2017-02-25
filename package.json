@@ -9,21 +9,32 @@
     "calculation",
     "calc"
   ],
-  "main": "index.js",
+  "main": "dist/index.js",
+  "files": [
+    "dist",
+    "LICENSE"
+  ],
   "scripts": {
-    "test": "eslint src/**/*.es6 && npm run build && node tests/test.js",
-    "build": "babel src -d . && jison parser.jison"
+    "prepublish": "npm run build && del-cli dist/__tests__",
+    "build": "del-cli dist && cross-env BABEL_ENV=publish babel src --out-dir dist && jison parser.jison -o dist/parser.js",
+    "pretest": "eslint src && npm run build",
+    "test": "ava dist/__tests__/"
   },
   "author": "Maxime Thirouin",
   "license": "MIT",
   "repository": "https://github.com/postcss/postcss-calc.git",
   "devDependencies": {
+    "ava": "^0.18.2",
     "babel-cli": "^6.18.0",
     "babel-core": "^6.21.0",
     "babel-eslint": "^7.1.1",
     "babel-plugin-add-module-exports": "^0.2.1",
     "babel-preset-es2015": "^6.18.0",
+    "babel-preset-es2015-loose": "^7.0.0",
+    "babel-preset-stage-0": "^6.3.13",
     "babel-register": "^6.18.0",
+    "cross-env": "^3.1.4",
+    "del-cli": "^0.2.1",
     "eslint": "^3.12.2",
     "eslint-plugin-babel": "^4.0.0",
     "eslint-plugin-import": "^2.2.0",
