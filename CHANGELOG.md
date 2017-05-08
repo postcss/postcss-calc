@@ -1,3 +1,8 @@
+# 6.0.0 - 2017-05-08
+
+- Breaking: Updated PostCSS from v5.x to v6.x, and reduce-css-calc from v1.x
+  to v2.x (thanks to @andyjansson).
+
 # 5.3.1 - 2016-08-22
 
 - Fixed: avoid security issue related to ``reduce-css-calc@< 1.2.4``.
