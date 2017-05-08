@@ -1,5 +1,9 @@
 {
-  "presets": ["es2015-loose", "stage-0"],
+  "presets": [["env", {
+    "targets": {
+      "node": 4
+    }
+  }]],
   "plugins": ["add-module-exports"],
   "env": {
     "development": {
