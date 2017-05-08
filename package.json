@@ -28,14 +28,14 @@
     "extends": "eslint-config-i-am-meticulous"
   },
   "devDependencies": {
-    "ava": "^0.18.2",
+    "ava": "^0.19.1",
     "babel-cli": "^6.18.0",
     "babel-core": "^6.21.0",
     "babel-eslint": "^7.1.1",
     "babel-plugin-add-module-exports": "^0.2.1",
     "babel-preset-env": "^1.4.0",
     "babel-register": "^6.18.0",
-    "cross-env": "^3.1.4",
+    "cross-env": "^4.0.0",
     "del-cli": "^0.2.1",
     "eslint": "^3.12.2",
     "eslint-config-i-am-meticulous": "^6.0.1",
@@ -44,8 +44,7 @@
   },
   "dependencies": {
     "css-unit-converter": "^1.1.1",
-    "object-assign": "^4.1.0",
-    "postcss": "^5.2.6",
+    "postcss": "^6.0.0",
     "postcss-selector-parser": "^2.2.2",
     "reduce-css-calc": "^2.0.0"
   },
