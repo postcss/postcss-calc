@@ -1,36 +1,19 @@
-import valueParser from 'postcss-value-parser';
 import selectorParser from 'postcss-selector-parser';
-import { parser } from '../parser';
-import reducer from './reducer';
-import stringifier from './stringifier';
+import reduceCssCalc from 'reduce-css-calc';
 
 const MATCH_CALC = /((?:\-[a-z]+\-)?calc)/;
 
 function transformValue(value, options, result, item) {
-  return valueParser(value).walk(node => {
-    // skip anything which isn't a calc() function
-    if (node.type !== 'function' || !MATCH_CALC.test(node.value))
-      return;
+  const reduced = reduceCssCalc(value, options.precision)
+  // if the warnWhenCannotResolve option is on, inform the user that the calc
+  // expression could not be resolved to a single value
+  if (options.warnWhenCannotResolve && MATCH_CALC.test(reduced)) {
+    result.warn(
+      "Could not reduce expression: " + value,
+      { plugin: 'postcss-calc', node: item });
+  }
 
-    // stringify calc expression and produce an AST
-    let contents = valueParser.stringify(node.nodes);
-    let ast = parser.parse(contents);
-
-    // reduce AST to its simplest form, that is, either to a single value
-    // or a simplified calc expression
-    let reducedAst = reducer(ast, options.precision, item);
-
-    // stringify AST and write it back
-    node.type = 'word';
-    node.value = stringifier(
-      node.value,
-      reducedAst,
-      value,
-      options,
-      result,
-      item);
-
-  }, true).toString();
+  return reduced
 }
 
 function transformSelector(value, options, result, item) {
@@ -39,7 +22,7 @@ function transformSelector(value, options, result, item) {
       // attribute value
       // e.g. the "calc(3*3)" part of "div[data-size="calc(3*3)"]"
       if (node.type === 'attribute') {
-        let val = transformValue(node.raws.unquoted, options, result, item);
+        const val = transformValue(node.raws.unquoted, options, result, item);
         node.value = node.quoted ? '"' + val + '"' : val;
       }
 
@@ -54,7 +37,7 @@ function transformSelector(value, options, result, item) {
 }
 
 export default (node, property, options, result) => {
-  let value = property === "selector"
+  const value = property === "selector"
     ? transformSelector(node[property], options, result, node)
     : transformValue(node[property], options, result, node);
 
@@ -63,7 +46,7 @@ export default (node, property, options, result) => {
   // node, preserving the original value. Otherwise, overwrite the original
   // value.
   if (options.preserve && node[property] !== value) {
-    let clone = node.clone();
+    const clone = node.clone();
     clone[property] = value;
     node.parent.insertBefore(node, clone);
   }

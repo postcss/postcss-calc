@@ -1,15 +1,16 @@
 import ava from 'ava';
-import reduceCalc from '..';
 import postcss from 'postcss';
+
+import reduceCalc from '..';
 
 function test(message, input, output = null, opts = {}, expectedWarnings = []) {
   if (output === null)
     output = input;
-  
+
   ava(message, t => {
     const out = postcss(reduceCalc(opts)).process(input);
     t.deepEqual(out.css, output);
-    let warnings = out.warnings().map(warning => warning.text);
+    const warnings = out.warnings().map(warning => warning.text);
     t.deepEqual(warnings.length, expectedWarnings.length);
     warnings.forEach((warning, i) => {
       t.true(expectedWarnings[i].test(warning));
@@ -25,7 +26,7 @@ function testThrows(message, input, expected, opts = {}) {
 
 test(
   'should reduce simple calc (1)',
-  'foo{bar:calc(1px + 1px);baz:bat}', 
+  'foo{bar:calc(1px + 1px);baz:bat}',
   'foo{bar:2px;baz:bat}'
 );
 
@@ -37,13 +38,13 @@ test(
 
 test(
   'should reduce simple calc (3)',
-  'foo{bar:calc(1rem * 1.5)}', 
+  'foo{bar:calc(1rem * 1.5)}',
   'foo{bar:1.5rem}'
 );
 
 test(
   'should reduce calc with newline characters',
-  'foo{bar:calc(\n1rem \n* 2 \n* 1.5)}', 
+  'foo{bar:calc(\n1rem \n* 2 \n* 1.5)}',
   'foo{bar:3rem}'
 );
 
@@ -55,58 +56,58 @@ test(
 
 test(
   'should parse fractions without leading zero',
-  'foo{margin:calc(2rem - .14285em)}', 
+  'foo{margin:calc(2rem - .14285em)}',
   'foo{margin:calc(2rem - 0.14285em)}'
 );
 
 test(
   'should handle precision correctly (1)',
-  'foo{bar:calc(1/100)}', 
+  'foo{bar:calc(1/100)}',
   'foo{bar:0.01}'
 );
 
 test(
   'should handle precision correctly (2)',
-  'foo{bar:calc(5/1000000)}', 
+  'foo{bar:calc(5/1000000)}',
   'foo{bar:0.00001}'
 );
 
 test(
   'should handle precision correctly (3)',
-  'foo{bar:calc(5/1000000)}', 
-  'foo{bar:0.000005}', 
+  'foo{bar:calc(5/1000000)}',
+  'foo{bar:0.000005}',
   { precision: 6 }
 );
 
 test(
   'should ignore media queries',
-  '@media (min-width:calc(10px+10px)){}', 
+  '@media (min-width:calc(10px+10px)){}',
   '@media (min-width:calc(10px+10px)){}'
 );
 
 test(
   'should reduce calc in media queries when `mediaQueries` option is set to true',
-  '@media (min-width:calc(10px+10px)){}', 
+  '@media (min-width:calc(10px+10px)){}',
   '@media (min-width:20px){}',
    { mediaQueries: true }
 );
 
 test(
   'should ignore selectors (1)',
-  'div[data-size="calc(3*3)"]{}', 
+  'div[data-size="calc(3*3)"]{}',
   'div[data-size="calc(3*3)"]{}'
 );
 
 test(
   'should ignore selectors (2)',
-  'div:nth-child(2n + calc(3*3)){}', 
+  'div:nth-child(2n + calc(3*3)){}',
   'div:nth-child(2n + calc(3*3)){}'
 );
 
 test(
   'should reduce calc in selectors when `selectors` option is set to true (1)',
-  'div[data-size="calc(3*3)"]{}', 
-  'div[data-size="9"]{}', 
+  'div[data-size="calc(3*3)"]{}',
+  'div[data-size="9"]{}',
   { selectors: true }
 );
 
@@ -119,8 +120,8 @@ test(
 
 test(
   'should preserve the original declaration when `preserve` option is set to true',
-  'foo{bar:calc(1rem * 1.5)}', 
-  'foo{bar:1.5rem;bar:calc(1rem * 1.5)}', 
+  'foo{bar:calc(1rem * 1.5)}',
+  'foo{bar:1.5rem;bar:calc(1rem * 1.5)}',
   { preserve: true }
 );
 
@@ -160,19 +161,19 @@ test(
 
 test(
   'should correctly reduce calc with mixed units (cssnano#211)',
-  'foo{bar:calc(99.99% * 1/1 - 0rem)}', 
+  'foo{bar:calc(99.99% * 1/1 - 0rem)}',
   'foo{bar:99.99%}'
 );
 
 test(
   'should apply algebraic reduction (cssnano#319)',
-  'foo{bar:calc((100px - 1em) + (-50px + 1em))}', 
+  'foo{bar:calc((100px - 1em) + (-50px + 1em))}',
   'foo{bar:50px}'
 );
 
 test(
   'should apply optimization (cssnano#320)',
-  'foo{bar:calc(50% + (5em + 5%))}', 
+  'foo{bar:calc(50% + (5em + 5%))}',
   'foo{bar:calc(55% + 5em)}'
 );
 

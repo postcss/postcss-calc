@@ -16,9 +16,9 @@
   ],
   "scripts": {
     "prepublish": "npm run build && del-cli dist/__tests__",
-    "build": "del-cli dist && cross-env BABEL_ENV=publish babel src --out-dir dist && jison parser.jison -o dist/parser.js",
+    "build": "del-cli dist && cross-env BABEL_ENV=publish babel src --out-dir dist",
     "pretest": "eslint src && npm run build",
-    "test": "ava dist/__tests__/"
+    "test": "ava src/__tests__/"
   },
   "author": "Maxime Thirouin",
   "license": "MIT",
@@ -40,14 +40,16 @@
     "eslint": "^3.12.2",
     "eslint-config-i-am-meticulous": "^6.0.1",
     "eslint-plugin-babel": "^4.0.0",
-    "eslint-plugin-import": "^2.2.0",
-    "jison": "^0.4.17"
+    "eslint-plugin-import": "^2.2.0"
   },
   "dependencies": {
     "css-unit-converter": "^1.1.1",
     "object-assign": "^4.1.0",
     "postcss": "^5.2.6",
     "postcss-selector-parser": "^2.2.2",
-    "postcss-value-parser": "^3.3.0"
+    "reduce-css-calc": "^2.0.0"
+  },
+  "ava": {
+    "require": "babel-register"
   }
 }
