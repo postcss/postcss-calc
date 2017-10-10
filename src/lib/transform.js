@@ -4,6 +4,10 @@ import reduceCssCalc from 'reduce-css-calc';
 const MATCH_CALC = /((?:\-[a-z]+\-)?calc)/;
 
 function transformValue(value, options, result, item) {
+  if (!value) {
+    return value;
+  }
+
   const reduced = reduceCssCalc(value, options.precision)
   // if the warnWhenCannotResolve option is on, inform the user that the calc
   // expression could not be resolved to a single value

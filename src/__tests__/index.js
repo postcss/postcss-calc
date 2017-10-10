@@ -206,3 +206,10 @@ testThrows(
   'foo{bar:calc(500px/2px)}',
   /Cannot divide by "px", number expected/
 );
+
+test(
+  'should return the same and not thrown an exception for attribute selectors without a value',
+  'button[disabled]{}',
+  'button[disabled]{}',
+  { selectors: true }
+);
