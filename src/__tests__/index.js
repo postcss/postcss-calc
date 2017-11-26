@@ -213,3 +213,9 @@ test(
   'button[disabled]{}',
   { selectors: true }
 );
+
+test(
+  'should ignore reducing custom property',
+  ':root { --foo: calc(var(--bar) / 8); }',
+  ':root { --foo: calc(var(--bar) / 8); }'
+)
