@@ -86,7 +86,7 @@ h1 {
 }
 ```
 
-Checkout [tests](test) for more examples.
+Checkout [tests](src/__tests__) for more examples.
 
 ### Options
 
