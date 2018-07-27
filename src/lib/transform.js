@@ -4,10 +4,6 @@ import reduceCssCalc from 'reduce-css-calc';
 const MATCH_CALC = /((?:\-[a-z]+\-)?calc)/;
 
 function transformValue(value, options, result, item) {
-  if (!value) {
-    return value;
-  }
-
   const reduced = reduceCssCalc(value, options.precision)
   // if the warnWhenCannotResolve option is on, inform the user that the calc
   // expression could not be resolved to a single value
@@ -25,19 +21,19 @@ function transformSelector(value, options, result, item) {
     selectors.walk(node => {
       // attribute value
       // e.g. the "calc(3*3)" part of "div[data-size="calc(3*3)"]"
-      if (node.type === 'attribute') {
-        const val = transformValue(node.raws.unquoted, options, result, item);
-        node.value = node.quoted ? '"' + val + '"' : val;
+      if (node.type === 'attribute' && node.value) {
+        node.setValue(transformValue(node.value, options, result, item));
       }
 
       // tag value
       // e.g. the "calc(3*3)" part of "div:nth-child(2n + calc(3*3))"
-      if (node.type === 'tag')
+      if (node.type === 'tag') {
         node.value = transformValue(node.value, options, result, item);
+      }
 
       return;
     });
-  }).process(value).result.toString();
+  }).processSync(value);
 }
 
 export default (node, property, options, result) => {
