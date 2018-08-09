@@ -44,7 +44,7 @@
   },
   "dependencies": {
     "css-unit-converter": "^1.1.1",
-    "postcss": "^7.0.1",
+    "postcss": "^7.0.2",
     "postcss-selector-parser": "^5.0.0-rc.3",
     "reduce-css-calc": "^2.0.0"
   },
