@@ -1,3 +1,7 @@
+# 6.0.2 - 2018-09-25
+
+- Fixed: use PostCSS 7 (thanks to @douglasduteil)
+
 # 6.0.1 - 2017-10-10
 
 - Fixed: throwing error for attribute selectors without a value
