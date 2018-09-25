@@ -1,7 +1,7 @@
 import selectorParser from 'postcss-selector-parser';
 import reduceCssCalc from 'reduce-css-calc';
 
-const MATCH_CALC = /((?:\-[a-z]+\-)?calc)/;
+const MATCH_CALC = /((?:\-[a-z]+\-)?calc)/i;
 
 function transformValue(value, options, result, item) {
   if (!value) {
