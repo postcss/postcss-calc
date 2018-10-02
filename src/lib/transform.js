@@ -1,7 +1,7 @@
 import selectorParser from 'postcss-selector-parser';
 import reduceCssCalc from 'reduce-css-calc';
 
-const MATCH_CALC = /((?:\-[a-z]+\-)?calc)/;
+const MATCH_CALC = /((?:-[a-z]+-)?calc)/;
 
 function transformValue(value, options, result, item) {
   if (!value) {
@@ -25,9 +25,8 @@ function transformSelector(value, options, result, item) {
     selectors.walk(node => {
       // attribute value
       // e.g. the "calc(3*3)" part of "div[data-size="calc(3*3)"]"
-      if (node.type === 'attribute') {
-        const val = transformValue(node.raws.unquoted, options, result, item);
-        node.value = node.quoted ? '"' + val + '"' : val;
+      if (node.type === 'attribute' && node.value) {
+        node.setValue(transformValue(node.value, options, result, item));
       }
 
       // tag value
@@ -37,7 +36,7 @@ function transformSelector(value, options, result, item) {
 
       return;
     });
-  }).process(value).result.toString();
+  }).processSync(value);
 }
 
 export default (node, property, options, result) => {
