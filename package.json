@@ -15,12 +15,12 @@
     "LICENSE"
   ],
   "scripts": {
-    "prepublish": "npm run build && del-cli dist/__tests__",
-    "build": "del-cli dist && cross-env BABEL_ENV=publish babel src --out-dir dist",
+    "prepublish": "npm run build",
+    "build": "del-cli dist && cross-env BABEL_ENV=publish babel src --out-dir dist --ignore src/__tests__/**/*.js && jison src/parser.jison -o dist/parser.js",
     "pretest": "eslint src && npm run build",
-    "test": "ava src/__tests__/"
+    "test": "ava"
   },
-  "author": "Maxime Thirouin",
+  "author": "Andy Jansson",
   "license": "MIT",
   "repository": "https://github.com/postcss/postcss-calc.git",
   "eslintConfig": {
@@ -28,27 +28,32 @@
     "extends": "eslint-config-i-am-meticulous"
   },
   "devDependencies": {
-    "ava": "^0.19.1",
-    "babel-cli": "^6.18.0",
-    "babel-core": "^6.21.0",
-    "babel-eslint": "^7.1.1",
-    "babel-plugin-add-module-exports": "^0.2.1",
-    "babel-preset-env": "^1.4.0",
-    "babel-register": "^6.18.0",
-    "cross-env": "^4.0.0",
-    "del-cli": "^0.2.1",
-    "eslint": "^3.12.2",
-    "eslint-config-i-am-meticulous": "^6.0.1",
-    "eslint-plugin-babel": "^4.0.0",
-    "eslint-plugin-import": "^2.2.0"
+    "@babel/cli": "^7.0.0",
+    "@babel/core": "^7.0.0",
+    "@babel/polyfill": "^7.0.0",
+    "@babel/preset-env": "^7.0.0",
+    "@babel/register": "^7.0.0",
+    "ava": "^1.0.0-beta.8",
+    "babel-eslint": "^10.0.1",
+    "babel-plugin-add-module-exports": "^1.0.0",
+    "cross-env": "^5.2.0",
+    "del-cli": "^1.1.0",
+    "eslint": "^5.6.1",
+    "eslint-config-i-am-meticulous": "^11.0.0",
+    "eslint-plugin-babel": "^5.2.1",
+    "eslint-plugin-import": "^2.2.0",
+    "jison-gho": "^0.6.1-215"
   },
   "dependencies": {
     "css-unit-converter": "^1.1.1",
     "postcss": "^7.0.2",
-    "postcss-selector-parser": "^2.2.2",
-    "reduce-css-calc": "^2.0.0"
+    "postcss-selector-parser": "^5.0.0-rc.3",
+    "postcss-value-parser": "^3.3.0"
   },
   "ava": {
-    "require": "babel-register"
+    "require": [
+      "@babel/register",
+      "@babel/polyfill"
+    ]
   }
 }

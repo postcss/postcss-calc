@@ -1,3 +1,4 @@
 node_modules
 test/fixtures/*.actual.css
 dist
+yarn-error.log

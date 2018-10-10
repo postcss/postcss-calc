@@ -1,3 +1,14 @@
+- Changed: Updated postcss-selector-parser to version 5.0.0-rc.3
+- Changed: Dropped reduce-css-calc as a dependency
+- Fixed: Support constant() and env() ([#42](https://github.com/postcss/postcss-calc/issues/42), [#48](https://github.com/postcss/postcss-calc/issues/48))
+- Fixed: Support custom properties with "calc" in its name ([#50](https://github.com/postcss/postcss-calc/issues/50))
+- Fixed: Remove unnecessary whitespace around `*` and `/` ([cssnano#625](https://github.com/cssnano/cssnano/issues/625))
+- Fixed: Arithmetic bugs around subtraction ([#49](https://github.com/postcss/postcss-calc/issues/49))
+- Fixed: Handling of nested calc statements ([reduce-css-calc#49](https://github.com/MoOx/reduce-css-calc/issues/49))
+- Fixed: Bugs regarding complex calculations ([reduce-cs-calc#45](https://github.com/MoOx/reduce-css-calc/issues/45))
+- Fixed: `100%` incorrectly being transformed to `1` ([reduce-css-calc#44](https://github.com/MoOx/reduce-css-calc/issues/44))
+- Added: support for case-insensitive calc statements
+
 # 6.0.2 - 2018-09-25
 
 - Fixed: use PostCSS 7 (thanks to @douglasduteil)
