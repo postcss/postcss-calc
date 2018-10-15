@@ -1,3 +1,5 @@
+# 7.0.0
+
 - Changed: Updated postcss-selector-parser to version 5.0.0-rc.3
 - Changed: Dropped reduce-css-calc as a dependency
 - Fixed: Support constant() and env() ([#42](https://github.com/postcss/postcss-calc/issues/42), [#48](https://github.com/postcss/postcss-calc/issues/48))
