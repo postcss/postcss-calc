@@ -1,6 +1,6 @@
 {
   "name": "postcss-calc",
-  "version": "7.0.0",
+  "version": "7.0.1",
   "description": "PostCSS plugin to reduce calc()",
   "keywords": [
     "css",
@@ -47,7 +47,7 @@
   "dependencies": {
     "css-unit-converter": "^1.1.1",
     "postcss": "^7.0.2",
-    "postcss-selector-parser": "^5.0.0-rc.3",
+    "postcss-selector-parser": "^5.0.0-rc.4",
     "postcss-value-parser": "^3.3.0"
   },
   "ava": {
