@@ -69,7 +69,7 @@ function flip(operator) {
 function flipValue(node) {
   if (isValueType(node.type))
     node.value = -node.value;
-  else if (node.type == 'MathExpression') {
+  else if (node.type === 'MathExpression') {
     node.left = flipValue(node.left);
     node.right = flipValue(node.right);
   }
