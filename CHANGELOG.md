@@ -1,3 +1,9 @@
+# HEAD
+
+- Updated: `postcss` to 7.0.2 (patch)
+- Updated: `postcss-selector-parser` to 5.0.0-rc.4 (patch)
+- Updated: `postcss-value-parser` to 3.3.1 (patch)
+
 # 7.0.0
 
 - Changed: Updated postcss-selector-parser to version 5.0.0-rc.3
