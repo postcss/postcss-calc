@@ -3,6 +3,8 @@ import postcss from 'postcss';
 
 import reduceCalc from '../../dist';
 
+const postcssOpts =  { from: undefined }
+
 function testValue(t, fixture, expected = null, opts = {}) {
   if (expected === null) {
     expected = fixture;
@@ -17,14 +19,14 @@ function testCss(t, fixture, expected = null, opts = {}) {
     expected = fixture;
   }
 	t.plan(1);
-  return postcss(reduceCalc(opts)).process(fixture, { from: undefined }).then(result => {
+  return postcss(reduceCalc(opts)).process(fixture, postcssOpts).then(result => {
     t.deepEqual(result.css, expected);
   });
 }
 
 async function testThrows(t, fixture, expected, opts) {
   fixture = `foo{bar:${fixture}}`;
-  await t.throwsAsync(() => postcss(reduceCalc(opts)).process(fixture), expected);
+  await t.throwsAsync(() => postcss(reduceCalc(opts)).process(fixture, postcssOpts), expected);
 }
 
 test(
