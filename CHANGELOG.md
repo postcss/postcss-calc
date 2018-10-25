@@ -1,4 +1,4 @@
-# HEAD
+# 7.0.1
 
 - Updated: `postcss` to 7.0.2 (patch)
 - Updated: `postcss-selector-parser` to 5.0.0-rc.4 (patch)
