@@ -116,6 +116,19 @@ var out = postcss()
   .css
 ```
 
+#### `allowRounding` (default: `true`)
+
+With this variable set `true`, `calc(100% / 3)` will output `33.33333%` (with `precision: 5`). If it is set `false` it will remain `calc(100% / 3)`.
+
+Another example with `allowRounding: false`: `calc(900% / 16)` will output `56.25%` with `precision: 5` (because `calc(900% / 16)` == `56.25%`), but `calc(900% / 16)` with `precision: 0` (because `calc(900% / 16)` != `56%`).
+
+```js
+var out = postcss()
+  .use(calc({allowRounding: false}))
+  .process(css)
+  .css
+```
+
 #### `warnWhenCannotResolve` (default: `false`)
 
 Adds warnings when calc() are not reduced to a single value.
