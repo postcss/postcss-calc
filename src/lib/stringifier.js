@@ -5,40 +5,40 @@ const order = {
   "-": 1,
 };
 
-function round(value, prec) {
-  if (prec !== false) {
-    const precision = Math.pow(10, prec);
+function round(value, options) {
+  if (options.precision !== false && options.allowRounding) {
+    const precision = Math.pow(10, options.precision);
     return Math.round(value * precision) / precision;
   }
   return value;
 }
 
-function stringify(node, prec) {
+function stringify(node, options) {
   switch (node.type) {
     case "MathExpression": {
       const {left, right, operator: op} = node;
       let str = "";
 
       if (left.type === 'MathExpression' && order[op] < order[left.operator])
-        str += `(${stringify(left, prec)})`;
+        str += `(${stringify(left, options)})`;
       else
-        str += stringify(left, prec);
+        str += stringify(left, options);
 
       str += order[op] ? ` ${node.operator} ` : node.operator;
 
       if (right.type === 'MathExpression' && order[op] < order[right.operator])
-        str += `(${stringify(right, prec)})`;
+        str += `(${stringify(right, options)})`;
       else
-        str += stringify(right, prec);
+        str += stringify(right, options);
 
       return str;
     }
     case "Value":
-      return round(node.value, prec);
+      return round(node.value, options);
     case 'Function':
       return node.value;
     default:
-      return round(node.value, prec) + node.unit;
+      return round(node.value, options) + node.unit;
   }
 }
 
@@ -50,7 +50,7 @@ export default function (
     result,
     item
   ) {
-  let str = stringify(node, options.precision);
+  let str = stringify(node, options);
 
   if (node.type === "MathExpression") {
     // if calc expression couldn't be resolved to a single value, re-wrap it as

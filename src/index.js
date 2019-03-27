@@ -5,6 +5,7 @@ import transform from './lib/transform';
 export default plugin('postcss-calc', (opts) => {
   const options = Object.assign({
     precision: 5,
+    allowRounding: true,
     preserve: false,
     warnWhenCannotResolve: false,
     mediaQueries: false,

@@ -1,8 +1,8 @@
 import convert from './convert';
 
-function reduce(node, precision) {
-  if (node.type === "MathExpression") 
-    return reduceMathExpression(node, precision);
+function reduce(node, options) {
+  if (node.type === "MathExpression")
+    return reduceMathExpression(node, options);
 
   return node;
 }
@@ -33,10 +33,10 @@ function isValueType(type) {
   return false;
 }
 
-function convertMathExpression(node, precision) {
-  let nodes = convert(node.left, node.right, precision);
-  let left = reduce(nodes.left, precision);
-  let right = reduce(nodes.right, precision);
+function convertMathExpression(node, options) {
+  let nodes = convert(node.left, node.right, options);
+  let left = reduce(nodes.left, options);
+  let right = reduce(nodes.right, options);
 
   if (left.type === "MathExpression" && right.type === "MathExpression") {
 
@@ -46,13 +46,13 @@ function convertMathExpression(node, precision) {
       (left.operator === '+' && right.operator === '-'))) {
 
       if (isEqual(left.right, right.right))
-        nodes = convert(left.left, right.left, precision);
+        nodes = convert(left.left, right.left, options);
 
       else if (isEqual(left.right, right.left))
-        nodes = convert(left.left, right.right, precision);
+        nodes = convert(left.left, right.right, options);
 
-      left = reduce(nodes.left, precision);
-      right = reduce(nodes.right, precision);
+      left = reduce(nodes.left, options);
+      right = reduce(nodes.right, options);
 
     }
   }
@@ -76,7 +76,7 @@ function flipValue(node) {
   return node;
 }
 
-function reduceAddSubExpression(node, precision) {
+function reduceAddSubExpression(node, options) {
   const {left, right, operator: op} = node;
 
   if (left.type === 'Function' || right.type === 'Function')
@@ -122,10 +122,10 @@ function reduceAddSubExpression(node, precision) {
         operator: op,
         left: left,
         right: right.left
-      }, precision);
+      }, options);
       node.right = right.right;
             node.operator = op === '-' ? flip(right.operator) : right.operator;
-      return reduce(node, precision);
+      return reduce(node, options);
     }
     // value + (something + value) => (value + value) + something
     // value + (something - value) => (value - value) + something
@@ -138,15 +138,15 @@ function reduceAddSubExpression(node, precision) {
         operator: op === '-' ? flip(right.operator) : right.operator,
         left: left,
         right: right.right
-      }, precision);
+      }, options);
       node.right = right.left;
-      return reduce(node, precision);
+      return reduce(node, options);
         }
         // value - (something + something) => value - something - something
         else if (op === '-' && right.operator === '+') {
             node = Object.assign({ }, node);
             node.right.operator = '-';
-      return reduce(node, precision);
+      return reduce(node, options);
         }
   }
 
@@ -167,8 +167,8 @@ function reduceAddSubExpression(node, precision) {
         operator: op,
         left: left.left,
         right: right
-      }, precision);
-      return reduce(node, precision);
+      }, options);
+      return reduce(node, options);
     }
     // (something + value) + value => something + (value + value)
     // (something - value1) + value2 => something - (value2 - value1)
@@ -182,7 +182,7 @@ function reduceAddSubExpression(node, precision) {
           operator: flip(op),
                     left: left.right,
                     right: right
-                }, precision);
+                }, options);
                 if (node.right.value && node.right.value < 0) {
                     node.right.value = Math.abs(node.right.value);
                     node.operator = '+';
@@ -196,16 +196,16 @@ function reduceAddSubExpression(node, precision) {
           operator: op,
           left: left.right,
           right: right
-        }, precision);
+        }, options);
       }
       if (node.right.value < 0) {
         node.right.value *= -1;
         node.operator = node.operator === '-' ? '+' : '-';
       }
-      return reduce(node, precision);
+      return reduce(node, options);
     }
     }
-    
+
     if (
         left.type === 'MathExpression' && right.type === 'MathExpression' &&
         op === '-' && right.operator === '-'
@@ -269,15 +269,15 @@ function reduceMultiplicationExpression(node) {
   return node;
 }
 
-function reduceMathExpression(node, precision) {
-  node = convertMathExpression(node, precision);
+function reduceMathExpression(node, options) {
+  node = convertMathExpression(node, options);
 
   switch (node.operator) {
     case "+":
     case "-":
-      return reduceAddSubExpression(node, precision);
+      return reduceAddSubExpression(node, options);
     case "/":
-      return reduceDivisionExpression(node, precision);
+      return reduceDivisionExpression(node, options);
     case "*":
       return reduceMultiplicationExpression(node);
   }
