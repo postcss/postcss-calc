@@ -79,9 +79,6 @@ function flipValue(node) {
 function reduceAddSubExpression(node, precision) {
   const {left, right, operator: op} = node;
 
-  if (left.type === 'Function' || right.type === 'Function')
-    return node;
-
   // something + 0 => something
   // something - 0 => something
   if (right.value === 0)
@@ -141,13 +138,7 @@ function reduceAddSubExpression(node, precision) {
       }, precision);
       node.right = right.left;
       return reduce(node, precision);
-        }
-        // value - (something + something) => value - something - something
-        else if (op === '-' && right.operator === '+') {
-            node = Object.assign({ }, node);
-            node.right.operator = '-';
-      return reduce(node, precision);
-        }
+    }
   }
 
   // (expr) <op> value
@@ -179,16 +170,11 @@ function reduceAddSubExpression(node, precision) {
       if (left.operator === '-') {
         node.right = reduce({
           type: 'MathExpression',
-          operator: flip(op),
-                    left: left.right,
-                    right: right
-                }, precision);
-                if (node.right.value && node.right.value < 0) {
-                    node.right.value = Math.abs(node.right.value);
-                    node.operator = '+';
-                } else {
-                    node.operator = left.operator;
-                }
+          operator: op === '-' ? '+' : '-',
+          left: right,
+          right: left.right
+        }, precision);
+        node.operator = op === '-' ? '-' : '+';
       }
       else {
         node.right = reduce({
@@ -204,14 +190,15 @@ function reduceAddSubExpression(node, precision) {
       }
       return reduce(node, precision);
     }
-    }
-    
-    if (
-        left.type === 'MathExpression' && right.type === 'MathExpression' &&
-        op === '-' && right.operator === '-'
-    ) {
-        node.right.operator = flip(node.right.operator);
-    }
+  }
+
+  if (
+    right.type === 'MathExpression' &&
+    op === '-' && ["+", "-"].includes(right.operator)
+  ) {
+    node.right.operator = flip(node.right.operator);
+  }
+
   return node;
 }
 
