@@ -604,3 +604,24 @@ test(
   'calc(var(--foo) + 10px)',
   'calc(var(--foo) + 10px)',
 );
+
+test(
+  'should reduce calc (uppercase)',
+  testValue,
+  'CALC(1PX + 1PX)',
+  '2PX',
+);
+
+test(
+  'should reduce calc (uppercase) (#1)',
+  testValue,
+  'CALC(VAR(--foo) + VAR(--bar))',
+  'CALC(VAR(--foo) + VAR(--bar))',
+);
+
+test(
+  'should reduce calc (uppercase) (#2)',
+  testValue,
+  'CALC( (1EM - CALC( 10PX + 1EM)) / 2)',
+  '-5PX',
+);

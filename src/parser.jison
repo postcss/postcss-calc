@@ -2,6 +2,9 @@
 
 /* lexical grammar */
 %lex
+
+%options case-insensitive
+
 %%
 \s+                                             /* skip whitespace */
 
@@ -84,11 +87,11 @@ expression
     ;
 
   css_value
-  	: LENGTH { $$ = { type: 'LengthValue', value: parseFloat($1), unit: /[a-z]+/.exec($1)[0] }; }
-  	| ANGLE { $$ = { type: 'AngleValue', value: parseFloat($1), unit: /[a-z]+/.exec($1)[0] }; }
-  	| TIME { $$ = { type: 'TimeValue', value: parseFloat($1), unit: /[a-z]+/.exec($1)[0] }; }
-  	| FREQ { $$ = { type: 'FrequencyValue', value: parseFloat($1), unit: /[a-z]+/.exec($1)[0] }; }
-  	| RES { $$ = { type: 'ResolutionValue', value: parseFloat($1), unit: /[a-z]+/.exec($1)[0] }; }
+  	: LENGTH { $$ = { type: 'LengthValue', value: parseFloat($1), unit: /[a-z]+/i.exec($1)[0] }; }
+  	| ANGLE { $$ = { type: 'AngleValue', value: parseFloat($1), unit: /[a-z]+/i.exec($1)[0] }; }
+  	| TIME { $$ = { type: 'TimeValue', value: parseFloat($1), unit: /[a-z]+/i.exec($1)[0] }; }
+  	| FREQ { $$ = { type: 'FrequencyValue', value: parseFloat($1), unit: /[a-z]+/i.exec($1)[0] }; }
+  	| RES { $$ = { type: 'ResolutionValue', value: parseFloat($1), unit: /[a-z]+/i.exec($1)[0] }; }
   	| EMS { $$ = { type: 'EmValue', value: parseFloat($1), unit: 'em' }; }
   	| EXS { $$ = { type: 'ExValue', value: parseFloat($1), unit: 'ex' }; }
   	| CHS { $$ = { type: 'ChValue', value: parseFloat($1), unit: 'ch' }; }
