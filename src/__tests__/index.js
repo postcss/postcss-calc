@@ -562,3 +562,10 @@ test(
   'calc(500px/2px)',
   'Cannot divide by "px", number expected',
 );
+
+test(
+  'nested var (reduce-css-calc#50)',
+  testValue,
+  'calc(var(--xxx, var(--yyy)) / 2)',
+  'calc(var(--xxx, var(--yyy))/2)',
+);
