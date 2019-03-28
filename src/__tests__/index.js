@@ -569,3 +569,17 @@ test(
   'calc(var(--xxx, var(--yyy)) / 2)',
   'calc(var(--xxx, var(--yyy))/2)',
 );
+
+test(
+  'should not throw an exception when unknow function exist in calc',
+  testValue,
+  'calc(unknown(#fff) - other-unknown(200px))',
+  'calc(unknown(#fff) - other-unknown(200px))',
+);
+
+test(
+  'should not throw an exception when unknow function exist in calc (#1)',
+  testValue,
+  'calc(unknown(#fff) * other-unknown(200px))',
+  'calc(unknown(#fff)*other-unknown(200px))',
+);
