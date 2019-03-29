@@ -12,8 +12,9 @@ const MATCH_CALC = /((?:-(moz|webkit)-)?calc)/i;
 function transformValue(value, options, result, item) {
   return valueParser(value).walk(node => {
     // skip anything which isn't a calc() function
-    if (node.type !== 'function' || !MATCH_CALC.test(node.value))
+    if (node.type !== 'function' || !MATCH_CALC.test(node.value)) {
       return node;
+    }
 
     // stringify calc expression and produce an AST
     const contents = valueParser.stringify(node.nodes);

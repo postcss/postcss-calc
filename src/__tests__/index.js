@@ -583,3 +583,24 @@ test(
   'calc(unknown(#fff) * other-unknown(200px))',
   'calc(unknown(#fff)*other-unknown(200px))',
 );
+
+test(
+  'should not strip calc with single CSS custom variable',
+  testValue,
+  'calc(var(--foo))',
+  'calc(var(--foo))',
+);
+
+test(
+  'should strip unnecessary calc with single CSS custom variable',
+  testValue,
+  'calc(calc(var(--foo)))',
+  'calc(var(--foo))',
+);
+
+test(
+  'should not strip calc with single CSS custom variables and value',
+  testValue,
+  'calc(var(--foo) + 10px)',
+  'calc(var(--foo) + 10px)',
+);
