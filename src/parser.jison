@@ -62,44 +62,44 @@
 %%
 
 expression
-	: math_expression EOF { return $1; }
+  : math_expression EOF { return $1; }
   ;
 
   math_expression
     : CALC LPAREN math_expression RPAREN { $$ = $3; }
-  	| math_expression ADD math_expression { $$ = { type: 'MathExpression', operator: $2, left: $1, right: $3 }; }
-  	| math_expression SUB math_expression { $$ = { type: 'MathExpression', operator: $2, left: $1, right: $3 }; }
-  	| math_expression MUL math_expression { $$ = { type: 'MathExpression', operator: $2, left: $1, right: $3 }; }
-  	| math_expression DIV math_expression { $$ = { type: 'MathExpression', operator: $2, left: $1, right: $3 }; }
-  	| LPAREN math_expression RPAREN { $$ = $2; }
+    | math_expression ADD math_expression { $$ = { type: 'MathExpression', operator: $2, left: $1, right: $3 }; }
+    | math_expression SUB math_expression { $$ = { type: 'MathExpression', operator: $2, left: $1, right: $3 }; }
+    | math_expression MUL math_expression { $$ = { type: 'MathExpression', operator: $2, left: $1, right: $3 }; }
+    | math_expression DIV math_expression { $$ = { type: 'MathExpression', operator: $2, left: $1, right: $3 }; }
+    | LPAREN math_expression RPAREN { $$ = $2; }
     | function { $$ = $1; }
-  	| css_value { $$ = $1; }
-  	| value { $$ = $1; }
+    | css_value { $$ = $1; }
+    | value { $$ = $1; }
     ;
 
   value
-  	: NUMBER { $$ = { type: 'Value', value: parseFloat($1) }; }
-  	| SUB NUMBER { $$ = { type: 'Value', value: parseFloat($2) * -1 }; }
-  	;
+    : NUMBER { $$ = { type: 'Value', value: parseFloat($1) }; }
+    | SUB NUMBER { $$ = { type: 'Value', value: parseFloat($2) * -1 }; }
+    ;
 
   function
     : FUNCTION { $$ = { type: 'Function', value: $1 }; }
     ;
 
   css_value
-  	: LENGTH { $$ = { type: 'LengthValue', value: parseFloat($1), unit: /[a-z]+/i.exec($1)[0] }; }
-  	| ANGLE { $$ = { type: 'AngleValue', value: parseFloat($1), unit: /[a-z]+/i.exec($1)[0] }; }
-  	| TIME { $$ = { type: 'TimeValue', value: parseFloat($1), unit: /[a-z]+/i.exec($1)[0] }; }
-  	| FREQ { $$ = { type: 'FrequencyValue', value: parseFloat($1), unit: /[a-z]+/i.exec($1)[0] }; }
-  	| RES { $$ = { type: 'ResolutionValue', value: parseFloat($1), unit: /[a-z]+/i.exec($1)[0] }; }
-  	| EMS { $$ = { type: 'EmValue', value: parseFloat($1), unit: 'em' }; }
-  	| EXS { $$ = { type: 'ExValue', value: parseFloat($1), unit: 'ex' }; }
-  	| CHS { $$ = { type: 'ChValue', value: parseFloat($1), unit: 'ch' }; }
-  	| REMS { $$ = { type: 'RemValue', value: parseFloat($1), unit: 'rem' }; }
-  	| VHS { $$ = { type: 'VhValue', value: parseFloat($1), unit: 'vh' }; }
-  	| VWS { $$ = { type: 'VwValue', value: parseFloat($1), unit: 'vw' }; }
-  	| VMINS { $$ = { type: 'VminValue', value: parseFloat($1), unit: 'vmin' }; }
-  	| VMAXS { $$ = { type: 'VmaxValue', value: parseFloat($1), unit: 'vmax' }; }
-  	| PERCENTAGE { $$ = { type: 'PercentageValue', value: parseFloat($1), unit: '%' }; }
-  	| SUB css_value { var prev = $2; prev.value *= -1; $$ = prev; }
+    : LENGTH { $$ = { type: 'LengthValue', value: parseFloat($1), unit: /[a-z]+/i.exec($1)[0] }; }
+    | ANGLE { $$ = { type: 'AngleValue', value: parseFloat($1), unit: /[a-z]+/i.exec($1)[0] }; }
+    | TIME { $$ = { type: 'TimeValue', value: parseFloat($1), unit: /[a-z]+/i.exec($1)[0] }; }
+    | FREQ { $$ = { type: 'FrequencyValue', value: parseFloat($1), unit: /[a-z]+/i.exec($1)[0] }; }
+    | RES { $$ = { type: 'ResolutionValue', value: parseFloat($1), unit: /[a-z]+/i.exec($1)[0] }; }
+    | EMS { $$ = { type: 'EmValue', value: parseFloat($1), unit: 'em' }; }
+    | EXS { $$ = { type: 'ExValue', value: parseFloat($1), unit: 'ex' }; }
+    | CHS { $$ = { type: 'ChValue', value: parseFloat($1), unit: 'ch' }; }
+    | REMS { $$ = { type: 'RemValue', value: parseFloat($1), unit: 'rem' }; }
+    | VHS { $$ = { type: 'VhValue', value: parseFloat($1), unit: 'vh' }; }
+    | VWS { $$ = { type: 'VwValue', value: parseFloat($1), unit: 'vw' }; }
+    | VMINS { $$ = { type: 'VminValue', value: parseFloat($1), unit: 'vmin' }; }
+    | VMAXS { $$ = { type: 'VmaxValue', value: parseFloat($1), unit: 'vmax' }; }
+    | PERCENTAGE { $$ = { type: 'PercentageValue', value: parseFloat($1), unit: '%' }; }
+    | SUB css_value { var prev = $2; prev.value *= -1; $$ = prev; }
     ;
