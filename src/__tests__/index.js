@@ -828,3 +828,24 @@ test(
   'calc(\r\n100px\r\n+\r\n100px\r\n)',
   '200px',
 );
+
+test(
+  'comments',
+  testValue,
+  'calc(/*test*/100px/*test*/ + /*test*/100px/*test*/)',
+  '200px',
+);
+
+test(
+  'comments (#1)',
+  testValue,
+  'calc(/*test*/100px/*test*/*/*test*/2/*test*/)',
+  '200px',
+);
+
+test(
+  'comments nested',
+  testValue,
+  'calc(/*test*/100px + calc(/*test*/100px/*test*/ + /*test*/100px/*test*/))',
+  '300px',
+);
