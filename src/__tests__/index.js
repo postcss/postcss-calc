@@ -744,3 +744,59 @@ test(
   'calc(calc(100% / 3) * 3)',
   '100%',
 );
+
+test(
+  'plus sign',
+  testValue,
+  'calc(+100px + +100px)',
+  '200px',
+);
+
+test(
+  'plus sign (#1)',
+  testValue,
+  'calc(+100px - +100px)',
+  '0px',
+);
+
+test(
+  'plus sign (#2)',
+  testValue,
+  'calc(200px * +1)',
+  '200px',
+);
+
+test(
+  'plus sign (#3)',
+  testValue,
+  'calc(200px / +1)',
+  '200px',
+);
+
+test(
+  'minus sign',
+  testValue,
+  'calc(-100px + -100px)',
+  '-200px',
+);
+
+test(
+  'minus sign (#2)',
+  testValue,
+  'calc(-100px - -100px)',
+  '0px',
+);
+
+test(
+  'minus sign (#3)',
+  testValue,
+  'calc(200px * -1)',
+  '-200px',
+);
+
+test(
+  'minus sign (#4)',
+  testValue,
+  'calc(200px / -1)',
+  '-200px',
+);
