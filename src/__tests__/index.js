@@ -625,3 +625,108 @@ test(
   'CALC( (1EM - CALC( 10PX + 1EM)) / 2)',
   '-5PX',
 );
+
+test(
+  'should handle nested calc function (#1)',
+  testValue,
+  'calc(calc(var(--foo) + var(--bar)) + var(--baz))',
+  'calc(var(--foo) + var(--bar) + var(--baz))',
+);
+
+test(
+  'should handle nested calc function (#2)',
+  testValue,
+  'calc(var(--foo) + calc(var(--bar) + var(--baz)))',
+  'calc(var(--foo) + var(--bar) + var(--baz))',
+);
+
+test(
+  'should handle nested calc function (#3)',
+  testValue,
+  'calc(calc(var(--foo) - var(--bar)) - var(--baz))',
+  'calc(var(--foo) - var(--bar) - var(--baz))',
+);
+
+test(
+  'should handle nested calc function (#4)',
+  testValue,
+  'calc(var(--foo) - calc(var(--bar) - var(--baz)))',
+  'calc(var(--foo) - var(--bar) + var(--baz))',
+);
+
+test(
+  'should handle nested calc function (#5)',
+  testValue,
+  'calc(calc(var(--foo) + var(--bar)) - var(--baz))',
+  'calc(var(--foo) + var(--bar) - var(--baz))',
+);
+
+test(
+  'should handle nested calc function (#6)',
+  testValue,
+  'calc(var(--foo) + calc(var(--bar) - var(--baz)))',
+  'calc(var(--foo) + var(--bar) - var(--baz))',
+);
+
+test(
+  'should handle nested calc function (#7)',
+  testValue,
+  'calc(calc(var(--foo) - var(--bar)) + var(--baz))',
+  'calc(var(--foo) - var(--bar) + var(--baz))',
+);
+
+test(
+  'should handle nested calc function (#8)',
+  testValue,
+  'calc(var(--foo) - calc(var(--bar) + var(--baz)))',
+  'calc(var(--foo) - var(--bar) - var(--baz))',
+);
+
+test(
+  'should handle nested calc function (#9)',
+  testValue,
+  'calc(calc(var(--foo) + var(--bar)) * var(--baz))',
+  'calc((var(--foo) + var(--bar))*var(--baz))',
+);
+
+test(
+  'should handle nested calc function (#10)',
+  testValue,
+  'calc(var(--foo) * calc(var(--bar) + var(--baz)))',
+  'calc(var(--foo)*(var(--bar) + var(--baz)))',
+);
+
+test(
+  'should handle nested calc function (#11)',
+  testValue,
+  'calc(calc(var(--foo) + var(--bar)) / var(--baz))',
+  'calc((var(--foo) + var(--bar))/var(--baz))',
+);
+
+test(
+  'should handle nested calc function (#12)',
+  testValue,
+  'calc(var(--foo) / calc(var(--bar) + var(--baz)))',
+  'calc(var(--foo)/(var(--bar) + var(--baz)))',
+);
+
+test(
+  'should handle nested calc function (#13)',
+  testValue,
+  'calc(100vh - 5rem - calc(10rem + 100px))',
+  'calc(100vh - 5rem - 10rem - 100px)',
+);
+
+test(
+  'should handle nested calc function (#14)',
+  testValue,
+  'calc(100% - calc(10px + 2vw))',
+  'calc(100% - 10px - 2vw)',
+);
+
+test(
+  'should handle nested calc function (#15)',
+  testValue,
+  'calc(100% - calc(10px - 2vw))',
+  'calc(100% - 10px + 2vw)',
+);

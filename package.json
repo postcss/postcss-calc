@@ -17,7 +17,7 @@
   "scripts": {
     "prepublish": "npm run build",
     "build": "del-cli dist && cross-env BABEL_ENV=publish babel src --out-dir dist --ignore src/__tests__/**/*.js && jison src/parser.jison -o dist/parser.js",
-    "pretest": "eslint src && npm run build",
+    "pretest": "npm run build && eslint src",
     "test": "ava"
   },
   "author": "Andy Jansson",
