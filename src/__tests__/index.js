@@ -800,3 +800,31 @@ test(
   'calc(200px / -1)',
   '-200px',
 );
+
+test(
+  'whitespace',
+  testValue,
+  'calc( 100px + 100px )',
+  '200px',
+);
+
+test(
+  'whitespace (#1)',
+  testValue,
+  'calc(\t100px\t+\t100px\t)',
+  '200px',
+);
+
+test(
+  'whitespace (#2)',
+  testValue,
+  'calc(\n100px\n+\n100px\n)',
+  '200px',
+);
+
+test(
+  'whitespace (#4)',
+  testValue,
+  'calc(\r\n100px\r\n+\r\n100px\r\n)',
+  '200px',
+);
