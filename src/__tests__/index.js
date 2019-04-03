@@ -18,7 +18,7 @@ function testCss(t, fixture, expected = null, opts = {}) {
   if (expected === null) {
     expected = fixture;
   }
-	t.plan(1);
+  t.plan(1);
   return postcss(reduceCalc(opts)).process(fixture, postcssOpts).then(result => {
     t.deepEqual(result.css, expected);
   });
@@ -30,158 +30,158 @@ async function testThrows(t, fixture, expected, opts) {
 }
 
 test(
-	'should reduce simple calc (1)',
-	testValue,
-	'calc(1px + 1px)',
-	'2px',
+  'should reduce simple calc (1)',
+  testValue,
+  'calc(1px + 1px)',
+  '2px',
 );
 
 test(
-	'should reduce simple calc (2)',
-	testValue,
-	'calc(1px + 1px);baz:calc(2px+3px)',
-	'2px;baz:5px',
+  'should reduce simple calc (2)',
+  testValue,
+  'calc(1px + 1px);baz:calc(2px+3px)',
+  '2px;baz:5px',
 );
 
 test(
-	'should reduce simple calc (3)',
-	testValue,
-	'calc(1rem * 1.5)',
-	'1.5rem',
+  'should reduce simple calc (3)',
+  testValue,
+  'calc(1rem * 1.5)',
+  '1.5rem',
 );
 
 test(
-	'should reduce simple calc (4)',
-	testValue,
-	'calc(3em - 1em)',
-	'2em',
+  'should reduce simple calc (4)',
+  testValue,
+  'calc(3em - 1em)',
+  '2em',
 );
 
 test(
-	'should reduce simple calc (5',
-	testValue,
-	'calc(2ex / 2)',
-	'1ex',
+  'should reduce simple calc (5',
+  testValue,
+  'calc(2ex / 2)',
+  '1ex',
 );
 
 test(
-	'should reduce simple calc (6)',
-	testValue,
-	'calc(50px - (20px - 30px))',
-	'60px',
+  'should reduce simple calc (6)',
+  testValue,
+  'calc(50px - (20px - 30px))',
+  '60px',
 );
 
 test(
-	'should reduce simple calc (7)',
-	testValue,
-	'calc(100px - (100px - 100%))',
-	'100%',
+  'should reduce simple calc (7)',
+  testValue,
+  'calc(100px - (100px - 100%))',
+  '100%',
 );
 
 test(
-	'should reduce simple calc (8)',
-	testValue,
-	'calc(100px + (100px - 100%))',
-	'calc(200px - 100%)',
+  'should reduce simple calc (8)',
+  testValue,
+  'calc(100px + (100px - 100%))',
+  'calc(200px - 100%)',
 );
 
 test(
-	'should reduce additions and subtractions (1)',
-	testValue,
-	'calc(100% - 10px + 20px)',
-	'calc(100% + 10px)',
+  'should reduce additions and subtractions (1)',
+  testValue,
+  'calc(100% - 10px + 20px)',
+  'calc(100% + 10px)',
 );
 
 test(
-	'should reduce additions and subtractions (2)',
-	testValue,
-	'calc(100% + 10px - 20px)',
-	'calc(100% - 10px)',
+  'should reduce additions and subtractions (2)',
+  testValue,
+  'calc(100% + 10px - 20px)',
+  'calc(100% - 10px)',
 );
 
 test(
-	'should reduce additions and subtractions (3)',
-	testValue,
-	'calc(1px - (2em + 3%))',
-	'calc(1px - 2em - 3%)',
+  'should reduce additions and subtractions (3)',
+  testValue,
+  'calc(1px - (2em + 3%))',
+  'calc(1px - 2em - 3%)',
 );
 
 test(
-	'should reduce additions and subtractions (4)',
-	testValue,
-	'calc((100vw - 50em) / 2)',
-	'calc((100vw - 50em)/2)',
+  'should reduce additions and subtractions (4)',
+  testValue,
+  'calc((100vw - 50em) / 2)',
+  'calc((100vw - 50em)/2)',
 );
 
 test(
-	'should ignore value surrounding calc function (1)',
-	testValue,
-	'a calc(1px + 1px)',
-	'a 2px',
+  'should ignore value surrounding calc function (1)',
+  testValue,
+  'a calc(1px + 1px)',
+  'a 2px',
 );
 
 
 test(
-	'should ignore value surrounding calc function (2)',
-	testValue,
-	'calc(1px + 1px) a',
-	'2px a',
+  'should ignore value surrounding calc function (2)',
+  testValue,
+  'calc(1px + 1px) a',
+  '2px a',
 );
 
 test(
-	'should ignore value surrounding calc function (3)',
-	testValue,
-	'a calc(1px + 1px) b',
-	'a 2px b',
+  'should ignore value surrounding calc function (3)',
+  testValue,
+  'a calc(1px + 1px) b',
+  'a 2px b',
 );
 
 test(
-	'should ignore value surrounding calc function (4)',
-	testValue,
-	'a calc(1px + 1px) b calc(1em + 2em) c',
-	'a 2px b 3em c',
+  'should ignore value surrounding calc function (4)',
+  testValue,
+  'a calc(1px + 1px) b calc(1em + 2em) c',
+  'a 2px b 3em c',
 );
 
 test(
-	'should reduce nested calc',
-	testValue,
-	'calc(100% - calc(50% + 25px))',
-	'calc(50% - 25px)',
+  'should reduce nested calc',
+  testValue,
+  'calc(100% - calc(50% + 25px))',
+  'calc(50% - 25px)',
 );
 
 test(
-	'should reduce vendor-prefixed nested calc',
-	testValue,
-	'-webkit-calc(100% - -webkit-calc(50% + 25px))',
-	'-webkit-calc(50% - 25px)',
+  'should reduce vendor-prefixed nested calc',
+  testValue,
+  '-webkit-calc(100% - -webkit-calc(50% + 25px))',
+  '-webkit-calc(50% - 25px)',
 );
 
 test(
-	'should reduce uppercase calc (1)',
-	testValue,
-	'CALC(1px + 1px)',
-	'2px',
+  'should reduce uppercase calc (1)',
+  testValue,
+  'CALC(1px + 1px)',
+  '2px',
 );
 
 test(
-	'should reduce uppercase calc (2)',
-	testValue,
-	'CALC(1px + CALC(2px / 2))',
-	'2px',
+  'should reduce uppercase calc (2)',
+  testValue,
+  'CALC(1px + CALC(2px / 2))',
+  '2px',
 );
 
 test(
-	'should reduce uppercase calc (3)',
-	testValue,
-	'-WEBKIT-CALC(1px + 1px)',
-	'2px',
+  'should reduce uppercase calc (3)',
+  testValue,
+  '-WEBKIT-CALC(1px + 1px)',
+  '2px',
 );
 
 test(
-	'should reduce uppercase calc (4)',
-	testValue,
-	'-WEBKIT-CALC(1px + -WEBKIT-CALC(2px / 2))',
-	'2px',
+  'should reduce uppercase calc (4)',
+  testValue,
+  '-WEBKIT-CALC(1px + -WEBKIT-CALC(2px / 2))',
+  '2px',
 );
 
 test(
@@ -228,17 +228,17 @@ test(
 
 
 test(
-	'should reduce calc with newline characters',
-	testValue,
-	'calc(\n1rem \n* 2 \n* 1.5)',
-	'3rem',
+  'should reduce calc with newline characters',
+  testValue,
+  'calc(\n1rem \n* 2 \n* 1.5)',
+  '3rem',
 );
 
 test(
-	'should preserve calc with incompatible units',
-	testValue,
-	'calc(100% + 1px)',
-	'calc(100% + 1px)',
+  'should preserve calc with incompatible units',
+  testValue,
+  'calc(100% + 1px)',
+  'calc(100% + 1px)',
 );
 
 test(
@@ -249,25 +249,25 @@ test(
 );
 
 test(
-	'should handle precision correctly (1)',
-	testValue,
-	'calc(1/100)',
-	'0.01',
+  'should handle precision correctly (1)',
+  testValue,
+  'calc(1/100)',
+  '0.01',
 );
 
 test(
-	'should handle precision correctly (2)',
-	testValue,
-	'calc(5/1000000)',
-	'0.00001',
+  'should handle precision correctly (2)',
+  testValue,
+  'calc(5/1000000)',
+  '0.00001',
 );
 
 test(
-	'should handle precision correctly (3)',
-	testValue,
-	'calc(5/1000000)',
-	'0.000005',
-	{ precision: 6 }
+  'should handle precision correctly (3)',
+  testValue,
+  'calc(5/1000000)',
+  '0.000005',
+  { precision: 6 }
 );
 
 test(
@@ -377,129 +377,129 @@ test(
 );
 
 test(
-	'should preserve the original declaration when `preserve` option is set to true',
-	testCss,
-	'foo{bar:calc(1rem * 1.5)}',
-	'foo{bar:1.5rem;bar:calc(1rem * 1.5)}',
-	{ preserve: true }
+  'should preserve the original declaration when `preserve` option is set to true',
+  testCss,
+  'foo{bar:calc(1rem * 1.5)}',
+  'foo{bar:1.5rem;bar:calc(1rem * 1.5)}',
+  { preserve: true }
 );
 
 test(
-	'should not yield warnings when nothing is wrong',
-	testValue,
-	'calc(500px - 0px)',
-	'500px',
-	{ warnWhenCannotResolve: true }
+  'should not yield warnings when nothing is wrong',
+  testValue,
+  'calc(500px - 0px)',
+  '500px',
+  { warnWhenCannotResolve: true }
 );
 
 test(
-	'should warn when calc expression cannot be reduced to a single value',
-	testValue,
-	'calc(100% + 1px)',
-	'calc(100% + 1px)',
-	{ warnWhenCannotResolve: true },
-	[ /^Could not reduce expression:/ ]
+  'should warn when calc expression cannot be reduced to a single value',
+  testValue,
+  'calc(100% + 1px)',
+  'calc(100% + 1px)',
+  { warnWhenCannotResolve: true },
+  [ /^Could not reduce expression:/ ]
 );
 
 test(
-	'should reduce mixed units of time (#33)',
-	testValue,
-	'calc(1s - 50ms)',
-	'0.95s',
+  'should reduce mixed units of time (#33)',
+  testValue,
+  'calc(1s - 50ms)',
+  '0.95s',
 );
 
 test(
   'should not parse variables as calc expressions (#35)',
   testCss,
-	'foo:nth-child(2n + $var-calc){}',
-	'foo:nth-child(2n + $var-calc){}',
-	{ selectors: true }
+  'foo:nth-child(2n + $var-calc){}',
+  'foo:nth-child(2n + $var-calc){}',
+  { selectors: true }
 );
 
 test(
-	'should apply algebraic reduction (cssnano#319)',
-	testValue,
-	'calc((100px - 1em) + (-50px + 1em))',
-	'50px',
+  'should apply algebraic reduction (cssnano#319)',
+  testValue,
+  'calc((100px - 1em) + (-50px + 1em))',
+  '50px',
 );
 
 test(
-	'should discard zero values (reduce-css-calc#2) (1)',
-	testValue,
-	'calc(100vw / 2 - 6px + 0px)',
-	'calc(50vw - 6px)',
+  'should discard zero values (reduce-css-calc#2) (1)',
+  testValue,
+  'calc(100vw / 2 - 6px + 0px)',
+  'calc(50vw - 6px)',
 );
 
 test(
-	'should discard zero values (reduce-css-calc#2) (2)',
-	testValue,
-	'calc(500px - 0px)',
-	'500px',
+  'should discard zero values (reduce-css-calc#2) (2)',
+  testValue,
+  'calc(500px - 0px)',
+  '500px',
 );
 
 test(
-	'should not perform addition on unitless values (reduce-css-calc#3)',
-	testValue,
-	'calc(1px + 1)',
-	'calc(1px + 1)',
+  'should not perform addition on unitless values (reduce-css-calc#3)',
+  testValue,
+  'calc(1px + 1)',
+  'calc(1px + 1)',
 );
 
 test(
   'should return the same and not thrown an exception for attribute selectors without a value',
   testCss,
-	'button[disabled]{}',
-	'button[disabled]{}',
-	{ selectors: true }
+  'button[disabled]{}',
+  'button[disabled]{}',
+  { selectors: true }
 );
 
 test(
   'should ignore reducing custom property',
   testCss,
-	':root { --foo: calc(var(--bar) / 8); }',
-	':root { --foo: calc(var(--bar)/8); }',
+  ':root { --foo: calc(var(--bar) / 8); }',
+  ':root { --foo: calc(var(--bar)/8); }',
 );
 
 
 test(
-	'should ignore media queries',
-  testCss,
-	'@media (min-width:calc(10px+10px)){}',
-);
-
-test(
-	'should reduce calc in media queries when `mediaQueries` option is set to true',
+  'should ignore media queries',
   testCss,
   '@media (min-width:calc(10px+10px)){}',
-	'@media (min-width:20px){}',
-	{ mediaQueries: true }
 );
 
 test(
-	'should ignore selectors (1)',
+  'should reduce calc in media queries when `mediaQueries` option is set to true',
   testCss,
-	'div[data-size="calc(3*3)"]{}',
+  '@media (min-width:calc(10px+10px)){}',
+  '@media (min-width:20px){}',
+  { mediaQueries: true }
 );
 
 test(
-	'should ignore selectors (2)',
+  'should ignore selectors (1)',
   testCss,
-	'div:nth-child(2n + calc(3*3)){}',
+  'div[data-size="calc(3*3)"]{}',
 );
 
 test(
-	'should reduce calc in selectors when `selectors` option is set to true (1)',
+  'should ignore selectors (2)',
   testCss,
-	'div[data-size="calc(3*3)"]{}',
-	'div[data-size="9"]{}',
-	{ selectors: true }
+  'div:nth-child(2n + calc(3*3)){}',
 );
 
 test(
-	'should reduce calc in selectors when `selectors` option is set to true (2)',
+  'should reduce calc in selectors when `selectors` option is set to true (1)',
   testCss,
-	'div:nth-child(2n + calc(3*3)){}',
-	'div:nth-child(2n + 9){}',
-	{ selectors: true }
+  'div[data-size="calc(3*3)"]{}',
+  'div[data-size="9"]{}',
+  { selectors: true }
+);
+
+test(
+  'should reduce calc in selectors when `selectors` option is set to true (2)',
+  testCss,
+  'div:nth-child(2n + calc(3*3)){}',
+  'div:nth-child(2n + 9){}',
+  { selectors: true }
 );
 
 test(
@@ -543,10 +543,10 @@ test(
 );
 
 test(
-	'should handle nested calc statements (reduce-css-calc#49)',
-	testValue,
-	'calc(calc(2.25rem + 2px) - 1px * 2)',
-	'2.25rem',
+  'should handle nested calc statements (reduce-css-calc#49)',
+  testValue,
+  'calc(calc(2.25rem + 2px) - 1px * 2)',
+  '2.25rem',
 );
 
 test(
