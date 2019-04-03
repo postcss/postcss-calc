@@ -849,3 +849,45 @@ test(
   'calc(/*test*/100px + calc(/*test*/100px/*test*/ + /*test*/100px/*test*/))',
   '300px',
 );
+
+test(
+  'exponent composed',
+  testValue,
+  'calc(1.1e+1px + 1.1e+1px)',
+  '22px',
+);
+
+test(
+  'exponent composed (#1)',
+  testValue,
+  'calc(10e+1px + 10e+1px)',
+  '200px',
+);
+
+test(
+  'exponent composed (#2)',
+  testValue,
+  'calc(1.1e+10px + 1.1e+10px)',
+  '22000000000px',
+);
+
+test(
+  'exponent composed (#3)',
+  testValue,
+  'calc(9e+1 * 1px)',
+  '90px',
+);
+
+test(
+  'exponent composed (#4)',
+  testValue,
+  'calc(9e+1% + 10%)',
+  '100%',
+);
+
+test(
+  'exponent composed (uppercase)',
+  testValue,
+  'calc(1.1E+1px + 1.1E+1px)',
+  '22px',
+);
