@@ -34,7 +34,8 @@ function transformValue(value, options, result, item) {
       result,
       item);
 
-  }, true).toString();
+    return false;
+  }).toString();
 }
 
 function transformSelector(value, options, result, item) {

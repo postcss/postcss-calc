@@ -730,3 +730,17 @@ test(
   'calc(100% - calc(10px - 2vw))',
   'calc(100% - 10px + 2vw)',
 );
+
+test(
+  'precision for calc',
+  testValue,
+  'calc(100% / 3 * 3)',
+  '100%',
+);
+
+test(
+  'precision for nested calc',
+  testValue,
+  'calc(calc(100% / 3) * 3)',
+  '100%',
+);
