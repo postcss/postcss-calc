@@ -17,7 +17,7 @@ function convertAbsoluteLength(left, right, precision) {
   if (right.type === left.type) {
     right = {
       type: left.type,
-      value: convertUnits(right.value, right.unit, left.unit, precision),
+      value: convertUnits(right.value, right.unit.toLowerCase(), left.unit.toLowerCase(), precision),
       unit: left.unit,
     };
   }
