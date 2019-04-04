@@ -19,7 +19,7 @@ function transformValue(value, options, result, item) {
     // stringify calc expression and produce an AST
     const contents = valueParser.stringify(node.nodes);
     const ast = parser.parse(contents);
-    
+
     // reduce AST to its simplest form, that is, either to a single value
     // or a simplified calc expression
     const reducedAst = reducer(ast, options.precision);
