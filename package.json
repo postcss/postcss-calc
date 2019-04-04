@@ -25,7 +25,10 @@
   "repository": "https://github.com/postcss/postcss-calc.git",
   "eslintConfig": {
     "parser": "babel-eslint",
-    "extends": "eslint-config-i-am-meticulous"
+    "extends": "eslint-config-i-am-meticulous",
+    "rules": {
+      "curly": "error"
+    }
   },
   "devDependencies": {
     "@babel/cli": "^7.1.2",
@@ -45,7 +48,6 @@
     "jison-gho": "^0.6.1-215"
   },
   "dependencies": {
-    "css-unit-converter": "^1.1.1",
     "postcss": "^7.0.5",
     "postcss-selector-parser": "^6.0.2",
     "postcss-value-parser": "^3.3.1"

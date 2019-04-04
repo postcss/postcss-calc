@@ -3,14 +3,16 @@ import postcss from 'postcss';
 
 import reduceCalc from '../../dist';
 
-const postcssOpts =  { from: undefined }
+const postcssOpts =  { from: undefined };
 
 function testValue(t, fixture, expected = null, opts = {}) {
   if (expected === null) {
     expected = fixture;
   }
+
   fixture = `foo{bar:${fixture}}`;
   expected = `foo{bar:${expected}}`;
+
   return testCss(t, fixture, expected, opts);
 }
 
@@ -18,7 +20,9 @@ function testCss(t, fixture, expected = null, opts = {}) {
   if (expected === null) {
     expected = fixture;
   }
+
   t.plan(1);
+
   return postcss(reduceCalc(opts)).process(fixture, postcssOpts).then(result => {
     t.deepEqual(result.css, expected);
   });
@@ -26,6 +30,7 @@ function testCss(t, fixture, expected = null, opts = {}) {
 
 async function testThrows(t, fixture, expected, opts) {
   fixture = `foo{bar:${fixture}}`;
+
   await t.throwsAsync(() => postcss(reduceCalc(opts)).process(fixture, postcssOpts), expected);
 }
 
@@ -890,4 +895,137 @@ test(
   testValue,
   'calc(1.1E+1px + 1.1E+1px)',
   '22px',
+);
+
+test(
+  'convert units',
+  testValue,
+  'calc(1cm + 1px)',
+  '1.02646cm',
+);
+
+test(
+  'convert units (#1)',
+  testValue,
+  'calc(1px + 1cm)',
+  '38.79528px',
+);
+
+test(
+  'convert units (#2)',
+  testValue,
+  'calc(10Q + 10Q)',
+  '20Q',
+);
+
+test(
+  'convert units (#3)',
+  testValue,
+  'calc(100.9q + 10px)',
+  '111.48333q',
+);
+
+test(
+  'convert units (#4)',
+  testValue,
+  'calc(10px + 100.9q)',
+  '105.33858px',
+);
+
+test(
+  'convert units (#5)',
+  testValue,
+  'calc(10cm + 1px)',
+  '10.02646cm',
+);
+
+test(
+  'convert units (#6)',
+  testValue,
+  'calc(10mm + 1px)',
+  '10.26458mm',
+);
+
+test(
+  'convert units (#7)',
+  testValue,
+  'calc(10px + 1q)',
+  '10.94488px'
+);
+
+test(
+  'convert units (#8)',
+  testValue,
+  'calc(10cm + 1q)',
+  '10.025cm'
+);
+
+test(
+  'convert units (#9)',
+  testValue,
+  'calc(10mm + 1q)',
+  '10.25mm'
+);
+
+test(
+  'convert units (#10)',
+  testValue,
+  'calc(10in + 1q)',
+  '10.00984in'
+);
+
+test(
+  'convert units (#11)',
+  testValue,
+  'calc(10pt + 1q)',
+  '10.70866pt'
+);
+
+test(
+  'convert units (#12)',
+  testValue,
+  'calc(10pc + 1q)',
+  '10.05906pc'
+);
+
+test(
+  'convert units (#13)',
+  testValue,
+  'calc(1q + 10px)',
+  '11.58333q'
+);
+
+test(
+  'convert units (#14)',
+  testValue,
+  'calc(1q + 10cm)',
+  '401q'
+);
+
+test(
+  'convert units (#15)',
+  testValue,
+  'calc(1q + 10mm)',
+  '41q'
+);
+
+test(
+  'convert units (#16)',
+  testValue,
+  'calc(1q + 10in)',
+  '1017q'
+);
+
+test(
+  'convert units (#17)',
+  testValue,
+  'calc(1q + 10pt)',
+  '15.11111q'
+);
+
+test(
+  'convert units (#18)',
+  testValue,
+  'calc(1q + 10pc)',
+  '170.33333q'
 );

@@ -49,8 +49,9 @@ function transformSelector(value, options, result, item) {
 
       // tag value
       // e.g. the "calc(3*3)" part of "div:nth-child(2n + calc(3*3))"
-      if (node.type === 'tag')
+      if (node.type === 'tag') {
         node.value = transformValue(node.value, options, result, item);
+      }
 
       return;
     });
@@ -70,6 +71,7 @@ export default (node, property, options, result) => {
     const clone = node.clone();
     clone[property] = value;
     node.parent.insertBefore(node, clone);
+  } else {
+    node[property] = value;
   }
-  else node[property] = value;
 };

@@ -1,8 +1,9 @@
-import convert from './convert';
+import convertUnit from "./convertUnit";
 
 function reduce(node, precision) {
-  if (node.type === "MathExpression") 
+  if (node.type === "MathExpression") {
     return reduceMathExpression(node, precision);
+  }
 
   return node;
 }
@@ -33,8 +34,31 @@ function isValueType(type) {
   return false;
 }
 
+function covertNodesUnits(left, right, precision) {
+  switch (left.type) {
+    case 'LengthValue':
+    case 'AngleValue':
+    case 'TimeValue':
+    case 'FrequencyValue':
+    case 'ResolutionValue':
+      if (right.type === left.type && right.unit && left.unit) {
+        const converted = convertUnit(right.value, right.unit, left.unit, precision);
+
+        right = {
+          type: left.type,
+          value: converted,
+          unit: left.unit,
+        };
+      }
+
+      return { left, right };
+    default:
+      return { left, right };
+  }
+}
+
 function convertMathExpression(node, precision) {
-  let nodes = convert(node.left, node.right, precision);
+  let nodes = covertNodesUnits(node.left, node.right, precision);
   let left = reduce(nodes.left, precision);
   let right = reduce(nodes.right, precision);
 
@@ -45,11 +69,11 @@ function convertMathExpression(node, precision) {
       ((left.operator === '*' && right.operator === '/') ||
       (left.operator === '+' && right.operator === '-'))) {
 
-      if (isEqual(left.right, right.right))
-        nodes = convert(left.left, right.left, precision);
-
-      else if (isEqual(left.right, right.left))
-        nodes = convert(left.left, right.right, precision);
+      if (isEqual(left.right, right.right)) {
+        nodes = covertNodesUnits(left.left, right.left, precision);
+      } else if (isEqual(left.right, right.left)) {
+        nodes = covertNodesUnits(left.left, right.right, precision);
+      }
 
       left = reduce(nodes.left, precision);
       right = reduce(nodes.right, precision);
@@ -67,12 +91,13 @@ function flip(operator) {
 }
 
 function flipValue(node) {
-  if (isValueType(node.type))
+  if (isValueType(node.type)) {
     node.value = -node.value;
-  else if (node.type === 'MathExpression') {
+  } else if (node.type === 'MathExpression') {
     node.left = flipValue(node.left);
     node.right = flipValue(node.right);
   }
+
   return node;
 }
 
@@ -81,25 +106,29 @@ function reduceAddSubExpression(node, precision) {
 
   // something + 0 => something
   // something - 0 => something
-  if (right.value === 0)
+  if (right.value === 0) {
     return left;
+  }
 
   // 0 + something => something
-  if (left.value === 0 && op === "+")
+  if (left.value === 0 && op === "+") {
     return right;
+  }
 
   // 0 - something => -something
-  if (left.value === 0 && op === "-")
+  if (left.value === 0 && op === "-") {
     return flipValue(right);
+  }
 
   // value + value
   // value - value
   if (left.type === right.type && isValueType(left.type)) {
     node = Object.assign({ }, left);
-    if (op === "+")
+    if (op === "+") {
       node.value = left.value + right.value;
-    else
+    } else {
       node.value = left.value - right.value;
+    }
   }
 
     // value <op> (expr)
@@ -203,14 +232,17 @@ function reduceAddSubExpression(node, precision) {
 }
 
 function reduceDivisionExpression(node) {
-  if (!isValueType(node.right.type))
+  if (!isValueType(node.right.type)) {
     return node;
+  }
 
-  if (node.right.type !== 'Value')
+  if (node.right.type !== 'Value') {
     throw new Error(`Cannot divide by "${node.right.unit}", number expected`);
+  }
 
-  if (node.right.value === 0)
+  if (node.right.value === 0) {
     throw new Error('Cannot divide by zero');
+  }
 
   // something / value
   if (isValueType(node.left.type)) {
@@ -268,6 +300,7 @@ function reduceMathExpression(node, precision) {
     case "*":
       return reduceMultiplicationExpression(node);
   }
+
   return node;
 }
 

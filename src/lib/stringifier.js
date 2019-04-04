@@ -19,17 +19,19 @@ function stringify(node, prec) {
       const {left, right, operator: op} = node;
       let str = "";
 
-      if (left.type === 'MathExpression' && order[op] < order[left.operator])
+      if (left.type === 'MathExpression' && order[op] < order[left.operator]) {
         str += `(${stringify(left, prec)})`;
-      else
+      } else {
         str += stringify(left, prec);
+      }
 
       str += order[op] ? ` ${node.operator} ` : node.operator;
 
-      if (right.type === 'MathExpression' && order[op] < order[right.operator])
+      if (right.type === 'MathExpression' && order[op] < order[right.operator]) {
         str += `(${stringify(right, prec)})`;
-      else
+      } else {
         str += stringify(right, prec);
+      }
 
       return str;
     }
