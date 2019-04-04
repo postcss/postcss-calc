@@ -35,7 +35,7 @@ function stringify(node, prec) {
 
       return str;
     }
-    case "Value":
+    case 'Number':
       return round(node.value, prec);
     case 'Function':
       return node.value;

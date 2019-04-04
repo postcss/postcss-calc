@@ -28,7 +28,7 @@ function isValueType(type) {
     case 'VminValue':
     case 'VmaxValue':
     case 'PercentageValue':
-    case 'Value':
+    case 'Number':
       return true;
   }
   return false;
@@ -236,7 +236,7 @@ function reduceDivisionExpression(node) {
     return node;
   }
 
-  if (node.right.type !== 'Value') {
+  if (node.right.type !== 'Number') {
     throw new Error(`Cannot divide by "${node.right.unit}", number expected`);
   }
 
@@ -253,8 +253,8 @@ function reduceDivisionExpression(node) {
 }
 
 function reduceMultiplicationExpression(node) {
-  // (expr) * value
-  if (node.left.type === 'MathExpression' && node.right.type === 'Value') {
+  // (expr) * number
+  if (node.left.type === 'MathExpression' && node.right.type === 'Number') {
     if (
       isValueType(node.left.left.type) &&
       isValueType(node.left.right.type)
@@ -264,13 +264,13 @@ function reduceMultiplicationExpression(node) {
       return node.left;
     }
   }
-  // something * value
-  else if (isValueType(node.left.type) && node.right.type === 'Value') {
+  // something * number
+  else if (isValueType(node.left.type) && node.right.type === 'Number') {
     node.left.value *= node.right.value;
     return node.left;
   }
-  // value * (expr)
-  else if (node.left.type === 'Value' && node.right.type === 'MathExpression') {
+  // number * (expr)
+  else if (node.left.type === 'Number' && node.right.type === 'MathExpression') {
     if (
       isValueType(node.right.left.type) &&
       isValueType(node.right.right.type)
@@ -280,8 +280,8 @@ function reduceMultiplicationExpression(node) {
       return node.right;
     }
   }
-  // value * something
-  else if (node.left.type === 'Value' && isValueType(node.right.type)) {
+  // number * something
+  else if (node.left.type === 'Number' && isValueType(node.right.type)) {
     node.right.value *= node.left.value;
     return node.right;
   }

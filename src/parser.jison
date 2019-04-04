@@ -76,15 +76,15 @@ expression
     | math_expression DIV math_expression { $$ = { type: 'MathExpression', operator: $2, left: $1, right: $3 }; }
     | LPAREN math_expression RPAREN { $$ = $2; }
     | function { $$ = $1; }
-    | css_value { $$ = $1; }
-    | value { $$ = $1; }
+    | dimension { $$ = $1; }
+    | number { $$ = $1; }
     ;
 
   function
     : FUNCTION { $$ = { type: 'Function', value: $1 }; }
     ;
 
-  css_value
+  dimension
     : LENGTH { $$ = { type: 'LengthValue', value: parseFloat($1), unit: /[a-z]+$/i.exec($1)[0] }; }
     | ANGLE { $$ = { type: 'AngleValue', value: parseFloat($1), unit: /[a-z]+$/i.exec($1)[0] }; }
     | TIME { $$ = { type: 'TimeValue', value: parseFloat($1), unit: /[a-z]+$/i.exec($1)[0] }; }
@@ -100,12 +100,12 @@ expression
     | VMINS { $$ = { type: 'VminValue', value: parseFloat($1), unit: 'vmin' }; }
     | VMAXS { $$ = { type: 'VmaxValue', value: parseFloat($1), unit: 'vmax' }; }
     | PERCENTAGE { $$ = { type: 'PercentageValue', value: parseFloat($1), unit: '%' }; }
-    | ADD css_value { var prev = $2; $$ = prev; }
-    | SUB css_value { var prev = $2; prev.value *= -1; $$ = prev; }
+    | ADD dimension { var prev = $2; $$ = prev; }
+    | SUB dimension { var prev = $2; prev.value *= -1; $$ = prev; }
     ;
 
-  value
-    : NUMBER { $$ = { type: 'Value', value: parseFloat($1) }; }
-    | ADD NUMBER { $$ = { type: 'Value', value: parseFloat($2) }; }
-    | SUB NUMBER { $$ = { type: 'Value', value: parseFloat($2) * -1 }; }
+  number
+    : NUMBER { $$ = { type: 'Number', value: parseFloat($1) }; }
+    | ADD NUMBER { $$ = { type: 'Number', value: parseFloat($2) }; }
+    | SUB NUMBER { $$ = { type: 'Number', value: parseFloat($2) * -1 }; }
     ;
