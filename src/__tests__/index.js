@@ -1029,3 +1029,24 @@ test(
   'calc(1q + 10pc)',
   '170.33333q'
 );
+
+test(
+  'unknown units',
+  testValue,
+  'calc(1unknown + 2unknown)',
+  'calc(1unknown + 2unknown)'
+);
+
+test(
+  'unknown units with known',
+  testValue,
+  'calc(1unknown + 2px)',
+  'calc(1unknown + 2px)'
+);
+
+test(
+  'unknown units with known (#1)',
+  testValue,
+  'calc(1px + 2unknown)',
+  'calc(1px + 2unknown)'
+);

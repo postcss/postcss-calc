@@ -46,6 +46,8 @@
 (([0-9]+("."[0-9]+)?|"."[0-9]+)(e(\+|-)[0-9]+)?)\%                return 'PERCENTAGE';
 (([0-9]+("."[0-9]+)?|"."[0-9]+)(e(\+|-)[0-9]+)?)\b                return 'NUMBER';
 
+(([0-9]+("."[0-9]+)?|"."[0-9]+)(e(\+|-)[0-9]+)?)-?([a-zA-Z_]|[\240-\377]|(\\[0-9a-fA-F]{1,6}(\r\n|[ \t\r\n\f])?|\\[^\r\n\f0-9a-fA-F]))([a-zA-Z0-9_-]|[\240-\377]|(\\[0-9a-fA-F]{1,6}(\r\n|[ \t\r\n\f])?|\\[^\r\n\f0-9a-fA-F]))*\b       return 'UNKNOWN_DIMENSION';
+
 "("                                             return 'LPAREN';
 ")"                                             return 'RPAREN';
 
@@ -88,6 +90,7 @@ expression
     | TIME { $$ = { type: 'TimeValue', value: parseFloat($1), unit: /[a-z]+$/i.exec($1)[0] }; }
     | FREQ { $$ = { type: 'FrequencyValue', value: parseFloat($1), unit: /[a-z]+$/i.exec($1)[0] }; }
     | RES { $$ = { type: 'ResolutionValue', value: parseFloat($1), unit: /[a-z]+$/i.exec($1)[0] }; }
+    | UNKNOWN_DIMENSION { $$ = { type: 'UnknownDimension', value: parseFloat($1), unit: /[a-z]+$/i.exec($1)[0] }; }
     | EMS { $$ = { type: 'EmValue', value: parseFloat($1), unit: 'em' }; }
     | EXS { $$ = { type: 'ExValue', value: parseFloat($1), unit: 'ex' }; }
     | CHS { $$ = { type: 'ChValue', value: parseFloat($1), unit: 'ch' }; }
