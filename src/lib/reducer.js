@@ -1,13 +1,5 @@
 import convertUnit from "./convertUnit";
 
-function reduce(node, precision) {
-  if (node.type === "MathExpression") {
-    return reduceMathExpression(node, precision);
-  }
-
-  return node;
-}
-
 function isEqual(left, right) {
   return left.type === right.type && left.value === right.value;
 }
@@ -32,58 +24,6 @@ function isValueType(type) {
       return true;
   }
   return false;
-}
-
-function covertNodesUnits(left, right, precision) {
-  switch (left.type) {
-    case 'LengthValue':
-    case 'AngleValue':
-    case 'TimeValue':
-    case 'FrequencyValue':
-    case 'ResolutionValue':
-      if (right.type === left.type && right.unit && left.unit) {
-        const converted = convertUnit(right.value, right.unit, left.unit, precision);
-
-        right = {
-          type: left.type,
-          value: converted,
-          unit: left.unit,
-        };
-      }
-
-      return { left, right };
-    default:
-      return { left, right };
-  }
-}
-
-function convertMathExpression(node, precision) {
-  let nodes = covertNodesUnits(node.left, node.right, precision);
-  let left = reduce(nodes.left, precision);
-  let right = reduce(nodes.right, precision);
-
-  if (left.type === "MathExpression" && right.type === "MathExpression") {
-
-    if (((left.operator === '/' && right.operator === '*') ||
-      (left.operator === '-' && right.operator === '+')) ||
-      ((left.operator === '*' && right.operator === '/') ||
-      (left.operator === '+' && right.operator === '-'))) {
-
-      if (isEqual(left.right, right.right)) {
-        nodes = covertNodesUnits(left.left, right.left, precision);
-      } else if (isEqual(left.right, right.left)) {
-        nodes = covertNodesUnits(left.left, right.right, precision);
-      }
-
-      left = reduce(nodes.left, precision);
-      right = reduce(nodes.right, precision);
-
-    }
-  }
-
-  node.left = left;
-  node.right = right;
-  return node;
 }
 
 function flip(operator) {
@@ -133,7 +73,7 @@ function reduceAddSubExpression(node, precision) {
 
     // value <op> (expr)
   if (
-        isValueType(left.type) &&
+    isValueType(left.type) &&
     (right.operator === '+' || right.operator === '-') &&
     right.type === 'MathExpression'
   ) {
@@ -150,7 +90,7 @@ function reduceAddSubExpression(node, precision) {
         right: right.left
       }, precision);
       node.right = right.right;
-            node.operator = op === '-' ? flip(right.operator) : right.operator;
+      node.operator = op === '-' ? flip(right.operator) : right.operator;
       return reduce(node, precision);
     }
     // value + (something + value) => (value + value) + something
@@ -172,7 +112,7 @@ function reduceAddSubExpression(node, precision) {
 
   // (expr) <op> value
   if (
-        left.type === 'MathExpression' &&
+    left.type === 'MathExpression' &&
     (left.operator === '+' || left.operator === '-') &&
     isValueType(right.type)
   ) {
@@ -288,17 +228,67 @@ function reduceMultiplicationExpression(node) {
   return node;
 }
 
-function reduceMathExpression(node, precision) {
-  node = convertMathExpression(node, precision);
+function covertNodesUnits(left, right, precision) {
+  switch (left.type) {
+    case 'LengthValue':
+    case 'AngleValue':
+    case 'TimeValue':
+    case 'FrequencyValue':
+    case 'ResolutionValue':
+      if (right.type === left.type && right.unit && left.unit) {
+        const converted = convertUnit(right.value, right.unit, left.unit, precision);
 
-  switch (node.operator) {
-    case "+":
-    case "-":
-      return reduceAddSubExpression(node, precision);
-    case "/":
-      return reduceDivisionExpression(node, precision);
-    case "*":
-      return reduceMultiplicationExpression(node);
+        right = {
+          type: left.type,
+          value: converted,
+          unit: left.unit,
+        };
+      }
+
+      return { left, right };
+    default:
+      return { left, right };
+  }
+}
+
+function reduce(node, precision) {
+  if (node.type === "MathExpression") {
+    let nodes = covertNodesUnits(node.left, node.right, precision);
+    let left = reduce(nodes.left, precision);
+    let right = reduce(nodes.right, precision);
+
+    if (left.type === "MathExpression" && right.type === "MathExpression") {
+      if (((left.operator === '/' && right.operator === '*') ||
+        (left.operator === '-' && right.operator === '+')) ||
+        ((left.operator === '*' && right.operator === '/') ||
+          (left.operator === '+' && right.operator === '-'))) {
+
+        if (isEqual(left.right, right.right)) {
+          nodes = covertNodesUnits(left.left, right.left, precision);
+        } else if (isEqual(left.right, right.left)) {
+          nodes = covertNodesUnits(left.left, right.right, precision);
+        }
+
+        left = reduce(nodes.left, precision);
+        right = reduce(nodes.right, precision);
+
+      }
+    }
+
+    node.left = left;
+    node.right = right;
+
+    switch (node.operator) {
+      case "+":
+      case "-":
+        return reduceAddSubExpression(node, precision);
+      case "/":
+        return reduceDivisionExpression(node, precision);
+      case "*":
+        return reduceMultiplicationExpression(node);
+    }
+
+    return node;
   }
 
   return node;
