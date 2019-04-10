@@ -54,9 +54,7 @@ export default function (
   ) {
   let str = stringify(node, options.precision);
 
-  const shouldPrintCalc =
-    node.type === "MathExpression" ||
-    (node.type === "Function" && node.value.toLowerCase().slice(0, 4) === "var(");
+  const shouldPrintCalc = node.type === "MathExpression" || node.type === "Function";
 
   if (shouldPrintCalc) {
     // if calc expression couldn't be resolved to a single value, re-wrap it as

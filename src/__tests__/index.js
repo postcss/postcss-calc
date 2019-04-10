@@ -368,17 +368,31 @@ test(
 );
 
 test(
-  'should skip constant()',
+  'should skip constant function',
   testValue,
   'calc(constant(safe-area-inset-left))',
-  'constant(safe-area-inset-left)',
+  'calc(constant(safe-area-inset-left))',
 );
 
 test(
-  'should skip env()',
+  'should skip env function',
   testValue,
   'calc(env(safe-area-inset-left))',
-  'env(safe-area-inset-left)',
+  'calc(env(safe-area-inset-left))',
+);
+
+test(
+  'should skip env function (#1)',
+  testValue,
+  'calc(env(safe-area-inset-left, 50px 20px))',
+  'calc(env(safe-area-inset-left, 50px 20px))',
+);
+
+test(
+  'should skip unknown function',
+  testValue,
+  'calc(unknown(safe-area-inset-left))',
+  'calc(unknown(safe-area-inset-left))',
 );
 
 test(
