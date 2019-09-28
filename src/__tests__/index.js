@@ -361,6 +361,13 @@ test(
 );
 
 test(
+  'should reduce substracted division expression from zero',
+  testValue,
+  'calc( 0 - (100vw - 10px) / 2 )',
+  'calc((-100vw - -10px)/2)',
+);
+
+test(
   'should reduce nested expression',
   testValue,
   'calc( (1em - calc( 10px + 1em)) / 2)',
