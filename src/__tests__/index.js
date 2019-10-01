@@ -119,6 +119,13 @@ test(
 );
 
 test(
+  'should reduce additions and subtractions (5)',
+  testValue,
+  'calc(10px - (100vw - 50em) / 2)',
+  'calc(10px - (100vw - 50em)/2)',
+);
+
+test(
   'should ignore value surrounding calc function (1)',
   testValue,
   'a calc(1px + 1px)',
@@ -358,6 +365,34 @@ test(
   testValue,
   'calc( 0 - calc(1px + 1em) )',
   'calc(-1px + -1em)',
+);
+
+test(
+  'should reduce substracted expression from zero (1)',
+  testValue,
+  'calc( 0 - (100vw - 10px) / 2 )',
+  'calc((-100vw - -10px)/2)',
+);
+
+test(
+  'should reduce substracted expression from zero (2)',
+  testValue,
+  'calc( 0px - (100vw - 10px))',
+  'calc(-100vw - -10px)',
+);
+
+test(
+  'should reduce substracted expression from zero (3)',
+  testValue,
+  'calc( 0px - (100vw - 10px) * 2px )',
+  'calc((-100vw - -10px)*2px)',
+);
+
+test(
+  'should reduce substracted expression from zero (4)',
+  testValue,
+  'calc( 0px - (100vw + 10px))',
+  'calc(-100vw + -10px)',
 );
 
 test(

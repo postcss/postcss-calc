@@ -34,8 +34,12 @@ function flipValue(node) {
   if (isValueType(node.type)) {
     node.value = -node.value;
   } else if (node.type === 'MathExpression') {
-    node.left = flipValue(node.left);
-    node.right = flipValue(node.right);
+    if (node.operator === '*' || node.operator === '/') {
+      node.left = flipValue(node.left);
+    } else {
+      node.left = flipValue(node.left);
+      node.right = flipValue(node.right);
+    }
   }
 
   return node;
