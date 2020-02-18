@@ -31,7 +31,8 @@ function testCss(t, fixture, expected = null, opts = {}) {
 async function testThrows(t, fixture, expected, opts) {
   fixture = `foo{bar:${fixture}}`;
 
-  await t.throwsAsync(() => postcss(reduceCalc(opts)).process(fixture, postcssOpts), expected);
+  const error = await t.throwsAsync(() => postcss(reduceCalc(opts)).process(fixture, postcssOpts))
+  t.is(error.message, expected);
 }
 
 test(
@@ -607,7 +608,7 @@ test(
   'should throw an exception when attempting to divide by zero',
   testThrows,
   'calc(500px/0)',
-  /Cannot divide by zero/
+  'Cannot divide by zero'
 );
 
 test(
