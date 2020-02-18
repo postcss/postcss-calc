@@ -1,6 +1,6 @@
-import test from 'ava';
+const test = require('ava');
 
-import convertUnit from '../lib/convertUnit'
+const convertUnit = require('../lib/convertUnit');
 
 test("valid conversions", (t) => {
   const conversions = [

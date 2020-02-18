@@ -1,7 +1,7 @@
-import test from 'ava';
-import postcss from 'postcss';
+const test = require('ava');
+const postcss = require('postcss');
 
-import reduceCalc from '../../dist';
+const reduceCalc = require('..');
 
 const postcssOpts =  { from: undefined };
 

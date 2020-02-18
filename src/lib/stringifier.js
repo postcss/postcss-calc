@@ -44,7 +44,7 @@ function stringify(node, prec) {
   }
 }
 
-export default function (
+module.exports = function (
     calc,
     node,
     originalValue,

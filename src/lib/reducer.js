@@ -1,4 +1,4 @@
-import convertUnit from "./convertUnit";
+const convertUnit = require("./convertUnit");
 
 function isEqual(left, right) {
   return left.type === right.type && left.value === right.value;
@@ -329,4 +329,4 @@ function reduce(node, precision) {
   return node;
 }
 
-export default reduce;
+module.exports = reduce;

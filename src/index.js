@@ -1,8 +1,8 @@
-import {plugin} from 'postcss';
+const { plugin } = require('postcss');
 
-import transform from './lib/transform';
+const transform = require('./lib/transform');
 
-export default plugin('postcss-calc', (opts) => {
+module.exports = plugin('postcss-calc', (opts) => {
   const options = Object.assign({
     precision: 5,
     preserve: false,

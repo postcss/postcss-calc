@@ -1,11 +1,11 @@
-import selectorParser from 'postcss-selector-parser';
-import valueParser from 'postcss-value-parser'; 
+const selectorParser = require('postcss-selector-parser');
+const valueParser = require('postcss-value-parser');
 
 // eslint-disable-next-line import/no-unresolved
-import { parser } from '../parser';
+const { parser } = require('../parser');
 
-import reducer from './reducer';
-import stringifier from './stringifier';
+const reducer = require('./reducer');
+const stringifier = require('./stringifier');
 
 const MATCH_CALC = /((?:-(moz|webkit)-)?calc)/i;
 
@@ -58,7 +58,7 @@ function transformSelector(value, options, result, item) {
   }).processSync(value);
 }
 
-export default (node, property, options, result) => {
+module.exports = (node, property, options, result) => {
   const value = property === "selector"
     ? transformSelector(node[property], options, result, node)
     : transformValue(node[property], options, result, node);

@@ -147,4 +147,4 @@ function convertUnit(value, sourceUnit, targetUnit, precision) {
   return converted;
 }
 
-export default convertUnit;
+module.exports = convertUnit;
