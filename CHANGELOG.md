@@ -1,3 +1,7 @@
+# 8.0.0
+
+- Breaking: dropped `Node.js 6` and `Node.js 8` support
+
 # 7.0.2
 
 - Fixed: incorrect reduction of subtraction from zero ([#88](https://github.com/postcss/postcss-calc/issues/88))
