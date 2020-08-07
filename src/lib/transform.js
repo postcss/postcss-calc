@@ -1,5 +1,5 @@
 import selectorParser from 'postcss-selector-parser';
-import valueParser from 'postcss-value-parser'; 
+import valueParser from 'postcss-value-parser';
 
 // eslint-disable-next-line import/no-unresolved
 import { parser } from '../parser';
