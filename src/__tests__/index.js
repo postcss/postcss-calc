@@ -397,6 +397,13 @@ test(
 );
 
 test(
+  'should reduce substracted expression from zero (css-variable)',
+  testValue,
+  'calc( 0px - (var(--foo, 4px) / 2))',
+  'calc(0px - var(--foo, 4px)/2)',
+);
+
+test(
   'should reduce nested expression',
   testValue,
   'calc( (1em - calc( 10px + 1em)) / 2)',

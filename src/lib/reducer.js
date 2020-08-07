@@ -62,7 +62,7 @@ function reduceAddSubExpression(node, precision) {
     isValueType(node.left.type) &&
     node.left.value === 0 &&
     node.operator === "-" &&
-    node.right.type !== "Function"
+    !containCSSFunction(node.right)
   ) {
     return flipValue(node.right);
   }
@@ -330,3 +330,14 @@ function reduce(node, precision) {
 }
 
 export default reduce;
+
+
+function containCSSFunction(node) {
+  if (node.type === "Function") {
+    return true;
+  }
+  if (node.type === "MathExpression") {
+    return containCSSFunction(node.left) || containCSSFunction(node.right);
+  }
+  return false;
+}
