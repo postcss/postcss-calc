@@ -1,3 +1,7 @@
+# 7.0.4
+
+- Fixed: strips away important factors from multiplications in calc() ([#107](https://github.com/postcss/postcss-calc/issues/107))
+
 # 7.0.3
 
 - Fixed: substracted css-variable from zero ([#111](https://github.com/postcss/postcss-calc/issues/111))
@@ -61,7 +65,7 @@
 # 5.2.1 - 2016-04-10
 
 - Fixed: support for multiline value
-  ([#27](https://github.com/postcss/postcss-calc/pull/27)) 
+  ([#27](https://github.com/postcss/postcss-calc/pull/27))
 
 # 5.2.0 - 2016-01-08
 
