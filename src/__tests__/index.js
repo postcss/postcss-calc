@@ -239,6 +239,13 @@ test(
   'calc(var(--popupHeight)/2)',
 );
 
+test(
+  'should ignore calc with css variables (7)',
+  testValue,
+  'calc(var(--popupHeight) / 2 + var(--popupWidth) / 2)',
+  'calc((var(--popupHeight) + var(--popupWidth))/2)',
+);
+
 
 test(
   'should reduce calc with newline characters',
