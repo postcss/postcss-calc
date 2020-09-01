@@ -197,22 +197,55 @@ function reduceAddSubExpression(node, precision) {
   // (expr) + (expr) => number
   // (expr) - (expr) => number
   if (node.right.type === 'MathExpression' && node.left.type === 'MathExpression') {
-    if (isEqual(node.left.right, node.right.right)) {
-      const newNodes = covertNodesUnits(node.left.left, node.right.left, precision);
+    if (
+      (node.left.operator === "-" && node.right.operator === "+") ||
+      (node.right.operator === "-" && node.left.operator === "+")
+    ) {
+      // (expr1 - something) + (expr2 + something) => expr1 + expr2
+      // (expr1 + something) + (expr2 - something) => expr1 + expr2
+      // (expr1 - something) - (expr2 + something) => expr1 + expr2
+      // (expr1 + something) - (expr2 - something) => expr1 + expr2
+      if (isEqual(node.left.right, node.right.right)) {
+        const newNodes = covertNodesUnits(node.left.left, node.right.left, precision);
 
-      node.left = newNodes.left;
-      node.right = newNodes.right;
+        node.left = newNodes.left;
+        node.right = newNodes.right;
 
-      return reduce(node);
-    }
+        return reduce(node, precision);
+      }
 
-    if (isEqual(node.left.right, node.right.left)) {
-      const newNodes = covertNodesUnits(node.left.left, node.right.right, precision);
+      // (expr1 - something) + (something + expr2) => expr1 + expr2
+      // (expr1 + something) + (something - expr2) => expr1 + expr2
+      // (expr1 - something) - (something + expr2) => expr1 + expr2
+      // (expr1 + something) - (something - expr2) => expr1 + expr2
+      if (isEqual(node.left.right, node.right.left)) {
+        const newNodes = covertNodesUnits(node.left.left, node.right.right, precision);
 
-      node.left = newNodes.left;
-      node.right = newNodes.right;
+        node.left = newNodes.left;
+        node.right = newNodes.right;
 
-      return reduce(node);
+        return reduce(node, precision);
+      }
+      // (expr1 / something) + (expr2 / something) => (expr1 + expr2) / something
+      // (expr1 * something) + (expr2 * something) => (expr1 + expr2) * something
+      // (expr1 / something) - (expr2 / something) => (expr1 - expr2) / something
+      // (expr1 * something) - (expr2 * something) => (expr1 - expr2) * something
+    } else if (
+      (node.left.operator === "/" || node.left.operator === "*") &&
+      (node.left.operator === node.right.operator) &&
+      isEqual(node.left.right, node.right.right)
+    ) {
+      return reduce({
+        type: "MathExpression",
+        operator: node.left.operator,
+        left: {
+          type: "MathExpression",
+          operator: node.operator,
+          left: node.left.left,
+          right: node.right.left
+        },
+        right: node.left.right
+      }, precision)
     }
   }
 
