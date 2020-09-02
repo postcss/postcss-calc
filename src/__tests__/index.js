@@ -446,6 +446,13 @@ test(
 );
 
 test(
+  'should correctly preserve parentheses'
+  testValue,
+  'calc(1/((var(--a) - var(--b)) / 16))',
+  'calc(1/((var(--a) - var(--b)) / 16))'
+)
+
+test(
   'should preserve the original declaration when `preserve` option is set to true',
   testCss,
   'foo{bar:calc(1rem * 1.5)}',
