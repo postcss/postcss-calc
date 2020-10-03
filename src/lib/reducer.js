@@ -1,9 +1,5 @@
 import convertUnit from "./convertUnit";
 
-function isEqual(left, right) {
-  return left.type === right.type && left.value === right.value;
-}
-
 function isValueType(type) {
   switch (type) {
     case 'LengthValue':
@@ -30,226 +26,101 @@ function flip(operator) {
   return operator === '+' ? '-' : '+';
 }
 
-function flipValue(node) {
-  if (isValueType(node.type)) {
-    node.value = -node.value;
-  } else if (node.type === 'MathExpression') {
-    if (node.operator === '*' || node.operator === '/') {
-      node.left = flipValue(node.left);
-    } else {
-      node.left = flipValue(node.left);
-      node.right = flipValue(node.right);
-    }
-  }
-
-  return node;
+function isAddSubOperator(operator) {
+  return operator === '+' || operator === '-';
 }
 
-function reduceAddSubExpression(node, precision) {
-  // something + 0 => something
-  // something - 0 => something
-  if (isValueType(node.right.type) && node.right.value === 0) {
-    return node.left;
-  }
+function collectAddSubItems(preOperator, node, collected, precision) {
+  if (!isAddSubOperator(preOperator)) { throw new Error(`invalid operator ${preOperator}`); }
+  const type = node.type;
+  if (isValueType(type)) {
+    const itemIndex = collected.findIndex(x => x.node.type === type);
+    if (itemIndex >= 0) {
+      if (node.value === 0) { return; }
+      const {left: reducedNode, right: current} = covertNodesUnits(collected[itemIndex].node, node, precision)
 
-  // 0 + something => something
-  if (isValueType(node.left.type) && node.left.value === 0 && node.operator === "+") {
-    return node.right;
-  }
-
-  // 0 - something => -something
-  if (
-    isValueType(node.left.type) &&
-    node.left.value === 0 &&
-    node.operator === "-" &&
-    !isCSSFunction(node.right)
-  ) {
-    return flipValue(node.right);
-  }
-
-  // value + value
-  // value - value
-  if (isValueType(node.left.type) && node.left.type === node.right.type) {
-    const operator = node.operator;
-    const {left, right} = covertNodesUnits(node.left, node.right, precision);
-
-    if (operator === "+") {
-      left.value += right.value;
-    } else {
-      left.value -= right.value;
-    }
-
-    return left;
-  }
-
-  // value <op> (expr)
-  if (
-    node.right.type === 'MathExpression' &&
-    (node.right.operator === '+' || node.right.operator === '-')
-  ) {
-    // something - (something + something) => something - something - something
-    // something - (something - something) => something - something + something
-    if (
-      (node.right.operator === '+' || node.right.operator === '-') &&
-      node.operator === '-'
-    ) {
-      node.right.operator = flip(node.right.operator);
-    }
-
-    if (isValueType(node.left.type)) {
-      // value + (value + something) => value + something
-      // value + (value - something) => value - something
-      // value - (value + something) => value - something
-      // value - (value - something) => value + something
-      if (node.left.type === node.right.left.type) {
-        const { left, operator, right } = node;
-
-        node.left = reduce({
-          type: 'MathExpression',
-          operator: operator,
-          left: left,
-          right: right.left
-        });
-        node.operator = right.operator;
-        node.right = right.right;
-
-        return reduce(node, precision);
+      if (collected[itemIndex].preOperator === '-') {
+        collected[itemIndex].preOperator = '+';
+        reducedNode.value *= -1;
       }
-
-      // something + (something + value) => dimension + something
-      // something + (something - value) => dimension + something
-      // something - (something + value) => dimension - something
-      // something - (something - value) => dimension - something
-      if (node.left.type === node.right.right.type) {
-        const { left, right } = node;
-
-        node.left = reduce({
-          type: 'MathExpression',
-          operator: right.operator,
-          left: left,
-          right: right.right
-        });
-        node.right = right.left;
-
-        return reduce(node, precision);
-      }
-    }
-  }
-
-  // (expr) <op> value
-  if (
-    node.left.type === 'MathExpression' &&
-    (node.left.operator === '+' || node.left.operator === '-') &&
-    isValueType(node.right.type)
-  ) {
-    // (value + something) + value => value + something
-    // (value - something) + value => value - something
-    // (value + something) - value => value + something
-    // (value - something) - value => value - something
-    if (node.right.type === node.left.left.type) {
-      const { left, operator, right } = node;
-
-      left.left = reduce({
-        type: 'MathExpression',
-        operator: operator,
-        left: left.left,
-        right: right
-      }, precision);
-
-      return reduce(left, precision);
-    }
-
-    // (something + dimension) + dimension => something + dimension
-    // (something - dimension) + dimension => something - dimension
-    // (something + dimension) - dimension => something + dimension
-    // (something - dimension) - dimension => something - dimension
-    if (node.right.type === node.left.right.type) {
-      const { left, operator, right } = node;
-
-      if (left.operator === '-') {
-        left.operator = operator === '-' ? '-' : '+';
-        left.right = reduce({
-          type: 'MathExpression',
-          operator: operator === '-' ? '+' : '-',
-          left: right,
-          right: left.right
-        }, precision);
+      if (preOperator === "+") {
+        reducedNode.value += current.value
       } else {
-        left.right = reduce({
-          type: 'MathExpression',
-          operator: operator,
-          left: left.right,
-          right: right
-        }, precision);
+        reducedNode.value -= current.value
       }
-
-      if (left.right.value < 0) {
-        left.right.value *= -1;
-        left.operator = left.operator === '-' ? '+' : '-';
+      // make sure reducedNode.value >= 0
+      if (reducedNode.value >= 0) {
+        collected[itemIndex] = {node: reducedNode, preOperator: '+'};
+      } else {
+        reducedNode.value *= -1;
+        collected[itemIndex] = {node: reducedNode, preOperator: '-'};
       }
+    } else {
+      // make sure node.value >= 0
+      if (node.value >= 0) {
+        collected.push({node, preOperator});
+      } else {
+        node.value *= -1;
+        collected.push({node, preOperator: flip(preOperator)});
+      }
+    }
+  } else if (type === "MathExpression") {
+    if (isAddSubOperator(node.operator)) {
+      collectAddSubItems(preOperator, node.left, collected, precision);
+      const collectRightOperator = preOperator === '-' ? flip(node.operator) : node.operator;
+      collectAddSubItems(collectRightOperator, node.right, collected, precision);
+    } else {
+      // * or /
+      const reducedNode = reduce(node, precision);
+      // prevent infinite recursive call
+      if (reducedNode.type !== "MathExpression" ||
+        isAddSubOperator(reducedNode.operator)) {
+        collectAddSubItems(preOperator, reducedNode, collected, precision);
+      } else {
+        collected.push({node: reducedNode, preOperator});
+      }
+    }
+  } else {
+    collected.push({node, preOperator});
+  }
+}
 
-      left.parenthesized = node.parenthesized;
 
-      return reduce(left, precision);
+function reduceAddSubExpression(node, precision) {
+  const collected = [];
+  collectAddSubItems('+', node, collected, precision);
+
+  const withoutZeroItem = collected.filter((item) => !(isValueType(item.node.type) && item.node.value === 0));
+  const firstNonZeroItem = withoutZeroItem[0]; // could be undefined
+
+  // prevent producing "calc(-var(--a))" or "calc()"
+  // which is invalid css
+  if (!firstNonZeroItem ||
+    firstNonZeroItem.preOperator === '-' &&
+    !isValueType(firstNonZeroItem.node.type)) {
+      const firstZeroItem = collected.find((item) =>
+        isValueType(item.node.type) && item.node.value === 0);
+      withoutZeroItem.unshift(firstZeroItem)
+  }
+
+  // make sure the preOperator of the first item is +
+  if (withoutZeroItem[0].preOperator === '-' &&
+    isValueType(withoutZeroItem[0].node.type)) {
+      withoutZeroItem[0].node.value *= -1;
+      withoutZeroItem[0].preOperator = '+';
+  }
+
+  let root = withoutZeroItem[0].node;
+  for (let i = 1; i < withoutZeroItem.length; i++) {
+    root = {
+      type: 'MathExpression',
+      operator: withoutZeroItem[i].preOperator,
+      left: root,
+      right: withoutZeroItem[i].node
     }
   }
 
-  // (expr) + (expr) => number
-  // (expr) - (expr) => number
-  if (node.right.type === 'MathExpression' && node.left.type === 'MathExpression') {
-    if (
-      (node.left.operator === "-" && node.right.operator === "+") ||
-      (node.right.operator === "-" && node.left.operator === "+")
-    ) {
-      // (expr1 - something) + (expr2 + something) => expr1 + expr2
-      // (expr1 + something) + (expr2 - something) => expr1 + expr2
-      // (expr1 - something) - (expr2 + something) => expr1 + expr2
-      // (expr1 + something) - (expr2 - something) => expr1 + expr2
-      if (isEqual(node.left.right, node.right.right)) {
-        const newNodes = covertNodesUnits(node.left.left, node.right.left, precision);
-
-        node.left = newNodes.left;
-        node.right = newNodes.right;
-
-        return reduce(node, precision);
-      }
-
-      // (expr1 - something) + (something + expr2) => expr1 + expr2
-      // (expr1 + something) + (something - expr2) => expr1 + expr2
-      // (expr1 - something) - (something + expr2) => expr1 + expr2
-      // (expr1 + something) - (something - expr2) => expr1 + expr2
-      if (isEqual(node.left.right, node.right.left)) {
-        const newNodes = covertNodesUnits(node.left.left, node.right.right, precision);
-
-        node.left = newNodes.left;
-        node.right = newNodes.right;
-
-        return reduce(node, precision);
-      }
-      // (expr1 / something) + (expr2 / something) => (expr1 + expr2) / something
-      // (expr1 * something) + (expr2 * something) => (expr1 + expr2) * something
-      // (expr1 / something) - (expr2 / something) => (expr1 - expr2) / something
-      // (expr1 * something) - (expr2 * something) => (expr1 - expr2) * something
-    } else if (
-      (node.left.operator === "/" || node.left.operator === "*") &&
-      (node.left.operator === node.right.operator) &&
-      isEqual(node.left.right, node.right.right)
-    ) {
-      return reduce({
-        type: "MathExpression",
-        operator: node.left.operator,
-        left: {
-          type: "MathExpression",
-          operator: node.operator,
-          left: node.left.left,
-          right: node.right.left
-        },
-        right: node.left.right
-      }, precision)
-    }
-  }
-
-  return node;
+  return root;
 }
 
 function reduceDivisionExpression(node) {
@@ -261,61 +132,86 @@ function reduceDivisionExpression(node) {
     throw new Error(`Cannot divide by "${node.right.unit}", number expected`);
   }
 
-  if (node.right.value === 0) {
+  return applyNumberDivision(node.left, node.right.value)
+}
+
+// apply (expr) / number
+function applyNumberDivision(node, divisor) {
+  if (divisor === 0) {
     throw new Error('Cannot divide by zero');
   }
-
-  // something / value
-  if (isValueType(node.left.type)) {
-    node.left.value /= node.right.value;
-
-    return node.left;
+  if (isValueType(node.type)) {
+    node.value /= divisor;
+    return node;
   }
-
-  return node;
+  if (node.type === "MathExpression" && isAddSubOperator(node.operator)) {
+    // turn (a + b) / num into a/num + b/num
+    // is good for further reduction
+    // checkout the test case
+    // "should reduce division before reducing additions"
+    return {
+      type: "MathExpression",
+      operator: node.operator,
+      left: applyNumberDivision(node.left, divisor),
+      right: applyNumberDivision(node.right, divisor)
+    }
+  }
+  // it is impossible to reduce it into a single value
+  // .e.g the node contains css variable
+  // so we just preserve the division and let browser do it
+  return {
+    type: "MathExpression",
+    operator: '/',
+    left: node,
+    right: {
+      type: "Number",
+      value: divisor,
+    }
+  }
 }
 
 function reduceMultiplicationExpression(node) {
   // (expr) * number
-  if (node.left.type === 'MathExpression' && node.right.type === 'Number') {
-    if (
-      isValueType(node.left.left.type) &&
-      isValueType(node.left.right.type)
-    ) {
-      node.left.left.value *= node.right.value;
-      node.left.right.value *= node.right.value;
-
-      return node.left;
-    }
+  if (node.right.type === 'Number') {
+    return applyNumberMultiplication(node.left, node.right.value);
   }
-
-  // something * number
-  if (isValueType(node.left.type) && node.right.type === 'Number') {
-    node.left.value *= node.right.value;
-
-    return node.left;
-  }
-
   // number * (expr)
-  if (node.left.type === 'Number' && node.right.type === 'MathExpression') {
-    if (
-      isValueType(node.right.left.type) &&
-      isValueType(node.right.right.type)
-    ) {
-      node.right.left.value *= node.left.value;
-      node.right.right.value *= node.left.value;
+  if (node.left.type === 'Number') {
+    return applyNumberMultiplication(node.right, node.left.value);
+  }
+  return node;
+}
 
-      return node.right;
+// apply (expr) / number
+function applyNumberMultiplication(node, multiplier) {
+  if (isValueType(node.type)) {
+    node.value *= multiplier;
+    return node;
+  }
+  if (node.type === "MathExpression" && isAddSubOperator(node.operator)) {
+    // turn (a + b) * num into a*num + b*num
+    // is good for further reduction
+    // checkout the test case
+    // "should reduce multiplication before reducing additions"
+    return {
+      type: "MathExpression",
+      operator: node.operator,
+      left: applyNumberMultiplication(node.left, multiplier),
+      right: applyNumberMultiplication(node.right, multiplier)
     }
   }
-
-  // number * something
-  if (node.left.type === 'Number' && isValueType(node.right.type)) {
-    node.right.value *= node.left.value;
-    return node.right;
+  // it is impossible to reduce it into a single value
+  // .e.g the node contains css variable
+  // so we just preserve the division and let browser do it
+  return {
+    type: "MathExpression",
+    operator: '*',
+    left: node,
+    right: {
+      type: "Number",
+      value: multiplier,
+    }
   }
-
-  return node;
 }
 
 function covertNodesUnits(left, right, precision) {
@@ -343,13 +239,13 @@ function covertNodesUnits(left, right, precision) {
 
 function reduce(node, precision) {
   if (node.type === "MathExpression") {
+    if (isAddSubOperator(node.operator)) {
+      // reduceAddSubExpression will call reduce recursively
+      return reduceAddSubExpression(node, precision);
+    }
     node.left = reduce(node.left, precision);
     node.right = reduce(node.right, precision);
-
     switch (node.operator) {
-      case "+":
-      case "-":
-        return reduceAddSubExpression(node, precision);
       case "/":
         return reduceDivisionExpression(node, precision);
       case "*":
@@ -363,14 +259,3 @@ function reduce(node, precision) {
 }
 
 export default reduce;
-
-
-function isCSSFunction(node) {
-  if (node.type === "Function") {
-    return true;
-  }
-  if (node.type === "MathExpression") {
-    return isCSSFunction(node.left) || isCSSFunction(node.right);
-  }
-  return false;
-}
