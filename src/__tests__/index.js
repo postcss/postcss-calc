@@ -116,14 +116,70 @@ test(
   'should reduce additions and subtractions (4)',
   testValue,
   'calc((100vw - 50em) / 2)',
-  'calc((100vw - 50em)/2)',
+  'calc(50vw - 25em)',
 );
 
 test(
   'should reduce additions and subtractions (5)',
   testValue,
   'calc(10px - (100vw - 50em) / 2)',
-  'calc(10px - (100vw - 50em)/2)',
+  'calc(10px - 50vw + 25em)',
+);
+
+test(
+  'should reduce additions and subtractions (6)',
+  testValue,
+  'calc(1px - (2em + 4vh + 3%))',
+  'calc(1px - 2em - 4vh - 3%)',
+);
+
+test(
+  'should reduce additions and subtractions (7)',
+  testValue,
+  'calc(0px - (24px - (var(--a) - var(--b)) / 2 + var(--c)))',
+  'calc(-24px + var(--a)/2 - var(--b)/2 - var(--c))',
+);
+
+test(
+  'should reduce additions and subtractions (8)',
+  testValue,
+  'calc(1px + (2em + (3vh + 4px)))',
+  'calc(5px + 2em + 3vh)',
+);
+
+test(
+  'should reduce additions and subtractions (9)',
+  testValue,
+  'calc(1px - (2em + 4px - 6vh) / 2)',
+  'calc(-1px - 1em + 3vh)',
+);
+
+test(
+  'should reduce multiplication',
+  testValue,
+  'calc(((var(--a) + 4px) * 2) * 2)',
+  'calc(var(--a)*2*2 + 16px)',
+);
+
+test(
+  'should reduce multiplication before reducing additions',
+  testValue,
+  'calc(((var(--a) + 4px) * 2) * 2 + 4px)',
+  'calc(var(--a)*2*2 + 20px)',
+);
+
+test(
+  'should reduce division',
+  testValue,
+  'calc(((var(--a) + 4px) / 2) / 2)',
+  'calc(var(--a)/2/2 + 1px)',
+);
+
+test(
+  'should reduce division before reducing additions',
+  testValue,
+  'calc(((var(--a) + 4px) / 2) / 2 + 4px)',
+  'calc(var(--a)/2/2 + 5px)',
 );
 
 test(
@@ -243,7 +299,7 @@ test(
   'should ignore calc with css variables (7)',
   testValue,
   'calc(var(--popupHeight) / 2 + var(--popupWidth) / 2)',
-  'calc((var(--popupHeight) + var(--popupWidth))/2)',
+  'calc(var(--popupHeight)/2 + var(--popupWidth)/2)',
 );
 
 
@@ -372,35 +428,35 @@ test(
   'should reduce subtracted expression from zero',
   testValue,
   'calc( 0 - calc(1px + 1em) )',
-  'calc(-1px + -1em)',
+  'calc(-1px - 1em)',
 );
 
 test(
   'should reduce substracted expression from zero (1)',
   testValue,
   'calc( 0 - (100vw - 10px) / 2 )',
-  'calc((-100vw - -10px)/2)',
+  'calc(-50vw + 5px)',
 );
 
 test(
   'should reduce substracted expression from zero (2)',
   testValue,
   'calc( 0px - (100vw - 10px))',
-  'calc(-100vw - -10px)',
+  'calc(10px - 100vw)',
 );
 
 test(
   'should reduce substracted expression from zero (3)',
   testValue,
-  'calc( 0px - (100vw - 10px) * 2px )',
-  'calc((-100vw - -10px)*2px)',
+  'calc( 0px - (100vw - 10px) * 2 )',
+  'calc(20px - 200vw)',
 );
 
 test(
   'should reduce substracted expression from zero (4)',
   testValue,
   'calc( 0px - (100vw + 10px))',
-  'calc(-100vw + -10px)',
+  'calc(-10px - 100vw)',
 );
 
 test(
@@ -587,14 +643,14 @@ test(
   'should handle complex calculations (reduce-css-calc#45) (1)',
   testValue,
   'calc(100% + (2 * 100px) - ((75.37% - 63.5px) - 900px))',
-  'calc(100% + 200px - 75.37% + 963.5px)',
+  'calc(24.63% + 1163.5px)',
 );
 
 test(
   'should handle complex calculations (reduce-css-calc#45) (2)',
   testValue,
   'calc(((((100% + (2 * 30px) + 63.5px) / 0.7537) - (100vw - 60px)) / 2) + 30px)',
-  'calc(((100% + 123.5px)/0.7537 - 100vw + 60px)/2 + 30px)',
+  'calc(66.33939% + 141.92915px - 50vw)',
 );
 
 test(
@@ -783,7 +839,7 @@ test(
   'should handle nested calc function (#13)',
   testValue,
   'calc(100vh - 5rem - calc(10rem + 100px))',
-  'calc(100vh - 5rem - 10rem - 100px)',
+  'calc(100vh - 15rem - 100px)',
 );
 
 test(
