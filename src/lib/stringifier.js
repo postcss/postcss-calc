@@ -5,6 +5,30 @@ const order = {
   "-": 1,
 };
 
+var nonAssociative = {
+  '*': false,
+  '/': true,
+  '+': false,
+  '-': true
+}
+
+function needsParenthesis(op, childOp){
+  let opOrder = order[op];
+  let childOpOrder = order[childOp];
+  if (opOrder === childOpOrder){
+    // Chains of the same operation only need parenthesis if non-associative
+    if (op === childOp){
+      return nonAssociative[op];
+    } else {
+      // Same precedence but different operator: always
+      return true;
+    }
+  } else {
+    // Follow operator precendence
+    return order[op] < order[childOp];
+  }
+}
+
 function round(value, prec) {
   if (prec !== false) {
     const precision = Math.pow(10, prec);
@@ -19,7 +43,7 @@ function stringify(node, prec) {
       const {left, right, operator: op} = node;
       let str = "";
 
-      if (left.type === 'MathExpression' && order[op] < order[left.operator]) {
+      if (left.type === 'MathExpression' && needsParenthesis(op, left.operator)) {
         str += `(${stringify(left, prec)})`;
       } else {
         str += stringify(left, prec);
@@ -27,7 +51,7 @@ function stringify(node, prec) {
 
       str += order[op] ? ` ${node.operator} ` : node.operator;
 
-      if (right.type === 'MathExpression' && order[op] < order[right.operator]) {
+      if (right.type === 'MathExpression' && needsParenthesis(op, right.operator)) {
         str += `(${stringify(right, prec)})`;
       } else {
         str += stringify(right, prec);
