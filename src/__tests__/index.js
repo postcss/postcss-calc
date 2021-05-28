@@ -5,7 +5,7 @@ import reduceCalc from '../../dist';
 
 const postcssOpts =  { from: undefined };
 
-function testValue(t, fixture, expected = null, opts = {}) {
+function testValue(t, fixture, expected = null, opts = {}, plan = 1) {
   if (expected === null) {
     expected = fixture;
   }
@@ -13,26 +13,28 @@ function testValue(t, fixture, expected = null, opts = {}) {
   fixture = `foo{bar:${fixture}}`;
   expected = `foo{bar:${expected}}`;
 
-  return testCss(t, fixture, expected, opts);
+  return testCss(t, fixture, expected, opts, plan);
 }
 
-function testCss(t, fixture, expected = null, opts = {}) {
+function testCss(t, fixture, expected = null, opts = {}, plan = 1) {
   if (expected === null) {
     expected = fixture;
   }
 
-  t.plan(1);
+  t.plan(plan);
 
   return postcss(reduceCalc(opts)).process(fixture, postcssOpts).then(result => {
     t.deepEqual(result.css, expected);
+
+    return result;
   });
 }
 
-async function testThrows(t, fixture, expected, opts) {
-  fixture = `foo{bar:${fixture}}`;
+async function testThrows(t, fixture, expected, warning, opts) {
+  const result = await testValue(t, fixture, expected, opts, 2);
+  const warnings = result.warnings();
 
-  const error = await t.throwsAsync(() => postcss(reduceCalc(opts)).process(fixture, postcssOpts))
-  t.is(error.message, expected);
+  t.is(warnings[0].text, warning);
 }
 
 test(
@@ -523,7 +525,6 @@ test(
   'calc(100% + 1px)',
   'calc(100% + 1px)',
   { warnWhenCannotResolve: true },
-  [ /^Could not reduce expression:/ ]
 );
 
 test(
@@ -678,12 +679,14 @@ test(
   'should throw an exception when attempting to divide by zero',
   testThrows,
   'calc(500px/0)',
+  'calc(500px/0)',
   'Cannot divide by zero'
 );
 
 test(
   'should throw an exception when attempting to divide by unit (#1)',
   testThrows,
+  'calc(500px/2px)',
   'calc(500px/2px)',
   'Cannot divide by "px", number expected',
 );
@@ -1169,4 +1172,12 @@ test(
   testValue,
   'calc(1px + 2unknown)',
   'calc(1px + 2unknown)'
+);
+
+test(
+  'error with parsing',
+  testThrows,
+  'calc(10pc + unknown)',
+  'calc(10pc + unknown)',
+  'Lexical error on line 1: Unrecognized text.\n\n  Erroneous area:\n1: 10pc + unknown\n^.........^'
 );
