@@ -15,7 +15,7 @@
     "LICENSE"
   ],
   "scripts": {
-    "prepublish": "npm run build",
+    "prepare": "npm run build",
     "build": "rimraf dist && cross-env BABEL_ENV=publish babel src --out-dir dist --ignore src/__tests__/**/*.js && jison src/parser.jison -o dist/parser.js",
     "lint": "eslint src",
     "pretest": "npm run build",
