@@ -15,10 +15,10 @@
     "LICENSE"
   ],
   "scripts": {
-    "prepare": "npm run build",
+    "prepare": "pnpm run build",
     "build": "rimraf dist && babel src --out-dir dist --ignore src/__tests__/**/*.js && jison src/parser.jison -o dist/parser.js",
     "lint": "eslint src",
-    "pretest": "npm run build",
+    "pretest": "pnpm run build",
     "test": "ava"
   },
   "author": "Andy Jansson",
