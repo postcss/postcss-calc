@@ -16,7 +16,7 @@
   ],
   "scripts": {
     "prepare": "npm run build",
-    "build": "rimraf dist && cross-env BABEL_ENV=publish babel src --out-dir dist --ignore src/__tests__/**/*.js && jison src/parser.jison -o dist/parser.js",
+    "build": "rimraf dist && babel src --out-dir dist --ignore src/__tests__/**/*.js && jison src/parser.jison -o dist/parser.js",
     "lint": "eslint src",
     "pretest": "npm run build",
     "test": "ava"
@@ -40,7 +40,6 @@
     "@babel/preset-env": "^7.16.5",
     "ava": "^3.15.0",
     "babel-plugin-add-module-exports": "^1.0.0",
-    "cross-env": "^7.0.0",
     "eslint": "^8.5.0",
     "eslint-plugin-import": "^2.25.3",
     "jison-gho": "^0.6.1-216",
