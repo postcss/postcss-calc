@@ -1,6 +1,6 @@
 import test from 'ava';
 
-import convertUnit from '../lib/convertUnit'
+import convertUnit from '../../dist/lib/convertUnit'
 
 test("valid conversions", (t) => {
   const conversions = [
