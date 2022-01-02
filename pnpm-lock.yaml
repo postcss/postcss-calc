@@ -13,6 +13,7 @@ specifiers:
   postcss-selector-parser: ^6.0.2
   postcss-value-parser: ^4.0.2
   rimraf: ^3.0.2
+  typescript: ^4.5.4
   uvu: ^0.5.2
 
 dependencies:
@@ -30,6 +31,7 @@ devDependencies:
   jison-gho: 0.6.1-216
   postcss: 8.4.5
   rimraf: 3.0.2
+  typescript: 4.5.4
   uvu: 0.5.2
 
 packages:
@@ -2014,6 +2016,12 @@ packages:
   /type-fest/0.20.2:
     resolution: {integrity: sha512-Ne+eE4r0/iWnpAxD852z3A+N0Bt5RN//NjJwRd2VFHEmrywxf5vsZlh4R6lixl6B+wz/8d+maTSAkN1FIkI3LQ==}
     engines: {node: '>=10'}
+    dev: true
+
+  /typescript/4.5.4:
+    resolution: {integrity: sha512-VgYs2A2QIRuGphtzFV7aQJduJ2gyfTljngLzjpfW9FoYZF6xuw1W0vW9ghCKLfcWrCFxK81CSGRAvS1pn4fIUg==}
+    engines: {node: '>=4.2.0'}
+    hasBin: true
     dev: true
 
   /unbox-primitive/1.0.1:

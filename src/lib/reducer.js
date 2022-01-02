@@ -1,7 +1,11 @@
 import convertUnit from "./convertUnit";
 
-function isValueType(type) {
-  switch (type) {
+/**
+ * @param {import('../parser').CalcNode} node
+ * @return {node is import('../parser').ValueExpression}
+ */
+function isValueType(node) {
+  switch (node.type) {
     case 'LengthValue':
     case 'AngleValue':
     case 'TimeValue':
@@ -22,22 +26,38 @@ function isValueType(type) {
   return false;
 }
 
+/** @param {'-'|'+'} operator */
 function flip(operator) {
   return operator === '+' ? '-' : '+';
 }
 
+/**
+ * @param {string} operator
+ * @returns {operator is '+'|'-'}
+ */
 function isAddSubOperator(operator) {
   return operator === '+' || operator === '-';
 }
 
+/**
+ * @typedef {{preOperator: '+'|'-', node: import('../parser').CalcNode}} Collectible
+*/
+
+/**
+ * @param {'+'|'-'} preOperator
+ * @param {import('../parser').CalcNode} node
+ * @param {Collectible[]} collected 
+ * @param {number} precision
+ */
 function collectAddSubItems(preOperator, node, collected, precision) {
   if (!isAddSubOperator(preOperator)) { throw new Error(`invalid operator ${preOperator}`); }
-  const type = node.type;
-  if (isValueType(type)) {
-    const itemIndex = collected.findIndex(x => x.node.type === type);
+  if (isValueType(node)) {
+    const itemIndex = collected.findIndex(x => x.node.type === node.type);
     if (itemIndex >= 0) {
       if (node.value === 0) { return; }
-      const {left: reducedNode, right: current} = convertNodesUnits(collected[itemIndex].node, node, precision)
+      // can cast because of the criterion used to find itemIndex
+      const otherValueNode = /** @type import('../parser').ValueExpression*/(collected[itemIndex].node);
+      const {left: reducedNode, right: current} = convertNodesUnits(otherValueNode, node, precision)
 
       if (collected[itemIndex].preOperator === '-') {
         collected[itemIndex].preOperator = '+';
@@ -64,7 +84,7 @@ function collectAddSubItems(preOperator, node, collected, precision) {
         collected.push({node, preOperator: flip(preOperator)});
       }
     }
-  } else if (type === "MathExpression") {
+  } else if (node.type === "MathExpression") {
     if (isAddSubOperator(node.operator)) {
       collectAddSubItems(preOperator, node.left, collected, precision);
       const collectRightOperator = preOperator === '-' ? flip(node.operator) : node.operator;
@@ -85,27 +105,31 @@ function collectAddSubItems(preOperator, node, collected, precision) {
   }
 }
 
-
+/**
+ * @param {import('../parser').CalcNode} node
+ * @param {number} precision
+ */
 function reduceAddSubExpression(node, precision) {
+  /** @type Collectible[] */
   const collected = [];
   collectAddSubItems('+', node, collected, precision);
 
-  const withoutZeroItem = collected.filter((item) => !(isValueType(item.node.type) && item.node.value === 0));
+  const withoutZeroItem = collected.filter((item) => !(isValueType(item.node) && item.node.value === 0));
   const firstNonZeroItem = withoutZeroItem[0]; // could be undefined
 
   // prevent producing "calc(-var(--a))" or "calc()"
   // which is invalid css
   if (!firstNonZeroItem ||
     firstNonZeroItem.preOperator === '-' &&
-    !isValueType(firstNonZeroItem.node.type)) {
+    !isValueType(firstNonZeroItem.node)) {
       const firstZeroItem = collected.find((item) =>
-        isValueType(item.node.type) && item.node.value === 0);
-      withoutZeroItem.unshift(firstZeroItem)
+        isValueType(item.node) && item.node.value === 0);
+      withoutZeroItem.unshift(/** @type Collectible*/(firstZeroItem))
   }
 
   // make sure the preOperator of the first item is +
   if (withoutZeroItem[0].preOperator === '-' &&
-    isValueType(withoutZeroItem[0].node.type)) {
+    isValueType(withoutZeroItem[0].node)) {
       withoutZeroItem[0].node.value *= -1;
       withoutZeroItem[0].preOperator = '+';
   }
@@ -122,9 +146,11 @@ function reduceAddSubExpression(node, precision) {
 
   return root;
 }
-
+/**
+ * @param {import('../parser').MathExpression} node
+ */
 function reduceDivisionExpression(node) {
-  if (!isValueType(node.right.type)) {
+  if (!isValueType(node.right)) {
     return node;
   }
 
@@ -135,12 +161,18 @@ function reduceDivisionExpression(node) {
   return applyNumberDivision(node.left, node.right.value)
 }
 
-// apply (expr) / number
+/**
+ * apply (expr) / number
+ *
+ * @param {import('../parser').CalcNode} node
+ * @param {number} divisor
+ * @return {import('../parser').CalcNode}
+*/
 function applyNumberDivision(node, divisor) {
   if (divisor === 0) {
     throw new Error('Cannot divide by zero');
   }
-  if (isValueType(node.type)) {
+  if (isValueType(node)) {
     node.value /= divisor;
     return node;
   }
@@ -169,7 +201,9 @@ function applyNumberDivision(node, divisor) {
     }
   }
 }
-
+/**
+ * @param {import('../parser').MathExpression} node
+ */
 function reduceMultiplicationExpression(node) {
   // (expr) * number
   if (node.right.type === 'Number') {
@@ -182,9 +216,14 @@ function reduceMultiplicationExpression(node) {
   return node;
 }
 
-// apply (expr) / number
+/**
+ * apply (expr) * number
+ * @param {number} multiplier
+ * @param {import('../parser').CalcNode} node
+ * @return {import('../parser').CalcNode}
+ */
 function applyNumberMultiplication(node, multiplier) {
-  if (isValueType(node.type)) {
+  if (isValueType(node)) {
     node.value *= multiplier;
     return node;
   }
@@ -214,6 +253,11 @@ function applyNumberMultiplication(node, multiplier) {
   }
 }
 
+/**
+ * @param {import('../parser').ValueExpression} left
+ * @param {import('../parser').ValueExpression} right
+ * @param {number} precision
+ */
 function convertNodesUnits(left, right, precision) {
   switch (left.type) {
     case 'LengthValue':
@@ -237,6 +281,10 @@ function convertNodesUnits(left, right, precision) {
   }
 }
 
+/**
+ * @param {import('../parser').CalcNode} node
+ * @param {number} precision
+ */
 function reduce(node, precision) {
   if (node.type === "MathExpression") {
     if (isAddSubOperator(node.operator)) {
@@ -247,9 +295,9 @@ function reduce(node, precision) {
     node.right = reduce(node.right, precision);
     switch (node.operator) {
       case "/":
-        return reduceDivisionExpression(node, precision);
+        return reduceDivisionExpression(node);
       case "*":
-        return reduceMultiplicationExpression(node, precision);
+        return reduceMultiplicationExpression(node);
     }
 
     return node;
