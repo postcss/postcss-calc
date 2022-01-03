@@ -1,8 +1,9 @@
-import test from 'ava';
+import { test } from 'uvu';
+import * as assert from 'uvu/assert';
 
 import convertUnit from '../../dist/lib/convertUnit'
 
-test("valid conversions", (t) => {
+test("valid conversions", () => {
   const conversions = [
     // source value, source unit, expected value, target unit
     [ 10, 'px', 10, 'px'],
@@ -94,11 +95,11 @@ test("valid conversions", (t) => {
     const expected = e[2];
     const targetUnit = e[3];
 
-    t.is(convertUnit(value, unit, targetUnit), expected, unit + ' -> ' + targetUnit);
+    assert.is(convertUnit(value, unit, targetUnit), expected, unit + ' -> ' + targetUnit);
   });
 });
 
-test("invalid conversions", (t) => {
+test("invalid conversions", () => {
   const invalid_units = {
     'px': ['deg', 'grad', 'rad', 'turn', 's', 'ms', 'Hz', 'kHz', 'dpi', 'dpcm', 'dppx'],
     'cm': ['deg', 'grad', 'rad', 'turn', 's', 'ms', 'Hz', 'kHz', 'dpi', 'dpcm', 'dppx'],
@@ -130,12 +131,12 @@ test("invalid conversions", (t) => {
         failed = true;
       }
 
-      t.true(failed, unit + ' -> ' + targetUnit);
+      assert.ok(failed, unit + ' -> ' + targetUnit);
     });
   }
 });
 
-test("precision", (t) => {
+test("precision", () => {
   const precision = 10;
   const conversions = [
     // source value, source unit, expected value, target unit
@@ -151,13 +152,15 @@ test("precision", (t) => {
     const expected = e[2];
     const targetUnit = e[3];
 
-    t.is(convertUnit(value, unit, targetUnit, precision), expected, unit + ' -> ' + targetUnit);
+    assert.is(convertUnit(value, unit, targetUnit, precision), expected, unit + ' -> ' + targetUnit);
   });
 });
 
-test("falsey precision", (t) => {
-  t.is(
+test("falsey precision", () => {
+  assert.is(
     convertUnit(10, 'px', 'cm', false),
     0.26458333333333334
   );
 });
+
+test.run();
