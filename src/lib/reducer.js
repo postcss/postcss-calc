@@ -37,7 +37,7 @@ function collectAddSubItems(preOperator, node, collected, precision) {
     const itemIndex = collected.findIndex(x => x.node.type === type);
     if (itemIndex >= 0) {
       if (node.value === 0) { return; }
-      const {left: reducedNode, right: current} = covertNodesUnits(collected[itemIndex].node, node, precision)
+      const {left: reducedNode, right: current} = convertNodesUnits(collected[itemIndex].node, node, precision)
 
       if (collected[itemIndex].preOperator === '-') {
         collected[itemIndex].preOperator = '+';
@@ -214,7 +214,7 @@ function applyNumberMultiplication(node, multiplier) {
   }
 }
 
-function covertNodesUnits(left, right, precision) {
+function convertNodesUnits(left, right, precision) {
   switch (left.type) {
     case 'LengthValue':
     case 'AngleValue':
