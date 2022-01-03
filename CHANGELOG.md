@@ -1,3 +1,9 @@
+# [8.1.0](https://github.com/postcss/postcss-calc/compare/v8.0.0...v8.1.0) (2022-01-03)
+
+## Features
+
+- avoid fatal error ([#137](https://github.com/postcss/postcss-calc/issues/137)) ([125be6a](https://github.com/postcss/postcss-calc/commit/125be6ad1b1899ecd72d9a70dfe1b0690d4214b2))
+
 # 8.0.0
 
 - Breaking: Updated PostCSS from v7.x to v8.x ([#125](https://github.com/postcss/postcss-calc/pull/125))
