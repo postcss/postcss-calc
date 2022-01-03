@@ -19,7 +19,7 @@
     "build": "rimraf dist && babel src --out-dir dist --ignore src/__tests__/**/*.js && jison src/parser.jison -o dist/parser.js",
     "lint": "eslint src",
     "pretest": "pnpm run build",
-    "test": "ava"
+    "test": "uvu -r @babel/register src/__tests__"
   },
   "author": "Andy Jansson",
   "license": "MIT",
@@ -34,17 +34,17 @@
     }
   },
   "devDependencies": {
-    "@ava/babel": "^2.0.0",
     "@babel/cli": "^7.16.0",
     "@babel/core": "^7.16.5",
     "@babel/plugin-transform-modules-commonjs": "^7.16.5",
-    "ava": "^3.15.0",
+    "@babel/register": "^7.16.7",
     "babel-plugin-add-module-exports": "^1.0.0",
     "eslint": "^8.5.0",
     "eslint-plugin-import": "^2.25.3",
     "jison-gho": "^0.6.1-216",
     "postcss": "^8.2.2",
-    "rimraf": "^3.0.2"
+    "rimraf": "^3.0.2",
+    "uvu": "^0.5.2"
   },
   "dependencies": {
     "postcss-selector-parser": "^6.0.2",
@@ -52,8 +52,5 @@
   },
   "peerDependencies": {
     "postcss": "^8.2.2"
-  },
-  "ava": {
-    "babel": true
   }
 }
