@@ -1,11 +1,13 @@
 import transform from './lib/transform';
 
 /**
- * @param {{precision?: number | false, 
+ * @typedef {{precision?: number | false,
  *          preserve?: boolean, 
  *          warnWhenCannotResolve?: boolean, 
  *          mediaQueries?: boolean, 
- *          selectors?: boolean}} opts
+ *          selectors?: boolean}} PostCssCalcOptions
+ *
+ * @param {PostCssCalcOptions} opts
  */
 function pluginCreator(opts) {
   const options = Object.assign({

@@ -1,18 +1,21 @@
 export default pluginCreator;
-/**
- * @param {{precision?: number | false,
- *          preserve?: boolean,
- *          warnWhenCannotResolve?: boolean,
- *          mediaQueries?: boolean,
- *          selectors?: boolean}} opts
- */
-declare function pluginCreator(opts: {
+export type PostCssCalcOptions = {
     precision?: number | false;
     preserve?: boolean;
     warnWhenCannotResolve?: boolean;
     mediaQueries?: boolean;
     selectors?: boolean;
-}): {
+};
+/**
+ * @typedef {{precision?: number | false,
+ *          preserve?: boolean,
+ *          warnWhenCannotResolve?: boolean,
+ *          mediaQueries?: boolean,
+ *          selectors?: boolean}} PostCssCalcOptions
+ *
+ * @param {PostCssCalcOptions} opts
+ */
+declare function pluginCreator(opts: PostCssCalcOptions): {
     postcssPlugin: string;
     /**
      * @param {import('postcss').Root} css
