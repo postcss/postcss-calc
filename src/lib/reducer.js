@@ -124,7 +124,9 @@ function reduceAddSubExpression(node, precision) {
     !isValueType(firstNonZeroItem.node)) {
       const firstZeroItem = collected.find((item) =>
         isValueType(item.node) && item.node.value === 0);
-      withoutZeroItem.unshift(/** @type Collectible*/(firstZeroItem))
+      if (firstZeroItem) {
+        withoutZeroItem.unshift(firstZeroItem)
+      }
   }
 
   // make sure the preOperator of the first item is +
