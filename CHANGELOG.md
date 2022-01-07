@@ -1,3 +1,9 @@
+# [8.2.0](https://github.com/postcss/postcss-calc/compare/v8.1.0...v8.2.0) (2022-01-07)
+
+## Features
+
+* add types ([#155](https://github.com/postcss/postcss-calc/issues/155)) ([4c96c79](https://github.com/postcss/postcss-calc/commit/4c96c793fbc7807bb138d05b92a93bd29a2e94ac))
+
 # [8.1.0](https://github.com/postcss/postcss-calc/compare/v8.0.0...v8.1.0) (2022-01-03)
 
 ## Features
