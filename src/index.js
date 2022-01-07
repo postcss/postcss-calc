@@ -1,5 +1,14 @@
 import transform from './lib/transform';
 
+/**
+ * @typedef {{precision?: number | false,
+ *          preserve?: boolean, 
+ *          warnWhenCannotResolve?: boolean, 
+ *          mediaQueries?: boolean, 
+ *          selectors?: boolean}} PostCssCalcOptions
+ *
+ * @param {PostCssCalcOptions} opts
+ */
 function pluginCreator(opts) {
   const options = Object.assign({
     precision: 5,
@@ -11,10 +20,13 @@ function pluginCreator(opts) {
 
   return {
     postcssPlugin: 'postcss-calc',
+    /**
+     * @param {import('postcss').Root} css
+     * @param {{result: import('postcss').Result}} helpers
+     */ 
     OnceExit(css, { result }) {
       css.walk(node => {
         const { type } = node;
-
         if (type === 'decl') {
           transform(node, "value", options, result);
         }

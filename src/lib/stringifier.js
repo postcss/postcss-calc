@@ -5,6 +5,10 @@ const order = {
   "-": 1,
 };
 
+/**
+ * @param {number} value
+ * @param {number | false} prec
+ */
 function round(value, prec) {
   if (prec !== false) {
     const precision = Math.pow(10, prec);
@@ -13,12 +17,15 @@ function round(value, prec) {
   return value;
 }
 
+/**
+ * @param {number | false} prec
+ * @param {import('../parser').CalcNode} node
+ */
 function stringify(node, prec) {
   switch (node.type) {
     case "MathExpression": {
       const {left, right, operator: op} = node;
       let str = "";
-
       if (left.type === 'MathExpression' && order[op] < order[left.operator]) {
         str += `(${stringify(left, prec)})`;
       } else {
@@ -36,14 +43,24 @@ function stringify(node, prec) {
       return str;
     }
     case 'Number':
-      return round(node.value, prec);
+      return round(node.value, prec).toString();
     case 'Function':
-      return node.value;
+      return node.value.toString();
     default:
       return round(node.value, prec) + node.unit;
   }
 }
 
+/**
+ * @param {string} calc
+ * @param {import('../parser').CalcNode} node
+ * @param {string} originalValue
+ * @param {{precision: number | false, warnWhenCannotResolve: boolean}} options
+ * @param {import("postcss").Result} result
+ * @param {import("postcss").ChildNode} item
+ *
+ * @returns {string}
+ */
 export default function (
     calc,
     node,

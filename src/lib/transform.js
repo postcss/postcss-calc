@@ -9,12 +9,18 @@ import stringifier from "./stringifier";
 
 const MATCH_CALC = /((?:-(moz|webkit)-)?calc)/i;
 
+/**
+ * @param {string} value
+ * @param {{precision: number, warnWhenCannotResolve: boolean}} options
+ * @param {import("postcss").Result} result
+ * @param {import("postcss").ChildNode} item
+ */
 function transformValue(value, options, result, item) {
   return valueParser(value)
     .walk(node => {
       // skip anything which isn't a calc() function
       if (node.type !== "function" || !MATCH_CALC.test(node.value)) {
-        return node;
+        return;
       }
 
       // stringify calc expression and produce an AST
@@ -26,7 +32,7 @@ function transformValue(value, options, result, item) {
       const reducedAst = reducer(ast, options.precision);
 
       // stringify AST and write it back
-      node.type = "word";
+      (/** @type {valueParser.Node} */(node)).type = "word";
       node.value = stringifier(
         node.value,
         reducedAst,
@@ -40,7 +46,12 @@ function transformValue(value, options, result, item) {
     })
     .toString();
 }
-
+/**
+ * @param {import("postcss-selector-parser").Selectors} value
+ * @param {{precision: number, warnWhenCannotResolve: boolean}} options
+ * @param {import("postcss").Result} result
+ * @param {import("postcss").ChildNode} item
+ */
 function transformSelector(value, options, result, item) {
   return selectorParser(selectors => {
     selectors.walk(node => {
@@ -61,6 +72,13 @@ function transformSelector(value, options, result, item) {
   }).processSync(value);
 }
 
+
+/** 
+ * @param {any} node
+ * @param {{precision: number, preserve: boolean, warnWhenCannotResolve: boolean}} options
+ * @param {'value'|'params'|'selector'} property
+ * @param {import("postcss").Result} result
+ */
 export default (node, property, options, result) => {
   let value = node[property];
 
@@ -70,8 +88,11 @@ export default (node, property, options, result) => {
         ? transformSelector(node[property], options, result, node)
         : transformValue(node[property], options, result, node);
   } catch (error) {
-    result.warn(error.message, { node });
-
+    if (error instanceof Error) {
+      result.warn(error.message, { node });
+    } else {
+      result.warn('Error', { node });
+    }
     return;
   }
 

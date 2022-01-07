@@ -1,3 +1,6 @@
+/**
+ * @type {{[key:string]: {[key:string]: number}}}
+ */
 const conversions = {
   // Absolute length units
   'px': {
@@ -123,7 +126,12 @@ const conversions = {
     'dppx': 1
   }
 };
-
+/**
+ * @param {number} value
+ * @param {string} sourceUnit
+ * @param {string} targetUnit
+ * @param {number|false} precision 
+ */
 function convertUnit(value, sourceUnit, targetUnit, precision) {
   const sourceUnitNormalized = sourceUnit.toLowerCase();
   const targetUnitNormalized = targetUnit.toLowerCase();
@@ -139,7 +147,7 @@ function convertUnit(value, sourceUnit, targetUnit, precision) {
   const converted = conversions[targetUnitNormalized][sourceUnitNormalized] * value;
 
   if (precision !== false) {
-    precision = Math.pow(10, parseInt(precision) || 5);
+    precision = Math.pow(10, Math.ceil(precision) || 5);
 
     return Math.round(converted * precision) / precision;
   }
