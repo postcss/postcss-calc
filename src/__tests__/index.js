@@ -4,1024 +4,867 @@ import postcss from 'postcss';
 
 import reduceCalc from '../../dist';
 
-const postcssOpts =  { from: undefined };
+const postcssOpts = { from: undefined };
 
-function testValue(name, fixture, expected, opts = {}) {
-  fixture = `foo{bar:${fixture}}`;
-  expected = `foo{bar:${expected}}`;
-  
-  test(name, async () => {
-    const result = await postcss(reduceCalc(opts)).process(fixture, postcssOpts);
-    assert.equal(result.css, expected);
-  });
-}
-
-function testCss(name, fixture, expected, opts = {}) {
-  test(name, async () => {
-    const result = await postcss(reduceCalc(opts)).process(fixture, postcssOpts);
-    assert.equal(result.css, expected);
-  });
-}
-
-function testThrows(name, fixture, expected, warning, opts = {}) {
+function testValue(fixture, expected, opts = {}) {
   fixture = `foo{bar:${fixture}}`;
   expected = `foo{bar:${expected}}`;
 
-  test(name, async () => {
-    const result = await postcss(reduceCalc(opts)).process(fixture, postcssOpts);
+  return async () => {
+    const result = await postcss(reduceCalc(opts)).process(
+      fixture,
+      postcssOpts
+    );
+    assert.is(result.css, expected);
+  };
+}
+
+function testCss(fixture, expected, opts = {}) {
+  return async () => {
+    const result = await postcss(reduceCalc(opts)).process(
+      fixture,
+      postcssOpts
+    );
+    assert.is(result.css, expected);
+  };
+}
+
+function testThrows(fixture, expected, warning, opts = {}) {
+  fixture = `foo{bar:${fixture}}`;
+  expected = `foo{bar:${expected}}`;
+
+  return async () => {
+    const result = await postcss(reduceCalc(opts)).process(
+      fixture,
+      postcssOpts
+    );
     const warnings = result.warnings();
-    assert.equal(result.css, expected)
+    assert.is(result.css, expected);
     assert.is(warnings[0].text, warning);
-  });
+  };
 }
 
+test('should reduce simple calc (1)', testValue('calc(1px + 1px)', '2px'));
 
-testValue(
-  'should reduce simple calc (1)',
-  'calc(1px + 1px)',
-  '2px',
-);
-
-testValue(
+test(
   'should reduce simple calc (2)',
-  'calc(1px + 1px);baz:calc(2px+3px)',
-  '2px;baz:5px',
+  testValue('calc(1px + 1px);baz:calc(2px+3px)', '2px;baz:5px')
 );
 
-testValue(
-  'should reduce simple calc (3)',
-  'calc(1rem * 1.5)',
-  '1.5rem',
-);
+test('should reduce simple calc (3)', testValue('calc(1rem * 1.5)', '1.5rem'));
 
-testValue(
-  'should reduce simple calc (4)',
-  'calc(3em - 1em)',
-  '2em',
-);
+test('should reduce simple calc (4)', testValue('calc(3em - 1em)', '2em'));
 
-testValue(
-  'should reduce simple calc (5',
-  'calc(2ex / 2)',
-  '1ex',
-);
+test('should reduce simple calc (5', testValue('calc(2ex / 2)', '1ex'));
 
-testValue(
+test(
   'should reduce simple calc (6)',
-  'calc(50px - (20px - 30px))',
-  '60px',
+  testValue('calc(50px - (20px - 30px))', '60px')
 );
 
-testValue(
+test(
   'should reduce simple calc (7)',
-  'calc(100px - (100px - 100%))',
-  '100%',
+  testValue('calc(100px - (100px - 100%))', '100%')
 );
 
-testValue(
+test(
   'should reduce simple calc (8)',
-  'calc(100px + (100px - 100%))',
-  'calc(200px - 100%)',
+  testValue('calc(100px + (100px - 100%))', 'calc(200px - 100%)')
 );
 
-testValue(
+test(
   'should reduce additions and subtractions (1)',
-  'calc(100% - 10px + 20px)',
-  'calc(100% + 10px)',
+  testValue('calc(100% - 10px + 20px)', 'calc(100% + 10px)')
 );
 
-testValue(
+test(
   'should reduce additions and subtractions (2)',
-  'calc(100% + 10px - 20px)',
-  'calc(100% - 10px)',
+  testValue('calc(100% + 10px - 20px)', 'calc(100% - 10px)')
 );
 
-testValue(
+test(
   'should reduce additions and subtractions (3)',
-  'calc(1px - (2em + 3%))',
-  'calc(1px - 2em - 3%)',
+  testValue('calc(1px - (2em + 3%))', 'calc(1px - 2em - 3%)')
 );
 
-testValue(
+test(
   'should reduce additions and subtractions (4)',
-  'calc((100vw - 50em) / 2)',
-  'calc(50vw - 25em)',
+  testValue('calc((100vw - 50em) / 2)', 'calc(50vw - 25em)')
 );
 
-testValue(
+test(
   'should reduce additions and subtractions (5)',
-  'calc(10px - (100vw - 50em) / 2)',
-  'calc(10px - 50vw + 25em)',
+  testValue('calc(10px - (100vw - 50em) / 2)', 'calc(10px - 50vw + 25em)')
 );
 
-testValue(
+test(
   'should reduce additions and subtractions (6)',
-  'calc(1px - (2em + 4vh + 3%))',
-  'calc(1px - 2em - 4vh - 3%)',
+  testValue('calc(1px - (2em + 4vh + 3%))', 'calc(1px - 2em - 4vh - 3%)')
 );
 
-testValue(
+test(
   'should reduce additions and subtractions (7)',
-  'calc(0px - (24px - (var(--a) - var(--b)) / 2 + var(--c)))',
-  'calc(-24px + var(--a)/2 - var(--b)/2 - var(--c))',
+  testValue(
+    'calc(0px - (24px - (var(--a) - var(--b)) / 2 + var(--c)))',
+    'calc(-24px + var(--a)/2 - var(--b)/2 - var(--c))'
+  )
 );
 
-testValue(
+test(
   'should reduce additions and subtractions (8)',
-  'calc(1px + (2em + (3vh + 4px)))',
-  'calc(5px + 2em + 3vh)',
+  testValue('calc(1px + (2em + (3vh + 4px)))', 'calc(5px + 2em + 3vh)')
 );
 
-testValue(
+test(
   'should reduce additions and subtractions (9)',
-  'calc(1px - (2em + 4px - 6vh) / 2)',
-  'calc(-1px - 1em + 3vh)',
+  testValue('calc(1px - (2em + 4px - 6vh) / 2)', 'calc(-1px - 1em + 3vh)')
 );
 
-testValue(
+test(
   'should reduce multiplication',
-  'calc(((var(--a) + 4px) * 2) * 2)',
-  'calc(var(--a)*2*2 + 16px)',
+  testValue('calc(((var(--a) + 4px) * 2) * 2)', 'calc(var(--a)*2*2 + 16px)')
 );
 
-testValue(
+test(
   'should reduce multiplication before reducing additions',
-  'calc(((var(--a) + 4px) * 2) * 2 + 4px)',
-  'calc(var(--a)*2*2 + 20px)',
+  testValue(
+    'calc(((var(--a) + 4px) * 2) * 2 + 4px)',
+    'calc(var(--a)*2*2 + 20px)'
+  )
 );
 
-testValue(
+test(
   'should reduce division',
-  'calc(((var(--a) + 4px) / 2) / 2)',
-  'calc(var(--a)/2/2 + 1px)',
+  testValue('calc(((var(--a) + 4px) / 2) / 2)', 'calc(var(--a)/2/2 + 1px)')
 );
 
-testValue(
+test(
   'should reduce division before reducing additions',
-  'calc(((var(--a) + 4px) / 2) / 2 + 4px)',
-  'calc(var(--a)/2/2 + 5px)',
+  testValue(
+    'calc(((var(--a) + 4px) / 2) / 2 + 4px)',
+    'calc(var(--a)/2/2 + 5px)'
+  )
 );
 
-testValue(
+test(
   'should ignore value surrounding calc function (1)',
-  'a calc(1px + 1px)',
-  'a 2px',
+  testValue('a calc(1px + 1px)', 'a 2px')
 );
 
-
-testValue(
+test(
   'should ignore value surrounding calc function (2)',
-  'calc(1px + 1px) a',
-  '2px a',
+  testValue('calc(1px + 1px) a', '2px a')
 );
 
-testValue(
+test(
   'should ignore value surrounding calc function (3)',
-  'a calc(1px + 1px) b',
-  'a 2px b',
+  testValue('a calc(1px + 1px) b', 'a 2px b')
 );
 
-testValue(
+test(
   'should ignore value surrounding calc function (4)',
-  'a calc(1px + 1px) b calc(1em + 2em) c',
-  'a 2px b 3em c',
+  testValue('a calc(1px + 1px) b calc(1em + 2em) c', 'a 2px b 3em c')
 );
 
-testValue(
+test(
   'should reduce nested calc',
-  'calc(100% - calc(50% + 25px))',
-  'calc(50% - 25px)',
+  testValue('calc(100% - calc(50% + 25px))', 'calc(50% - 25px)')
 );
 
-testValue(
+test(
   'should reduce vendor-prefixed nested calc',
-  '-webkit-calc(100% - -webkit-calc(50% + 25px))',
-  '-webkit-calc(50% - 25px)',
+  testValue(
+    '-webkit-calc(100% - -webkit-calc(50% + 25px))',
+    '-webkit-calc(50% - 25px)'
+  )
 );
 
-testValue(
-  'should reduce uppercase calc (1)',
-  'CALC(1px + 1px)',
-  '2px',
-);
+test('should reduce uppercase calc (1)', testValue('CALC(1px + 1px)', '2px'));
 
-testValue(
+test(
   'should reduce uppercase calc (2)',
-  'CALC(1px + CALC(2px / 2))',
-  '2px',
+  testValue('CALC(1px + CALC(2px / 2))', '2px')
 );
 
-testValue(
+test(
   'should reduce uppercase calc (3)',
-  '-WEBKIT-CALC(1px + 1px)',
-  '2px',
+  testValue('-WEBKIT-CALC(1px + 1px)', '2px')
 );
 
-testValue(
+test(
   'should reduce uppercase calc (4)',
-  '-WEBKIT-CALC(1px + -WEBKIT-CALC(2px / 2))',
-  '2px',
+  testValue('-WEBKIT-CALC(1px + -WEBKIT-CALC(2px / 2))', '2px')
 );
 
-testValue(
+test(
   'should ignore calc with css variables (1)',
-  'calc(var(--mouseX) * 1px)',
-  'calc(var(--mouseX)*1px)',
+  testValue('calc(var(--mouseX) * 1px)', 'calc(var(--mouseX)*1px)')
 );
 
-testValue(
+test(
   'should ignore calc with css variables (2)',
-  'calc(10px - (100px * var(--mouseX)))',
-  'calc(10px - 100px*var(--mouseX))',
+  testValue(
+    'calc(10px - (100px * var(--mouseX)))',
+    'calc(10px - 100px*var(--mouseX))'
+  )
 );
 
-testValue(
+test(
   'should ignore calc with css variables (3)',
-  'calc(10px - (100px + var(--mouseX)))',
-  'calc(-90px - var(--mouseX))',
+  testValue(
+    'calc(10px - (100px + var(--mouseX)))',
+    'calc(-90px - var(--mouseX))'
+  )
 );
 
-testValue(
+test(
   'should ignore calc with css variables (4)',
-  'calc(10px - (100px / var(--mouseX)))',
-  'calc(10px - 100px/var(--mouseX))',
+  testValue(
+    'calc(10px - (100px / var(--mouseX)))',
+    'calc(10px - 100px/var(--mouseX))'
+  )
 );
 
-testValue(
+test(
   'should ignore calc with css variables (5)',
-  'calc(10px - (100px - var(--mouseX)))',
-  'calc(-90px + var(--mouseX))',
+  testValue(
+    'calc(10px - (100px - var(--mouseX)))',
+    'calc(-90px + var(--mouseX))'
+  )
 );
 
-testValue(
+test(
   'should ignore calc with css variables (6)',
-  'calc(var(--popupHeight) / 2)',
-  'calc(var(--popupHeight)/2)',
+  testValue('calc(var(--popupHeight) / 2)', 'calc(var(--popupHeight)/2)')
 );
 
-testValue(
+test(
   'should ignore calc with css variables (7)',
-  'calc(var(--popupHeight) / 2 + var(--popupWidth) / 2)',
-  'calc(var(--popupHeight)/2 + var(--popupWidth)/2)',
+  testValue(
+    'calc(var(--popupHeight) / 2 + var(--popupWidth) / 2)',
+    'calc(var(--popupHeight)/2 + var(--popupWidth)/2)'
+  )
 );
 
-
-testValue(
+test(
   'should reduce calc with newline characters',
-  'calc(\n1rem \n* 2 \n* 1.5)',
-  '3rem',
+  testValue('calc(\n1rem \n* 2 \n* 1.5)', '3rem')
 );
 
-testValue(
+test(
   'should preserve calc with incompatible units',
-  'calc(100% + 1px)',
-  'calc(100% + 1px)',
+  testValue('calc(100% + 1px)', 'calc(100% + 1px)')
 );
 
-testValue(
+test(
   'should parse fractions without leading zero',
-  'calc(2rem - .14285em)',
-  'calc(2rem - 0.14285em)',
+  testValue('calc(2rem - .14285em)', 'calc(2rem - 0.14285em)')
 );
 
-testValue(
-  'should handle precision correctly (1)',
-  'calc(1/100)',
-  '0.01',
-);
+test('should handle precision correctly (1)', testValue('calc(1/100)', '0.01'));
 
-testValue(
+test(
   'should handle precision correctly (2)',
-  'calc(5/1000000)',
-  '0.00001',
+  testValue('calc(5/1000000)', '0.00001')
 );
 
-testValue(
+test(
   'should handle precision correctly (3)',
-  'calc(5/1000000)',
-  '0.000005',
-  { precision: 6 }
+  testValue('calc(5/1000000)', '0.000005', { precision: 6 })
 );
 
-testValue(
+test(
   'should reduce browser-prefixed calc (1)',
-  '-webkit-calc(1px + 1px)',
-  '2px',
+  testValue('-webkit-calc(1px + 1px)', '2px')
 );
 
-testValue(
+test(
   'should reduce browser-prefixed calc (2)',
-  '-moz-calc(1px + 1px)',
-  '2px',
+  testValue('-moz-calc(1px + 1px)', '2px')
 );
 
-testValue(
+test(
   'should discard zero values (#2) (1)',
-  'calc(100vw / 2 - 6px + 0px)',
-  'calc(50vw - 6px)',
+  testValue('calc(100vw / 2 - 6px + 0px)', 'calc(50vw - 6px)')
 );
 
-testValue(
+test(
   'should discard zero values (#2) (2)',
-  'calc(500px - 0px)',
-  '500px',
+  testValue('calc(500px - 0px)', '500px')
 );
 
-
-testValue(
+test(
   'should not perform addition on unitless values (#3)',
-  'calc(1px + 1)',
-  'calc(1px + 1)',
+  testValue('calc(1px + 1)', 'calc(1px + 1)')
 );
 
-testValue(
+test(
   'should reduce consecutive substractions (#24) (1)',
-  'calc(100% - 120px - 60px)',
-  'calc(100% - 180px)',
+  testValue('calc(100% - 120px - 60px)', 'calc(100% - 180px)')
 );
 
-testValue(
+test(
   'should reduce consecutive substractions (#24) (2)',
-  'calc(100% - 10px - 20px)',
-  'calc(100% - 30px)',
+  testValue('calc(100% - 10px - 20px)', 'calc(100% - 30px)')
 );
 
-testValue(
+test(
   'should reduce mixed units of time (postcss-calc#33)',
-  'calc(1s - 50ms)',
-  '0.95s',
+  testValue('calc(1s - 50ms)', '0.95s')
 );
 
-testValue(
+test(
   'should correctly reduce calc with mixed units (cssnano#211)',
-  'calc(99.99% * 1/1 - 0rem)',
-  '99.99%',
+  testValue('calc(99.99% * 1/1 - 0rem)', '99.99%')
 );
 
-testValue(
+test(
   'should apply optimization (cssnano#320)',
-  'calc(50% + (5em + 5%))',
-  'calc(55% + 5em)',
+  testValue('calc(50% + (5em + 5%))', 'calc(55% + 5em)')
 );
 
-testValue(
+test(
   'should reduce substraction from zero',
-  'calc( 0 - 10px)',
-  '-10px',
+  testValue('calc( 0 - 10px)', '-10px')
 );
 
-testValue(
+test(
   'should reduce subtracted expression from zero',
-  'calc( 0 - calc(1px + 1em) )',
-  'calc(-1px - 1em)',
+  testValue('calc( 0 - calc(1px + 1em) )', 'calc(-1px - 1em)')
 );
 
-testValue(
+test(
   'should reduce substracted expression from zero (1)',
-  'calc( 0 - (100vw - 10px) / 2 )',
-  'calc(-50vw + 5px)',
+  testValue('calc( 0 - (100vw - 10px) / 2 )', 'calc(-50vw + 5px)')
 );
 
-testValue(
+test(
   'should reduce substracted expression from zero (2)',
-  'calc( 0px - (100vw - 10px))',
-  'calc(10px - 100vw)',
+  testValue('calc( 0px - (100vw - 10px))', 'calc(10px - 100vw)')
 );
 
-testValue(
+test(
   'should reduce substracted expression from zero (3)',
-  'calc( 0px - (100vw - 10px) * 2 )',
-  'calc(20px - 200vw)',
+  testValue('calc( 0px - (100vw - 10px) * 2 )', 'calc(20px - 200vw)')
 );
 
-testValue(
+test(
   'should reduce substracted expression from zero (4)',
-  'calc( 0px - (100vw + 10px))',
-  'calc(-10px - 100vw)',
+  testValue('calc( 0px - (100vw + 10px))', 'calc(-10px - 100vw)')
 );
 
-testValue(
+test(
   'should reduce substracted expression from zero (css-variable)',
-  'calc( 0px - (var(--foo, 4px) / 2))',
-  'calc(0px - var(--foo, 4px)/2)',
+  testValue(
+    'calc( 0px - (var(--foo, 4px) / 2))',
+    'calc(0px - var(--foo, 4px)/2)'
+  )
 );
 
-testValue(
+test(
   'should reduce nested expression',
-  'calc( (1em - calc( 10px + 1em)) / 2)',
-  '-5px',
+  testValue('calc( (1em - calc( 10px + 1em)) / 2)', '-5px')
 );
 
-testValue(
+test(
   'should skip constant function',
-  'calc(constant(safe-area-inset-left))',
-  'calc(constant(safe-area-inset-left))',
+  testValue(
+    'calc(constant(safe-area-inset-left))',
+    'calc(constant(safe-area-inset-left))'
+  )
 );
 
-testValue(
+test(
   'should skip env function',
-  'calc(env(safe-area-inset-left))',
-  'calc(env(safe-area-inset-left))',
+  testValue(
+    'calc(env(safe-area-inset-left))',
+    'calc(env(safe-area-inset-left))'
+  )
 );
 
-testValue(
+test(
   'should skip env function (#1)',
-  'calc(env(safe-area-inset-left, 50px 20px))',
-  'calc(env(safe-area-inset-left, 50px 20px))',
+  testValue(
+    'calc(env(safe-area-inset-left, 50px 20px))',
+    'calc(env(safe-area-inset-left, 50px 20px))'
+  )
 );
 
-testValue(
+test(
   'should skip unknown function',
-  'calc(unknown(safe-area-inset-left))',
-  'calc(unknown(safe-area-inset-left))',
+  testValue(
+    'calc(unknown(safe-area-inset-left))',
+    'calc(unknown(safe-area-inset-left))'
+  )
 );
 
-testCss(
+test(
   'should preserve the original declaration when `preserve` option is set to true',
-  'foo{bar:calc(1rem * 1.5)}',
-  'foo{bar:1.5rem;bar:calc(1rem * 1.5)}',
-  { preserve: true }
+  testCss('foo{bar:calc(1rem * 1.5)}', 'foo{bar:1.5rem;bar:calc(1rem * 1.5)}', {
+    preserve: true,
+  })
 );
 
-testValue(
+test(
   'should not yield warnings when nothing is wrong',
-  'calc(500px - 0px)',
-  '500px',
-  { warnWhenCannotResolve: true }
+  testValue('calc(500px - 0px)', '500px', { warnWhenCannotResolve: true })
 );
 
-testValue(
+test(
   'should warn when calc expression cannot be reduced to a single value',
-  'calc(100% + 1px)',
-  'calc(100% + 1px)',
-  { warnWhenCannotResolve: true },
+  testValue('calc(100% + 1px)', 'calc(100% + 1px)', {
+    warnWhenCannotResolve: true,
+  })
 );
 
-testValue(
+test(
   'should reduce mixed units of time (#33)',
-  'calc(1s - 50ms)',
-  '0.95s',
+  testValue('calc(1s - 50ms)', '0.95s')
 );
 
-testCss(
+test(
   'should not parse variables as calc expressions (#35)',
-  'foo:nth-child(2n + $var-calc){}',
-  'foo:nth-child(2n + $var-calc){}',
-  { selectors: true }
+  testCss(
+    'foo:nth-child(2n + $var-calc){}',
+    'foo:nth-child(2n + $var-calc){}',
+    { selectors: true }
+  )
 );
 
-testValue(
+test(
   'should apply algebraic reduction (cssnano#319)',
-  'calc((100px - 1em) + (-50px + 1em))',
-  '50px',
+  testValue('calc((100px - 1em) + (-50px + 1em))', '50px')
 );
 
-testValue(
+test(
   'should discard zero values (reduce-css-calc#2) (1)',
-  'calc(100vw / 2 - 6px + 0px)',
-  'calc(50vw - 6px)',
+  testValue('calc(100vw / 2 - 6px + 0px)', 'calc(50vw - 6px)')
 );
 
-testValue(
+test(
   'should discard zero values (reduce-css-calc#2) (2)',
-  'calc(500px - 0px)',
-  '500px',
+  testValue('calc(500px - 0px)', '500px')
 );
 
-testValue(
+test(
   'should not perform addition on unitless values (reduce-css-calc#3)',
-  'calc(1px + 1)',
-  'calc(1px + 1)',
+  testValue('calc(1px + 1)', 'calc(1px + 1)')
 );
 
-testCss(
+test(
   'should return the same and not thrown an exception for attribute selectors without a value',
-  'button[disabled]{}',
-  'button[disabled]{}',
-  { selectors: true }
+  testCss('button[disabled]{}', 'button[disabled]{}', { selectors: true })
 );
 
-testCss(
+test(
   'should ignore reducing custom property',
-  ':root { --foo: calc(var(--bar) / 8); }',
-  ':root { --foo: calc(var(--bar)/8); }',
+  testCss(
+    ':root { --foo: calc(var(--bar) / 8); }',
+    ':root { --foo: calc(var(--bar)/8); }'
+  )
 );
 
-
-testCss(
+test(
   'should ignore media queries',
-  '@media (min-width:calc(10px+10px)){}',
-  '@media (min-width:calc(10px+10px)){}',
+  testCss(
+    '@media (min-width:calc(10px+10px)){}',
+    '@media (min-width:calc(10px+10px)){}'
+  )
 );
 
-testCss(
+test(
   'should reduce calc in media queries when `mediaQueries` option is set to true',
-  '@media (min-width:calc(10px+10px)){}',
-  '@media (min-width:20px){}',
-  { mediaQueries: true }
+  testCss('@media (min-width:calc(10px+10px)){}', '@media (min-width:20px){}', {
+    mediaQueries: true,
+  })
 );
 
-testCss(
+test(
   'should ignore selectors (1)',
-  'div[data-size="calc(3*3)"]{}',
-  'div[data-size="calc(3*3)"]{}',
+  testCss('div[data-size="calc(3*3)"]{}', 'div[data-size="calc(3*3)"]{}')
 );
 
-testCss(
+test(
   'should ignore selectors (2)',
-  'div:nth-child(2n + calc(3*3)){}',
-  'div:nth-child(2n + calc(3*3)){}',
+  testCss('div:nth-child(2n + calc(3*3)){}', 'div:nth-child(2n + calc(3*3)){}')
 );
 
-testCss(
+test(
   'should reduce calc in selectors when `selectors` option is set to true (1)',
-  'div[data-size="calc(3*3)"]{}',
-  'div[data-size="9"]{}',
-  { selectors: true }
+  testCss('div[data-size="calc(3*3)"]{}', 'div[data-size="9"]{}', {
+    selectors: true,
+  })
 );
 
-testCss(
+test(
   'should reduce calc in selectors when `selectors` option is set to true (2)',
-  'div:nth-child(2n + calc(3*3)){}',
-  'div:nth-child(2n + 9){}',
-  { selectors: true }
+  testCss('div:nth-child(2n + calc(3*3)){}', 'div:nth-child(2n + 9){}', {
+    selectors: true,
+  })
 );
 
-testCss(
+test(
   'should not reduce 100% to 1 (reduce-css-calc#44)',
-  '.@supports (width:calc(100% - constant(safe-area-inset-left))){.a{width:calc(100% - constant(safe-area-inset-left))}}',
-  '.@supports (width:calc(100% - constant(safe-area-inset-left))){.a{width:calc(100% - constant(safe-area-inset-left))}}',
+  testCss(
+    '.@supports (width:calc(100% - constant(safe-area-inset-left))){.a{width:calc(100% - constant(safe-area-inset-left))}}',
+    '.@supports (width:calc(100% - constant(safe-area-inset-left))){.a{width:calc(100% - constant(safe-area-inset-left))}}'
+  )
 );
 
-testCss(
+test(
   'should not break css variables that have "calc" in their names',
-  'a{transform: translateY(calc(-100% - var(--tooltip-calculated-offset)))}',
-  'a{transform: translateY(calc(-100% - var(--tooltip-calculated-offset)))}',
+  testCss(
+    'a{transform: translateY(calc(-100% - var(--tooltip-calculated-offset)))}',
+    'a{transform: translateY(calc(-100% - var(--tooltip-calculated-offset)))}'
+  )
 );
 
-testValue(
+test(
   'should handle complex calculations (reduce-css-calc#45) (1)',
-  'calc(100% + (2 * 100px) - ((75.37% - 63.5px) - 900px))',
-  'calc(24.63% + 1163.5px)',
+  testValue(
+    'calc(100% + (2 * 100px) - ((75.37% - 63.5px) - 900px))',
+    'calc(24.63% + 1163.5px)'
+  )
 );
 
-testValue(
+test(
   'should handle complex calculations (reduce-css-calc#45) (2)',
-  'calc(((((100% + (2 * 30px) + 63.5px) / 0.7537) - (100vw - 60px)) / 2) + 30px)',
-  'calc(66.33939% + 141.92915px - 50vw)',
+  testValue(
+    'calc(((((100% + (2 * 30px) + 63.5px) / 0.7537) - (100vw - 60px)) / 2) + 30px)',
+    'calc(66.33939% + 141.92915px - 50vw)'
+  )
 );
 
-testValue(
+test(
   'should handle advanced arithmetic (1)',
-  'calc(((75.37% - 63.5px) - 900px) + (2 * 100px))',
-  'calc(75.37% - 763.5px)',
+  testValue(
+    'calc(((75.37% - 63.5px) - 900px) + (2 * 100px))',
+    'calc(75.37% - 763.5px)'
+  )
 );
 
-testValue(
+test(
   'should handle advanced arithmetic (2)',
-  'calc((900px - (10% - 63.5px)) + (2 * 100px))',
-  'calc(1163.5px - 10%)',
+  testValue(
+    'calc((900px - (10% - 63.5px)) + (2 * 100px))',
+    'calc(1163.5px - 10%)'
+  )
 );
 
-testValue(
+test(
   'should handle nested calc statements (reduce-css-calc#49)',
-  'calc(calc(2.25rem + 2px) - 1px * 2)',
-  '2.25rem',
+  testValue('calc(calc(2.25rem + 2px) - 1px * 2)', '2.25rem')
 );
 
-testThrows(
+test(
   'should throw an exception when attempting to divide by zero',
-  'calc(500px/0)',
-  'calc(500px/0)',
-  'Cannot divide by zero'
+  testThrows('calc(500px/0)', 'calc(500px/0)', 'Cannot divide by zero')
 );
 
-testThrows(
+test(
   'should throw an exception when attempting to divide by unit (#1)',
-  'calc(500px/2px)',
-  'calc(500px/2px)',
-  'Cannot divide by "px", number expected',
+  testThrows(
+    'calc(500px/2px)',
+    'calc(500px/2px)',
+    'Cannot divide by "px", number expected'
+  )
 );
 
-testValue(
+test(
   'nested var (reduce-css-calc#50)',
-  'calc(var(--xxx, var(--yyy)) / 2)',
-  'calc(var(--xxx, var(--yyy))/2)',
+  testValue(
+    'calc(var(--xxx, var(--yyy)) / 2)',
+    'calc(var(--xxx, var(--yyy))/2)'
+  )
 );
 
-testValue(
+test(
   'should not throw an exception when unknow function exist in calc',
-  'calc(unknown(#fff) - other-unknown(200px))',
-  'calc(unknown(#fff) - other-unknown(200px))',
+  testValue(
+    'calc(unknown(#fff) - other-unknown(200px))',
+    'calc(unknown(#fff) - other-unknown(200px))'
+  )
 );
 
-testValue(
+test(
   'should not throw an exception when unknow function exist in calc (#1)',
-  'calc(unknown(#fff) * other-unknown(200px))',
-  'calc(unknown(#fff)*other-unknown(200px))',
+  testValue(
+    'calc(unknown(#fff) * other-unknown(200px))',
+    'calc(unknown(#fff)*other-unknown(200px))'
+  )
 );
 
-testValue(
+test(
   'should not strip calc with single CSS custom variable',
-  'calc(var(--foo))',
-  'calc(var(--foo))',
+  testValue('calc(var(--foo))', 'calc(var(--foo))')
 );
 
-testValue(
+test(
   'should strip unnecessary calc with single CSS custom variable',
-  'calc(calc(var(--foo)))',
-  'calc(var(--foo))',
+  testValue('calc(calc(var(--foo)))', 'calc(var(--foo))')
 );
 
-testValue(
+test(
   'should not strip calc with single CSS custom variables and value',
-  'calc(var(--foo) + 10px)',
-  'calc(var(--foo) + 10px)',
+  testValue('calc(var(--foo) + 10px)', 'calc(var(--foo) + 10px)')
 );
 
-testValue(
-  'should reduce calc (uppercase)',
-  'CALC(1PX + 1PX)',
-  '2PX',
-);
+test('should reduce calc (uppercase)', testValue('CALC(1PX + 1PX)', '2PX'));
 
-testValue(
+test(
   'should reduce calc (uppercase) (#1)',
-  'CALC(VAR(--foo) + VAR(--bar))',
-  'CALC(VAR(--foo) + VAR(--bar))',
+  testValue('CALC(VAR(--foo) + VAR(--bar))', 'CALC(VAR(--foo) + VAR(--bar))')
 );
 
-testValue(
+test(
   'should reduce calc (uppercase) (#2)',
-  'CALC( (1EM - CALC( 10PX + 1EM)) / 2)',
-  '-5PX',
+  testValue('CALC( (1EM - CALC( 10PX + 1EM)) / 2)', '-5PX')
 );
 
-testValue(
+test(
   'should handle nested calc function (#1)',
-  'calc(calc(var(--foo) + var(--bar)) + var(--baz))',
-  'calc(var(--foo) + var(--bar) + var(--baz))',
+  testValue(
+    'calc(calc(var(--foo) + var(--bar)) + var(--baz))',
+    'calc(var(--foo) + var(--bar) + var(--baz))'
+  )
 );
 
-testValue(
+test(
   'should handle nested calc function (#2)',
-  'calc(var(--foo) + calc(var(--bar) + var(--baz)))',
-  'calc(var(--foo) + var(--bar) + var(--baz))',
+  testValue(
+    'calc(var(--foo) + calc(var(--bar) + var(--baz)))',
+    'calc(var(--foo) + var(--bar) + var(--baz))'
+  )
 );
 
-testValue(
+test(
   'should handle nested calc function (#3)',
-  'calc(calc(var(--foo) - var(--bar)) - var(--baz))',
-  'calc(var(--foo) - var(--bar) - var(--baz))',
+  testValue(
+    'calc(calc(var(--foo) - var(--bar)) - var(--baz))',
+    'calc(var(--foo) - var(--bar) - var(--baz))'
+  )
 );
 
-testValue(
+test(
   'should handle nested calc function (#4)',
-  'calc(var(--foo) - calc(var(--bar) - var(--baz)))',
-  'calc(var(--foo) - var(--bar) + var(--baz))',
+  testValue(
+    'calc(var(--foo) - calc(var(--bar) - var(--baz)))',
+    'calc(var(--foo) - var(--bar) + var(--baz))'
+  )
 );
 
-testValue(
+test(
   'should handle nested calc function (#5)',
-  'calc(calc(var(--foo) + var(--bar)) - var(--baz))',
-  'calc(var(--foo) + var(--bar) - var(--baz))',
+  testValue(
+    'calc(calc(var(--foo) + var(--bar)) - var(--baz))',
+    'calc(var(--foo) + var(--bar) - var(--baz))'
+  )
 );
 
-testValue(
+test(
   'should handle nested calc function (#6)',
-  'calc(var(--foo) + calc(var(--bar) - var(--baz)))',
-  'calc(var(--foo) + var(--bar) - var(--baz))',
+  testValue(
+    'calc(var(--foo) + calc(var(--bar) - var(--baz)))',
+    'calc(var(--foo) + var(--bar) - var(--baz))'
+  )
 );
 
-testValue(
+test(
   'should handle nested calc function (#7)',
-  'calc(calc(var(--foo) - var(--bar)) + var(--baz))',
-  'calc(var(--foo) - var(--bar) + var(--baz))',
+  testValue(
+    'calc(calc(var(--foo) - var(--bar)) + var(--baz))',
+    'calc(var(--foo) - var(--bar) + var(--baz))'
+  )
 );
 
-testValue(
+test(
   'should handle nested calc function (#8)',
-  'calc(var(--foo) - calc(var(--bar) + var(--baz)))',
-  'calc(var(--foo) - var(--bar) - var(--baz))',
+  testValue(
+    'calc(var(--foo) - calc(var(--bar) + var(--baz)))',
+    'calc(var(--foo) - var(--bar) - var(--baz))'
+  )
 );
 
-testValue(
+test(
   'should handle nested calc function (#9)',
-  'calc(calc(var(--foo) + var(--bar)) * var(--baz))',
-  'calc((var(--foo) + var(--bar))*var(--baz))',
+  testValue(
+    'calc(calc(var(--foo) + var(--bar)) * var(--baz))',
+    'calc((var(--foo) + var(--bar))*var(--baz))'
+  )
 );
 
-testValue(
+test(
   'should handle nested calc function (#10)',
-  'calc(var(--foo) * calc(var(--bar) + var(--baz)))',
-  'calc(var(--foo)*(var(--bar) + var(--baz)))',
+  testValue(
+    'calc(var(--foo) * calc(var(--bar) + var(--baz)))',
+    'calc(var(--foo)*(var(--bar) + var(--baz)))'
+  )
 );
 
-testValue(
+test(
   'should handle nested calc function (#11)',
-  'calc(calc(var(--foo) + var(--bar)) / var(--baz))',
-  'calc((var(--foo) + var(--bar))/var(--baz))',
+  testValue(
+    'calc(calc(var(--foo) + var(--bar)) / var(--baz))',
+    'calc((var(--foo) + var(--bar))/var(--baz))'
+  )
 );
 
-testValue(
+test(
   'should handle nested calc function (#12)',
-  'calc(var(--foo) / calc(var(--bar) + var(--baz)))',
-  'calc(var(--foo)/(var(--bar) + var(--baz)))',
+  testValue(
+    'calc(var(--foo) / calc(var(--bar) + var(--baz)))',
+    'calc(var(--foo)/(var(--bar) + var(--baz)))'
+  )
 );
 
-testValue(
+test(
   'should handle nested calc function (#13)',
-  'calc(100vh - 5rem - calc(10rem + 100px))',
-  'calc(100vh - 15rem - 100px)',
+  testValue(
+    'calc(100vh - 5rem - calc(10rem + 100px))',
+    'calc(100vh - 15rem - 100px)'
+  )
 );
 
-testValue(
+test(
   'should handle nested calc function (#14)',
-  'calc(100% - calc(10px + 2vw))',
-  'calc(100% - 10px - 2vw)',
+  testValue('calc(100% - calc(10px + 2vw))', 'calc(100% - 10px - 2vw)')
 );
 
-testValue(
+test(
   'should handle nested calc function (#15)',
-  'calc(100% - calc(10px - 2vw))',
-  'calc(100% - 10px + 2vw)',
+  testValue('calc(100% - calc(10px - 2vw))', 'calc(100% - 10px + 2vw)')
 );
 
-testValue(
-  'precision for calc',
-  'calc(100% / 3 * 3)',
-  '100%',
-);
+test('precision for calc', testValue('calc(100% / 3 * 3)', '100%'));
 
-testValue(
+test(
   'precision for nested calc',
-  'calc(calc(100% / 3) * 3)',
-  '100%',
+  testValue('calc(calc(100% / 3) * 3)', '100%')
 );
 
-testValue(
-  'plus sign',
-  'calc(+100px + +100px)',
-  '200px',
-);
+test('plus sign', testValue('calc(+100px + +100px)', '200px'));
 
-testValue(
-  'plus sign (#1)',
-  'calc(+100px - +100px)',
-  '0px',
-);
+test('plus sign (#1)', testValue('calc(+100px - +100px)', '0px'));
 
-testValue(
-  'plus sign (#2)',
-  'calc(200px * +1)',
-  '200px',
-);
+test('plus sign (#2)', testValue('calc(200px * +1)', '200px'));
 
-testValue(
-  'plus sign (#3)',
-  'calc(200px / +1)',
-  '200px',
-);
+test('plus sign (#3)', testValue('calc(200px / +1)', '200px'));
 
-testValue(
-  'minus sign',
-  'calc(-100px + -100px)',
-  '-200px',
-);
+test('minus sign', testValue('calc(-100px + -100px)', '-200px'));
 
-testValue(
-  'minus sign (#2)',
-  'calc(-100px - -100px)',
-  '0px',
-);
+test('minus sign (#2)', testValue('calc(-100px - -100px)', '0px'));
 
-testValue(
-  'minus sign (#3)',
-  'calc(200px * -1)',
-  '-200px',
-);
+test('minus sign (#3)', testValue('calc(200px * -1)', '-200px'));
 
-testValue(
-  'minus sign (#4)',
-  'calc(200px / -1)',
-  '-200px',
-);
+test('minus sign (#4)', testValue('calc(200px / -1)', '-200px'));
 
-testValue(
-  'whitespace',
-  'calc( 100px + 100px )',
-  '200px',
-);
+test('whitespace', testValue('calc( 100px + 100px )', '200px'));
 
-testValue(
-  'whitespace (#1)',
-  'calc(\t100px\t+\t100px\t)',
-  '200px',
-);
+test('whitespace (#1)', testValue('calc(\t100px\t+\t100px\t)', '200px'));
 
-testValue(
-  'whitespace (#2)',
-  'calc(\n100px\n+\n100px\n)',
-  '200px',
-);
+test('whitespace (#2)', testValue('calc(\n100px\n+\n100px\n)', '200px'));
 
-testValue(
+test(
   'whitespace (#4)',
-  'calc(\r\n100px\r\n+\r\n100px\r\n)',
-  '200px',
+  testValue('calc(\r\n100px\r\n+\r\n100px\r\n)', '200px')
 );
 
-testValue(
+test(
   'comments',
-  'calc(/*test*/100px/*test*/ + /*test*/100px/*test*/)',
-  '200px',
+  testValue('calc(/*test*/100px/*test*/ + /*test*/100px/*test*/)', '200px')
 );
 
-testValue(
+test(
   'comments (#1)',
-  'calc(/*test*/100px/*test*/*/*test*/2/*test*/)',
-  '200px',
+  testValue('calc(/*test*/100px/*test*/*/*test*/2/*test*/)', '200px')
 );
 
-testValue(
+test(
   'comments nested',
-  'calc(/*test*/100px + calc(/*test*/100px/*test*/ + /*test*/100px/*test*/))',
-  '300px',
+  testValue(
+    'calc(/*test*/100px + calc(/*test*/100px/*test*/ + /*test*/100px/*test*/))',
+    '300px'
+  )
 );
 
-testValue(
-  'exponent composed',
-  'calc(1.1e+1px + 1.1e+1px)',
-  '22px',
-);
+test('exponent composed', testValue('calc(1.1e+1px + 1.1e+1px)', '22px'));
 
-testValue(
-  'exponent composed (#1)',
-  'calc(10e+1px + 10e+1px)',
-  '200px',
-);
+test('exponent composed (#1)', testValue('calc(10e+1px + 10e+1px)', '200px'));
 
-testValue(
+test(
   'exponent composed (#2)',
-  'calc(1.1e+10px + 1.1e+10px)',
-  '22000000000px',
+  testValue('calc(1.1e+10px + 1.1e+10px)', '22000000000px')
 );
 
-testValue(
-  'exponent composed (#3)',
-  'calc(9e+1 * 1px)',
-  '90px',
-);
+test('exponent composed (#3)', testValue('calc(9e+1 * 1px)', '90px'));
 
-testValue(
-  'exponent composed (#4)',
-  'calc(9e+1% + 10%)',
-  '100%',
-);
+test('exponent composed (#4)', testValue('calc(9e+1% + 10%)', '100%'));
 
-testValue(
+test(
   'exponent composed (uppercase)',
-  'calc(1.1E+1px + 1.1E+1px)',
-  '22px',
+  testValue('calc(1.1E+1px + 1.1E+1px)', '22px')
 );
 
-testValue(
-  'convert units',
-  'calc(1cm + 1px)',
-  '1.02646cm',
-);
+test('convert units', testValue('calc(1cm + 1px)', '1.02646cm'));
 
-testValue(
-  'convert units (#1)',
-  'calc(1px + 1cm)',
-  '38.79528px',
-);
+test('convert units (#1)', testValue('calc(1px + 1cm)', '38.79528px'));
 
-testValue(
-  'convert units (#2)',
-  'calc(10Q + 10Q)',
-  '20Q',
-);
+test('convert units (#2)', testValue('calc(10Q + 10Q)', '20Q'));
 
-testValue(
-  'convert units (#3)',
-  'calc(100.9q + 10px)',
-  '111.48333q',
-);
+test('convert units (#3)', testValue('calc(100.9q + 10px)', '111.48333q'));
 
-testValue(
-  'convert units (#4)',
-  'calc(10px + 100.9q)',
-  '105.33858px',
-);
+test('convert units (#4)', testValue('calc(10px + 100.9q)', '105.33858px'));
 
-testValue(
-  'convert units (#5)',
-  'calc(10cm + 1px)',
-  '10.02646cm',
-);
+test('convert units (#5)', testValue('calc(10cm + 1px)', '10.02646cm'));
 
-testValue(
-  'convert units (#6)',
-  'calc(10mm + 1px)',
-  '10.26458mm',
-);
+test('convert units (#6)', testValue('calc(10mm + 1px)', '10.26458mm'));
 
-testValue(
-  'convert units (#7)',
-  'calc(10px + 1q)',
-  '10.94488px'
-);
+test('convert units (#7)', testValue('calc(10px + 1q)', '10.94488px'));
 
-testValue(
-  'convert units (#8)',
-  'calc(10cm + 1q)',
-  '10.025cm'
-);
+test('convert units (#8)', testValue('calc(10cm + 1q)', '10.025cm'));
 
-testValue(
-  'convert units (#9)',
-  'calc(10mm + 1q)',
-  '10.25mm'
-);
+test('convert units (#9)', testValue('calc(10mm + 1q)', '10.25mm'));
 
-testValue(
-  'convert units (#10)',
-  'calc(10in + 1q)',
-  '10.00984in'
-);
+test('convert units (#10)', testValue('calc(10in + 1q)', '10.00984in'));
 
-testValue(
-  'convert units (#11)',
-  'calc(10pt + 1q)',
-  '10.70866pt'
-);
+test('convert units (#11)', testValue('calc(10pt + 1q)', '10.70866pt'));
 
-testValue(
-  'convert units (#12)',
-  'calc(10pc + 1q)',
-  '10.05906pc'
-);
+test('convert units (#12)', testValue('calc(10pc + 1q)', '10.05906pc'));
 
-testValue(
-  'convert units (#13)',
-  'calc(1q + 10px)',
-  '11.58333q'
-);
+test('convert units (#13)', testValue('calc(1q + 10px)', '11.58333q'));
 
-testValue(
-  'convert units (#14)',
-  'calc(1q + 10cm)',
-  '401q'
-);
+test('convert units (#14)', testValue('calc(1q + 10cm)', '401q'));
 
-testValue(
-  'convert units (#15)',
-  'calc(1q + 10mm)',
-  '41q'
-);
+test('convert units (#15)', testValue('calc(1q + 10mm)', '41q'));
 
-testValue(
-  'convert units (#16)',
-  'calc(1q + 10in)',
-  '1017q'
-);
+test('convert units (#16)', testValue('calc(1q + 10in)', '1017q'));
 
-testValue(
-  'convert units (#17)',
-  'calc(1q + 10pt)',
-  '15.11111q'
-);
+test('convert units (#17)', testValue('calc(1q + 10pt)', '15.11111q'));
 
-testValue(
-  'convert units (#18)',
-  'calc(1q + 10pc)',
-  '170.33333q'
-);
+test('convert units (#18)', testValue('calc(1q + 10pc)', '170.33333q'));
 
-testValue(
+test(
   'unknown units',
-  'calc(1unknown + 2unknown)',
-  'calc(1unknown + 2unknown)'
+  testValue('calc(1unknown + 2unknown)', 'calc(1unknown + 2unknown)')
 );
 
-testValue(
+test(
   'unknown units with known',
-  'calc(1unknown + 2px)',
-  'calc(1unknown + 2px)'
+  testValue('calc(1unknown + 2px)', 'calc(1unknown + 2px)')
 );
 
-testValue(
+test(
   'unknown units with known (#1)',
-  'calc(1px + 2unknown)',
-  'calc(1px + 2unknown)'
+  testValue('calc(1px + 2unknown)', 'calc(1px + 2unknown)')
 );
 
-testThrows(
+test(
   'error with parsing',
-  'calc(10pc + unknown)',
-  'calc(10pc + unknown)',
-  'Lexical error on line 1: Unrecognized text.\n\n  Erroneous area:\n1: 10pc + unknown\n^.........^'
+  testThrows(
+    'calc(10pc + unknown)',
+    'calc(10pc + unknown)',
+    'Lexical error on line 1: Unrecognized text.\n\n  Erroneous area:\n1: 10pc + unknown\n^.........^'
+  )
 );
 
 test.run();
