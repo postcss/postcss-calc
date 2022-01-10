@@ -5,6 +5,11 @@ export interface MathExpression {
   operator: '*' | '+' | '-' | '/';
 }
 
+export interface ParenthesizedExpression {
+  type: 'ParenthesizedExpression';
+  content: CalcNode;
+}
+
 export interface DimensionExpression {
   type:
     | 'LengthValue'
@@ -37,7 +42,7 @@ export interface FunctionExpression {
 
 export type ValueExpression = DimensionExpression | NumberExpression;
 
-export type CalcNode = MathExpression | ValueExpression | FunctionExpression;
+export type CalcNode = MathExpression | ValueExpression | FunctionExpression | ParenthesizedExpression;
 
 export interface Parser {
   parse: (arg: string) => CalcNode;

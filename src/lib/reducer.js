@@ -100,6 +100,8 @@ function collectAddSubItems(preOperator, node, collected, precision) {
         collected.push({node: reducedNode, preOperator});
       }
     }
+  } else if (node.type === 'ParenthesizedExpression') {
+    collectAddSubItems(preOperator, node.content, collected, precision);
   } else {
     collected.push({node, preOperator});
   }
@@ -286,6 +288,7 @@ function convertNodesUnits(left, right, precision) {
 /**
  * @param {import('../parser').CalcNode} node
  * @param {number} precision
+ * @return {import('../parser').CalcNode}
  */
 function reduce(node, precision) {
   if (node.type === "MathExpression") {
@@ -303,6 +306,12 @@ function reduce(node, precision) {
     }
 
     return node;
+  }
+
+  if (node.type === 'ParenthesizedExpression') {
+    if (node.content.type !== 'Function') {
+      return reduce(node.content, precision);
+    }
   }
 
   return node;

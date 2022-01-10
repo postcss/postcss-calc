@@ -735,6 +735,25 @@ test(
   testValue('calc(100% - calc(10px - 2vw))', 'calc(100% - 10px + 2vw)')
 );
 
+test(
+  'should preserve division precedence',
+  testValue(
+    'calc(100%/(var(--aspect-ratio)))',
+    'calc(100%/(var(--aspect-ratio)))'
+  )
+);
+
+test(
+  'should preserve division precedence (2)',
+  testValue(
+    `calc(
+        (var(--fluid-screen) - ((var(--fluid-min-width) / 16) * 1rem)) /
+        ((var(--fluid-max-width) / 16) - (var(--fluid-min-width) / 16))
+    )`,
+    'calc((var(--fluid-screen) - var(--fluid-min-width)/16*1rem)/(var(--fluid-max-width)/16 - var(--fluid-min-width)/16))'
+  )
+);
+
 test('precision for calc', testValue('calc(100% / 3 * 3)', '100%'));
 
 test(

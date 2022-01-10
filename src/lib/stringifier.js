@@ -20,6 +20,8 @@ function round(value, prec) {
 /**
  * @param {number | false} prec
  * @param {import('../parser').CalcNode} node
+ *
+ * @return {string}
  */
 function stringify(node, prec) {
   switch (node.type) {
@@ -46,6 +48,8 @@ function stringify(node, prec) {
       return round(node.value, prec).toString();
     case 'Function':
       return node.value.toString();
+    case 'ParenthesizedExpression':
+      return `(${stringify(node.content, prec)})`;
     default:
       return round(node.value, prec) + node.unit;
   }
