@@ -6,5 +6,6 @@ export type Collectible = {
 /**
  * @param {import('../parser').CalcNode} node
  * @param {number} precision
+ * @return {import('../parser').CalcNode}
  */
-declare function reduce(node: import('../parser').CalcNode, precision: number): import("../parser").MathExpression | import("../parser").DimensionExpression | import("../parser").NumberExpression | import("../parser").FunctionExpression;
+declare function reduce(node: import('../parser').CalcNode, precision: number): import('../parser').CalcNode;

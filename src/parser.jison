@@ -74,7 +74,7 @@ expression
     | math_expression SUB math_expression { $$ = { type: 'MathExpression', operator: $2, left: $1, right: $3 }; }
     | math_expression MUL math_expression { $$ = { type: 'MathExpression', operator: $2, left: $1, right: $3 }; }
     | math_expression DIV math_expression { $$ = { type: 'MathExpression', operator: $2, left: $1, right: $3 }; }
-    | LPAREN math_expression RPAREN { $$ = $2; }
+    | LPAREN math_expression RPAREN { $$ = { type: 'ParenthesizedExpression', content: $2 }; }
     | function { $$ = $1; }
     | dimension { $$ = $1; }
     | number { $$ = $1; }
