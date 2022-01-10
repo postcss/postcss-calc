@@ -106,7 +106,7 @@ test(
   'should reduce additions and subtractions (7)',
   testValue(
     'calc(0px - (24px - (var(--a) - var(--b)) / 2 + var(--c)))',
-    'calc(-24px + var(--a)/2 - var(--b)/2 - var(--c))'
+    'calc(-24px + (var(--a) - var(--b))/2 - var(--c))'
   )
 );
 
@@ -122,27 +122,27 @@ test(
 
 test(
   'should reduce multiplication',
-  testValue('calc(((var(--a) + 4px) * 2) * 2)', 'calc(var(--a)*2*2 + 16px)')
+  testValue('calc(((var(--a) + 4px) * 2) * 2)', 'calc((var(--a) + 4px)*2*2)')
 );
 
 test(
   'should reduce multiplication before reducing additions',
   testValue(
     'calc(((var(--a) + 4px) * 2) * 2 + 4px)',
-    'calc(var(--a)*2*2 + 20px)'
+    'calc((var(--a) + 4px)*2*2 + 4px)'
   )
 );
 
 test(
   'should reduce division',
-  testValue('calc(((var(--a) + 4px) / 2) / 2)', 'calc(var(--a)/2/2 + 1px)')
+  testValue('calc(((var(--a) + 4px) / 2) / 2)', 'calc((var(--a) + 4px)/2/2)')
 );
 
 test(
   'should reduce division before reducing additions',
   testValue(
     'calc(((var(--a) + 4px) / 2) / 2 + 4px)',
-    'calc(var(--a)/2/2 + 5px)'
+    'calc((var(--a) + 4px)/2/2 + 4px)'
   )
 );
 
@@ -750,7 +750,20 @@ test(
         (var(--fluid-screen) - ((var(--fluid-min-width) / 16) * 1rem)) /
         ((var(--fluid-max-width) / 16) - (var(--fluid-min-width) / 16))
     )`,
-    'calc((var(--fluid-screen) - var(--fluid-min-width)/16*1rem)/(var(--fluid-max-width)/16 - var(--fluid-min-width)/16))'
+    'calc((var(--fluid-screen) - ((var(--fluid-min-width)/16)*1rem))/(var(--fluid-max-width)/16 - var(--fluid-min-width)/16))'
+  )
+);
+
+test(
+  'should preserve division precedence (3)',
+  testValue('calc(1/(10/var(--dot-size)))', 'calc(1/(10/var(--dot-size)))')
+);
+
+test(
+  'should correctly preserve parentheses',
+  testValue(
+    'calc(1/((var(--a) - var(--b))/16))',
+    'calc(1/(var(--a) - var(--b))/16)'
   )
 );
 
