@@ -286,6 +286,16 @@ function convertNodesUnits(left, right, precision) {
 }
 
 /**
+ * @param {import('../parser').ParenthesizedExpression} node
+ */
+function includesNoCssProperties(node) {
+  return node.content.type !== 'Function' &&
+    (node.content.type !== 'MathExpression' ||
+      (node.content.right.type !== 'Function' &&
+       node.content.left.type !== 'Function')
+    );
+}
+/**
  * @param {import('../parser').CalcNode} node
  * @param {number} precision
  * @return {import('../parser').CalcNode}
@@ -309,7 +319,7 @@ function reduce(node, precision) {
   }
 
   if (node.type === 'ParenthesizedExpression') {
-    if (node.content.type !== 'Function') {
+    if (includesNoCssProperties(node)) {
       return reduce(node.content, precision);
     }
   }
