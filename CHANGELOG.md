@@ -1,3 +1,9 @@
+## [8.2.2](https://github.com/postcss/postcss-calc/compare/v8.2.1...v8.2.2) (2022-01-12)
+
+## Bug Fixes
+
+* respect CSS var when reducing ([99d9fa5](https://github.com/postcss/postcss-calc/commit/99d9fa53a7fba3586590d0c45a0982b09e8bf5c6))
+
 # [8.2.1](https://github.com/postcss/postcss-calc/compare/v8.2.0...v8.2.1) (2022-01-11)
 
 ## Bug Fixes
