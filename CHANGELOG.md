@@ -1,3 +1,9 @@
+# [8.2.1](https://github.com/postcss/postcss-calc/compare/v8.2.0...v8.2.1) (2022-01-11)
+
+## Bug Fixes
+
+* preserve brackets around functions ([0b70a1d](https://github.com/postcss/postcss-calc/commit/0b70a1d5773f17373991b1294e3ae618600aae7d)), closes [#113](https://github.com/postcss/postcss-calc/issues/113) [#115](https://github.com/postcss/postcss-calc/issues/115)
+
 # [8.2.0](https://github.com/postcss/postcss-calc/compare/v8.1.0...v8.2.0) (2022-01-07)
 
 ## Features
