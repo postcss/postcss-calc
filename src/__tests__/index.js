@@ -890,6 +890,15 @@ test(
   testValue('calc(1px + 2unknown)', 'calc(1px + 2unknown)')
 );
 
+test('decimal unknown units', async () => {
+  const result = await postcss(reduceCalc()).process(
+    'p{width: calc(120rpx - 41.7rpx)}',
+    postcssOpts
+  );
+  const warnings = result.warnings();
+  assert.is(warnings.length, 0);
+});
+
 test(
   'error with parsing',
   testThrows(
