@@ -12,19 +12,13 @@ export type PostCssCalcOptions = {
  *          warnWhenCannotResolve?: boolean,
  *          mediaQueries?: boolean,
  *          selectors?: boolean}} PostCssCalcOptions
- *
- * @param {PostCssCalcOptions} opts
  */
-declare function pluginCreator(opts: PostCssCalcOptions): {
-    postcssPlugin: string;
-    /**
-     * @param {import('postcss').Root} css
-     * @param {{result: import('postcss').Result}} helpers
-     */
-    OnceExit(css: import('postcss').Root, { result }: {
-        result: import('postcss').Result;
-    }): void;
-};
+/**
+* @type {import('postcss').PluginCreator<PostCssCalcOptions>}
+* @param {PostCssCalcOptions} opts
+* @return {import('postcss').Plugin}
+*/
+declare function pluginCreator(opts: PostCssCalcOptions): import('postcss').Plugin;
 declare namespace pluginCreator {
-    const postcss: boolean;
+    const postcss: true;
 }

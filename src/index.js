@@ -6,8 +6,11 @@ import transform from './lib/transform';
  *          warnWhenCannotResolve?: boolean, 
  *          mediaQueries?: boolean, 
  *          selectors?: boolean}} PostCssCalcOptions
- *
+ */
+ /**
+ * @type {import('postcss').PluginCreator<PostCssCalcOptions>}
  * @param {PostCssCalcOptions} opts
+ * @return {import('postcss').Plugin}
  */
 function pluginCreator(opts) {
   const options = Object.assign({
@@ -20,10 +23,6 @@ function pluginCreator(opts) {
 
   return {
     postcssPlugin: 'postcss-calc',
-    /**
-     * @param {import('postcss').Root} css
-     * @param {{result: import('postcss').Result}} helpers
-     */ 
     OnceExit(css, { result }) {
       css.walk(node => {
         const { type } = node;
