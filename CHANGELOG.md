@@ -1,3 +1,9 @@
+# [8.2.3](https://github.com/postcss/postcss-calc/compare/v8.2.2...v8.2.3) (2022-01-28)
+
+## Bug Fixes
+
+* improve types ([f2cce1b](https://github.com/postcss/postcss-calc/commit/f2cce1bc1d47af7ab02891c61b4c1485d6e6dfd3))
+
 ## [8.2.2](https://github.com/postcss/postcss-calc/compare/v8.2.1...v8.2.2) (2022-01-12)
 
 ## Bug Fixes
