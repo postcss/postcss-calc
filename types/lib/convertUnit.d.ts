@@ -1,4 +1,4 @@
-export default convertUnit;
+export = convertUnit;
 /**
  * @param {number} value
  * @param {string} sourceUnit

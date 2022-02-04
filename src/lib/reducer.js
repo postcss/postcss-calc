@@ -1,4 +1,5 @@
-import convertUnit from "./convertUnit";
+"use strict";
+const convertUnit = require("./convertUnit.js");
 
 /**
  * @param {import('../parser').CalcNode} node
@@ -327,4 +328,4 @@ function reduce(node, precision) {
   return node;
 }
 
-export default reduce;
+module.exports = reduce;

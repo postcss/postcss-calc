@@ -1,4 +1,4 @@
 node_modules
 test/fixtures/*.actual.css
-dist
+src/parser.js
 yarn-error.log

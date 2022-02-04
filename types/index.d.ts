@@ -1,11 +1,4 @@
-export default pluginCreator;
-export type PostCssCalcOptions = {
-    precision?: number | false;
-    preserve?: boolean;
-    warnWhenCannotResolve?: boolean;
-    mediaQueries?: boolean;
-    selectors?: boolean;
-};
+export = pluginCreator;
 /**
  * @typedef {{precision?: number | false,
  *          preserve?: boolean,
@@ -20,5 +13,13 @@ export type PostCssCalcOptions = {
 */
 declare function pluginCreator(opts: PostCssCalcOptions): import('postcss').Plugin;
 declare namespace pluginCreator {
-    const postcss: true;
+    export { postcss, PostCssCalcOptions };
 }
+type PostCssCalcOptions = {
+    precision?: number | false;
+    preserve?: boolean;
+    warnWhenCannotResolve?: boolean;
+    mediaQueries?: boolean;
+    selectors?: boolean;
+};
+declare var postcss: true;

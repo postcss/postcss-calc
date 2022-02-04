@@ -1,7 +1,8 @@
-import { test } from 'uvu';
-import * as assert from 'uvu/assert';
+"use strict";
+const { test } = require('uvu');
+const assert = require('uvu/assert');
 
-import convertUnit from '../../dist/lib/convertUnit'
+const convertUnit = require('../lib/convertUnit.js');
 
 test("valid conversions", () => {
   const conversions = [
