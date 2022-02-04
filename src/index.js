@@ -1,4 +1,5 @@
-import transform from './lib/transform';
+'use strict';
+const transform = require('./lib/transform.js');
 
 /**
  * @typedef {{precision?: number | false,
@@ -44,4 +45,4 @@ function pluginCreator(opts) {
 
 pluginCreator.postcss = true;
 
-export default pluginCreator;
+module.exports =  pluginCreator;

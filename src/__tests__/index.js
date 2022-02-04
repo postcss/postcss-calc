@@ -1,8 +1,9 @@
-import { test } from 'uvu';
-import * as assert from 'uvu/assert';
-import postcss from 'postcss';
+"use strict";
+const { test } = require('uvu');
+const assert = require('uvu/assert');
+const postcss = require('postcss');
 
-import reduceCalc from '../../dist';
+const reduceCalc = require('../index.js');
 
 const postcssOpts = { from: undefined };
 

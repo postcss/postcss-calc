@@ -1,3 +1,4 @@
+"use strict";
 const order = {
   "*": 0,
   "/": 0,
@@ -65,7 +66,7 @@ function stringify(node, prec) {
  *
  * @returns {string}
  */
-export default function (
+module.exports = function (
     calc,
     node,
     originalValue,
