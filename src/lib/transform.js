@@ -1,11 +1,11 @@
-"use strict";
-const selectorParser = require("postcss-selector-parser");
-const valueParser = require("postcss-value-parser");
+'use strict';
+const selectorParser = require('postcss-selector-parser');
+const valueParser = require('postcss-value-parser');
 
-const { parser } = require("../parser.js");
+const { parser } = require('../parser.js');
 
-const reducer = require("./reducer.js");
-const stringifier = require("./stringifier.js");
+const reducer = require('./reducer.js');
+const stringifier = require('./stringifier.js');
 
 const MATCH_CALC = /((?:-(moz|webkit)-)?calc)/i;
 
@@ -17,9 +17,9 @@ const MATCH_CALC = /((?:-(moz|webkit)-)?calc)/i;
  */
 function transformValue(value, options, result, item) {
   return valueParser(value)
-    .walk(node => {
+    .walk((node) => {
       // skip anything which isn't a calc() function
-      if (node.type !== "function" || !MATCH_CALC.test(node.value)) {
+      if (node.type !== 'function' || !MATCH_CALC.test(node.value)) {
         return;
       }
 
@@ -32,7 +32,7 @@ function transformValue(value, options, result, item) {
       const reducedAst = reducer(ast, options.precision);
 
       // stringify AST and write it back
-      (/** @type {valueParser.Node} */(node)).type = "word";
+      /** @type {valueParser.Node} */ (node).type = 'word';
       node.value = stringifier(
         node.value,
         reducedAst,
@@ -53,17 +53,17 @@ function transformValue(value, options, result, item) {
  * @param {import("postcss").ChildNode} item
  */
 function transformSelector(value, options, result, item) {
-  return selectorParser(selectors => {
-    selectors.walk(node => {
+  return selectorParser((selectors) => {
+    selectors.walk((node) => {
       // attribute value
       // e.g. the "calc(3*3)" part of "div[data-size="calc(3*3)"]"
-      if (node.type === "attribute" && node.value) {
+      if (node.type === 'attribute' && node.value) {
         node.setValue(transformValue(node.value, options, result, item));
       }
 
       // tag value
       // e.g. the "calc(3*3)" part of "div:nth-child(2n + calc(3*3))"
-      if (node.type === "tag") {
+      if (node.type === 'tag') {
         node.value = transformValue(node.value, options, result, item);
       }
 
@@ -72,8 +72,7 @@ function transformSelector(value, options, result, item) {
   }).processSync(value);
 }
 
-
-/** 
+/**
  * @param {any} node
  * @param {{precision: number, preserve: boolean, warnWhenCannotResolve: boolean}} options
  * @param {'value'|'params'|'selector'} property
@@ -84,7 +83,7 @@ module.exports = (node, property, options, result) => {
 
   try {
     value =
-      property === "selector"
+      property === 'selector'
         ? transformSelector(node[property], options, result, node)
         : transformValue(node[property], options, result, node);
   } catch (error) {

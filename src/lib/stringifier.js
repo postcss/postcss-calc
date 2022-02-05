@@ -1,9 +1,9 @@
-"use strict";
+'use strict';
 const order = {
-  "*": 0,
-  "/": 0,
-  "+": 1,
-  "-": 1,
+  '*': 0,
+  '/': 0,
+  '+': 1,
+  '-': 1,
 };
 
 /**
@@ -26,9 +26,9 @@ function round(value, prec) {
  */
 function stringify(node, prec) {
   switch (node.type) {
-    case "MathExpression": {
-      const {left, right, operator: op} = node;
-      let str = "";
+    case 'MathExpression': {
+      const { left, right, operator: op } = node;
+      let str = '';
       if (left.type === 'MathExpression' && order[op] < order[left.operator]) {
         str += `(${stringify(left, prec)})`;
       } else {
@@ -37,7 +37,10 @@ function stringify(node, prec) {
 
       str += order[op] ? ` ${node.operator} ` : node.operator;
 
-      if (right.type === 'MathExpression' && order[op] < order[right.operator]) {
+      if (
+        right.type === 'MathExpression' &&
+        order[op] < order[right.operator]
+      ) {
         str += `(${stringify(right, prec)})`;
       } else {
         str += stringify(right, prec);
@@ -66,17 +69,11 @@ function stringify(node, prec) {
  *
  * @returns {string}
  */
-module.exports = function (
-    calc,
-    node,
-    originalValue,
-    options,
-    result,
-    item
-  ) {
+module.exports = function (calc, node, originalValue, options, result, item) {
   let str = stringify(node, options.precision);
 
-  const shouldPrintCalc = node.type === "MathExpression" || node.type === "Function";
+  const shouldPrintCalc =
+    node.type === 'MathExpression' || node.type === 'Function';
 
   if (shouldPrintCalc) {
     // if calc expression couldn't be resolved to a single value, re-wrap it as
@@ -86,10 +83,11 @@ module.exports = function (
     // if the warnWhenCannotResolve option is on, inform the user that the calc
     // expression could not be resolved to a single value
     if (options.warnWhenCannotResolve) {
-      result.warn(
-        "Could not reduce expression: " + originalValue,
-        { plugin: 'postcss-calc', node: item });
+      result.warn('Could not reduce expression: ' + originalValue, {
+        plugin: 'postcss-calc',
+        node: item,
+      });
     }
   }
   return str;
-}
+};
