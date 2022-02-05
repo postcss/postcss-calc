@@ -43,8 +43,8 @@
     }
   },
   "devDependencies": {
-    "@types/node": "^17.0.14",
-    "eslint": "^8.7.0",
+    "@types/node": "^17.0.15",
+    "eslint": "^8.8.0",
     "eslint-config-prettier": "^8.3.0",
     "jison-gho": "^0.6.1-216",
     "postcss": "^8.2.2",
@@ -53,8 +53,8 @@
     "uvu": "^0.5.3"
   },
   "dependencies": {
-    "postcss-selector-parser": "^6.0.2",
-    "postcss-value-parser": "^4.0.2"
+    "postcss-selector-parser": "^6.0.9",
+    "postcss-value-parser": "^4.2.0"
   },
   "peerDependencies": {
     "postcss": "^8.2.2"
