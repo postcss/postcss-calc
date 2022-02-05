@@ -8,6 +8,22 @@ const reducer = require('./reducer.js');
 const stringifier = require('./stringifier.js');
 
 const MATCH_CALC = /((?:-(moz|webkit)-)?calc)/i;
+/**
+ * @param {valueParser.Node[]} nodes
+ * @return {valueParser.Node[]}
+ */
+function removeComments(nodes) {
+  const newNodes = [];
+  for (const node of nodes) {
+    if (node.type !== 'comment') {
+      if (node.type === 'function') {
+        node.nodes = removeComments(node.nodes);
+      }
+      newNodes.push(node);
+    }
+  }
+  return newNodes;
+}
 
 /**
  * @param {string} value
@@ -23,8 +39,9 @@ function transformValue(value, options, result, item) {
         return;
       }
 
+      const noComments = removeComments(node.nodes);
       // stringify calc expression and produce an AST
-      const contents = valueParser.stringify(node.nodes);
+      const contents = valueParser.stringify(noComments);
       const ast = parser.parse(contents);
 
       // reduce AST to its simplest form, that is, either to a single value
