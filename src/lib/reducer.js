@@ -1,5 +1,5 @@
-"use strict";
-const convertUnit = require("./convertUnit.js");
+'use strict';
+const convertUnit = require('./convertUnit.js');
 
 /**
  * @param {import('../parser').CalcNode} node
@@ -64,7 +64,7 @@ function collectAddSubItems(preOperator, node, collected, precision) {
         collected[itemIndex].preOperator = '+';
         reducedNode.value *= -1;
       }
-      if (preOperator === "+") {
+      if (preOperator === '+') {
         reducedNode.value += current.value
       } else {
         reducedNode.value -= current.value
@@ -85,7 +85,7 @@ function collectAddSubItems(preOperator, node, collected, precision) {
         collected.push({node, preOperator: flip(preOperator)});
       }
     }
-  } else if (node.type === "MathExpression") {
+  } else if (node.type === 'MathExpression') {
     if (isAddSubOperator(node.operator)) {
       collectAddSubItems(preOperator, node.left, collected, precision);
       const collectRightOperator = preOperator === '-' ? flip(node.operator) : node.operator;
@@ -94,7 +94,7 @@ function collectAddSubItems(preOperator, node, collected, precision) {
       // * or /
       const reducedNode = reduce(node, precision);
       // prevent infinite recursive call
-      if (reducedNode.type !== "MathExpression" ||
+      if (reducedNode.type !== 'MathExpression' ||
         isAddSubOperator(reducedNode.operator)) {
         collectAddSubItems(preOperator, reducedNode, collected, precision);
       } else {
@@ -181,13 +181,13 @@ function applyNumberDivision(node, divisor) {
     node.value /= divisor;
     return node;
   }
-  if (node.type === "MathExpression" && isAddSubOperator(node.operator)) {
+  if (node.type === 'MathExpression' && isAddSubOperator(node.operator)) {
     // turn (a + b) / num into a/num + b/num
     // is good for further reduction
     // checkout the test case
     // "should reduce division before reducing additions"
     return {
-      type: "MathExpression",
+      type: 'MathExpression',
       operator: node.operator,
       left: applyNumberDivision(node.left, divisor),
       right: applyNumberDivision(node.right, divisor)
@@ -197,11 +197,11 @@ function applyNumberDivision(node, divisor) {
   // .e.g the node contains css variable
   // so we just preserve the division and let browser do it
   return {
-    type: "MathExpression",
+    type: 'MathExpression',
     operator: '/',
     left: node,
     right: {
-      type: "Number",
+      type: 'Number',
       value: divisor,
     }
   }
@@ -232,13 +232,13 @@ function applyNumberMultiplication(node, multiplier) {
     node.value *= multiplier;
     return node;
   }
-  if (node.type === "MathExpression" && isAddSubOperator(node.operator)) {
+  if (node.type === 'MathExpression' && isAddSubOperator(node.operator)) {
     // turn (a + b) * num into a*num + b*num
     // is good for further reduction
     // checkout the test case
     // "should reduce multiplication before reducing additions"
     return {
-      type: "MathExpression",
+      type: 'MathExpression',
       operator: node.operator,
       left: applyNumberMultiplication(node.left, multiplier),
       right: applyNumberMultiplication(node.right, multiplier)
@@ -248,11 +248,11 @@ function applyNumberMultiplication(node, multiplier) {
   // .e.g the node contains css variable
   // so we just preserve the division and let browser do it
   return {
-    type: "MathExpression",
+    type: 'MathExpression',
     operator: '*',
     left: node,
     right: {
-      type: "Number",
+      type: 'Number',
       value: multiplier,
     }
   }
@@ -302,7 +302,7 @@ function includesNoCssProperties(node) {
  * @return {import('../parser').CalcNode}
  */
 function reduce(node, precision) {
-  if (node.type === "MathExpression") {
+  if (node.type === 'MathExpression') {
     if (isAddSubOperator(node.operator)) {
       // reduceAddSubExpression will call reduce recursively
       return reduceAddSubExpression(node, precision);
@@ -310,9 +310,9 @@ function reduce(node, precision) {
     node.left = reduce(node.left, precision);
     node.right = reduce(node.right, precision);
     switch (node.operator) {
-      case "/":
+      case '/':
         return reduceDivisionExpression(node);
-      case "*":
+      case '*':
         return reduceMultiplicationExpression(node);
     }
 

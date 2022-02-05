@@ -1,9 +1,9 @@
-"use strict";
+'use strict';
 const order = {
-  "*": 0,
-  "/": 0,
-  "+": 1,
-  "-": 1,
+  '*': 0,
+  '/': 0,
+  '+': 1,
+  '-': 1,
 };
 
 /**
@@ -26,9 +26,9 @@ function round(value, prec) {
  */
 function stringify(node, prec) {
   switch (node.type) {
-    case "MathExpression": {
+    case 'MathExpression': {
       const {left, right, operator: op} = node;
-      let str = "";
+      let str = '';
       if (left.type === 'MathExpression' && order[op] < order[left.operator]) {
         str += `(${stringify(left, prec)})`;
       } else {
@@ -76,7 +76,7 @@ module.exports = function (
   ) {
   let str = stringify(node, options.precision);
 
-  const shouldPrintCalc = node.type === "MathExpression" || node.type === "Function";
+  const shouldPrintCalc = node.type === 'MathExpression' || node.type === 'Function';
 
   if (shouldPrintCalc) {
     // if calc expression couldn't be resolved to a single value, re-wrap it as
@@ -87,7 +87,7 @@ module.exports = function (
     // expression could not be resolved to a single value
     if (options.warnWhenCannotResolve) {
       result.warn(
-        "Could not reduce expression: " + originalValue,
+        'Could not reduce expression: ' + originalValue,
         { plugin: 'postcss-calc', node: item });
     }
   }

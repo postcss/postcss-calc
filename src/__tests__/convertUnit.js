@@ -1,10 +1,10 @@
-"use strict";
+'use strict';
 const { test } = require('uvu');
 const assert = require('uvu/assert');
 
 const convertUnit = require('../lib/convertUnit.js');
 
-test("valid conversions", () => {
+test('valid conversions', () => {
   const conversions = [
     // source value, source unit, expected value, target unit
     [ 10, 'px', 10, 'px'],
@@ -100,7 +100,7 @@ test("valid conversions", () => {
   });
 });
 
-test("invalid conversions", () => {
+test('invalid conversions', () => {
   const invalid_units = {
     'px': ['deg', 'grad', 'rad', 'turn', 's', 'ms', 'Hz', 'kHz', 'dpi', 'dpcm', 'dppx'],
     'cm': ['deg', 'grad', 'rad', 'turn', 's', 'ms', 'Hz', 'kHz', 'dpi', 'dpcm', 'dppx'],
@@ -137,7 +137,7 @@ test("invalid conversions", () => {
   }
 });
 
-test("precision", () => {
+test('precision', () => {
   const precision = 10;
   const conversions = [
     // source value, source unit, expected value, target unit
@@ -157,7 +157,7 @@ test("precision", () => {
   });
 });
 
-test("falsey precision", () => {
+test('falsey precision', () => {
   assert.is(
     convertUnit(10, 'px', 'cm', false),
     0.26458333333333334

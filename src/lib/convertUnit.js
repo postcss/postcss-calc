@@ -1,4 +1,4 @@
-"use strict";
+'use strict';
 /**
  * @type {{[key:string]: {[key:string]: number}}}
  */
@@ -138,11 +138,11 @@ function convertUnit(value, sourceUnit, targetUnit, precision) {
   const targetUnitNormalized = targetUnit.toLowerCase();
 
   if (!conversions[targetUnitNormalized]) {
-    throw new Error("Cannot convert to " + targetUnit);
+    throw new Error('Cannot convert to ' + targetUnit);
   }
 
   if (!conversions[targetUnitNormalized][sourceUnitNormalized]) {
-    throw new Error("Cannot convert from " + sourceUnit + " to " + targetUnit);
+    throw new Error('Cannot convert from ' + sourceUnit + ' to ' + targetUnit);
   }
 
   const converted = conversions[targetUnitNormalized][sourceUnitNormalized] * value;

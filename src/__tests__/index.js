@@ -1,4 +1,4 @@
-"use strict";
+'use strict';
 const { test } = require('uvu');
 const assert = require('uvu/assert');
 const postcss = require('postcss');

@@ -36,7 +36,8 @@
     },
     "ignorePatterns": ["src/parser.js"],
     "rules": {
-      "curly": "error"
+      "curly": "error",
+      "quotes": ["error", "single"]
     }
   },
   "devDependencies": {
