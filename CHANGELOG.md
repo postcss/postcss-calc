@@ -1,3 +1,9 @@
+# [8.2.4](https://github.com/postcss/postcss-calc/compare/v8.2.3...v8.2.4) (2022-02-05)
+
+## Patch Changes
+
+* convert source to CommonJS and publish untranspiled code ([b55adcb](https://github.com/postcss/postcss-calc/commit/b55adcb285ea8d385bf802a0f7edeb2d12be1549))
+
 # [8.2.3](https://github.com/postcss/postcss-calc/compare/v8.2.2...v8.2.3) (2022-01-28)
 
 ## Bug Fixes
