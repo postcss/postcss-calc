@@ -2,7 +2,7 @@
 const { test } = require('uvu');
 const assert = require('uvu/assert');
 
-const convertUnit = require('../lib/convertUnit.js');
+const convertUnit = require('../src/lib/convertUnit.js');
 
 test('valid conversions', () => {
   const conversions = [
