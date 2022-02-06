@@ -20,7 +20,6 @@
     "prepare": "pnpm run build && tsc",
     "build": "jison src/parser.jison -o src/parser.js",
     "lint": "eslint . && tsc",
-    "pretest": "pnpm run build",
     "test": "uvu test"
   },
   "author": "Andy Jansson",
