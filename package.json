@@ -19,9 +19,9 @@
   "scripts": {
     "prepare": "pnpm run build && tsc",
     "build": "jison src/parser.jison -o src/parser.js",
-    "lint": "eslint src && tsc",
+    "lint": "eslint . && tsc",
     "pretest": "pnpm run build",
-    "test": "uvu src/__tests__"
+    "test": "uvu test"
   },
   "author": "Andy Jansson",
   "license": "MIT",

@@ -3,7 +3,7 @@ const { test } = require('uvu');
 const assert = require('uvu/assert');
 const postcss = require('postcss');
 
-const reduceCalc = require('../index.js');
+const reduceCalc = require('../src/index.js');
 
 const postcssOpts = { from: undefined };
 
