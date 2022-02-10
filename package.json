@@ -18,7 +18,7 @@
   ],
   "scripts": {
     "prepare": "pnpm run build && tsc",
-    "build": "jison src/parser.jison -o src/parser.js",
+    "build": "jison ./parser.jison -o src/parser.js",
     "lint": "eslint . && tsc",
     "test": "uvu test"
   },
