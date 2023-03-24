@@ -9,6 +9,11 @@
     "calculation",
     "calc"
   ],
+  "homepage": "https://github.com/postcss/postcss-calc",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/postcss/postcss-calc.git"
+  },
   "main": "src/index.js",
   "types": "types/index.d.ts",
   "files": [
