@@ -892,6 +892,14 @@ test(
 );
 
 test(
+  'too many parentheses',
+  testValue(
+    'calc((var(--circumference) / var(--number-of-segments)))',
+    'calc(var(--circumference) / var(--number-of-segments))'
+  )
+);
+
+test(
   'error with parsing',
   testThrows(
     'calc(10pc + unknown)',
