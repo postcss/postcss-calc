@@ -1,3 +1,9 @@
+# 9.0.0 (2023-04-29)
+
+## Breaking Changes
+
+* drop support for Node.js versions before 14
+
 # [8.2.4](https://github.com/postcss/postcss-calc/compare/v8.2.3...v8.2.4) (2022-02-05)
 
 ## Patch Changes
