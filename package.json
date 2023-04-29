@@ -1,6 +1,6 @@
 {
   "name": "postcss-calc",
-  "version": "8.2.4",
+  "version": "9.0.0",
   "description": "PostCSS plugin to reduce calc()",
   "keywords": [
     "css",
@@ -45,6 +45,9 @@
     "rules": {
       "curly": "error"
     }
+  },
+  "engines": {
+    "node": "^14 || ^16 || >=18.0"
   },
   "devDependencies": {
     "@types/node": "^18.16.2",
