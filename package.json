@@ -29,7 +29,6 @@
   },
   "author": "Andy Jansson",
   "license": "MIT",
-  "repository": "https://github.com/postcss/postcss-calc.git",
   "eslintConfig": {
     "extends": [
       "eslint:recommended",
