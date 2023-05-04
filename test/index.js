@@ -768,6 +768,14 @@ test(
   )
 );
 
+test(
+  'should preserve calc when extra parentheses are used',
+  testValue(
+    'calc((var(--circumference) / var(--number-of-segments)))',
+    'calc((var(--circumference)/var(--number-of-segments)))'
+  )
+);
+
 test('precision for calc', testValue('calc(100% / 3 * 3)', '100%'));
 
 test(
