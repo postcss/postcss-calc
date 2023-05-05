@@ -772,7 +772,7 @@ test(
   'should preserve calc when extra parentheses are used',
   testValue(
     'calc((var(--circumference) / var(--number-of-segments)))',
-    'calc((var(--circumference)/var(--number-of-segments)))'
+    'calc(var(--circumference)/var(--number-of-segments))'
   )
 );
 

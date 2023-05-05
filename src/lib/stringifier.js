@@ -79,7 +79,11 @@ module.exports = function (calc, node, originalValue, options, result, item) {
   if (shouldPrintCalc) {
     // if calc expression couldn't be resolved to a single value, re-wrap it as
     // a calc()
-    str = `${calc}(${str})`;
+    if (node.type === 'ParenthesizedExpression') {
+      str = `${calc}${str}`;
+    } else {
+      str = `${calc}(${str})`;
+    }
 
     // if the warnWhenCannotResolve option is on, inform the user that the calc
     // expression could not be resolved to a single value
