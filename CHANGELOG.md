@@ -1,3 +1,9 @@
+# 9.0.1 (2023-05-05)
+
+## Bug Fixes
+
+* fix disappearing calc expression when source contains extra brackets ([18bb47bd0](https://github.com/postcss/postcss-calc/commit/18bb47bd095d2a5b224b0a60521e52f620474b3d))
+
 # 9.0.0 (2023-04-29)
 
 ## Breaking Changes
