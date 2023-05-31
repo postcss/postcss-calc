@@ -49,8 +49,8 @@
     "node": "^14 || ^16 || >=18.0"
   },
   "devDependencies": {
-    "@types/node": "^18.16.2",
-    "eslint": "^8.39.0",
+    "@types/node": "^20.2.5",
+    "eslint": "^8.41.0",
     "eslint-config-prettier": "^8.8.0",
     "jison-gho": "^0.6.1-216",
     "postcss": "^8.2.2",
