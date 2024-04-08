@@ -381,7 +381,7 @@ test('invalid conversions', () => {
 
       try {
         convertUnit(10, unit, targetUnit);
-      } catch (e) {
+      } catch {
         failed = true;
       }
 
