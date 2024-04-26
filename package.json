@@ -29,22 +29,6 @@
   },
   "author": "Andy Jansson",
   "license": "MIT",
-  "eslintConfig": {
-    "extends": [
-      "eslint:recommended",
-      "prettier"
-    ],
-    "env": {
-      "node": true,
-      "es2017": true
-    },
-    "ignorePatterns": [
-      "src/parser.js"
-    ],
-    "rules": {
-      "curly": "error"
-    }
-  },
   "engines": {
     "node": "^18.12 || ^20.9 || >=22.0"
   },
