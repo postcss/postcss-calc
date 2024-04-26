@@ -1,6 +1,6 @@
 'use strict';
-const { test } = require('uvu');
-const assert = require('uvu/assert');
+const { test } = require('node:test');
+const assert = require('node:assert/strict');
 
 const convertUnit = require('../src/lib/convertUnit.js');
 
@@ -96,7 +96,7 @@ test('valid conversions', () => {
     const expected = e[2];
     const targetUnit = e[3];
 
-    assert.is(
+    assert.strictEqual(
       convertUnit(value, unit, targetUnit),
       expected,
       unit + ' -> ' + targetUnit
@@ -406,7 +406,7 @@ test('precision', () => {
     const expected = e[2];
     const targetUnit = e[3];
 
-    assert.is(
+    assert.strictEqual(
       convertUnit(value, unit, targetUnit, precision),
       expected,
       unit + ' -> ' + targetUnit
@@ -415,7 +415,6 @@ test('precision', () => {
 });
 
 test('falsey precision', () => {
-  assert.is(convertUnit(10, 'px', 'cm', false), 0.26458333333333334);
+  assert.strictEqual(convertUnit(10, 'px', 'cm', false), 0.26458333333333334);
 });
 
-test.run();

@@ -25,7 +25,7 @@
     "prepare": "pnpm run build && tsc",
     "build": "jison ./parser.jison -o src/parser.js",
     "lint": "eslint . && tsc",
-    "test": "uvu test"
+    "test": "node --test"
   },
   "author": "Andy Jansson",
   "license": "MIT",
@@ -39,8 +39,7 @@
     "jison-gho": "^0.6.1-216",
     "postcss": "^8.4.38",
     "prettier": "^3.2.5",
-    "typescript": "~5.4.5",
-    "uvu": "^0.5.6"
+    "typescript": "~5.4.5"
   },
   "dependencies": {
     "postcss-selector-parser": "^6.0.16",
