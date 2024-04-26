@@ -1,3 +1,9 @@
+# 10.0.0 (2024-04-26)
+
+## Breaking Changes
+
+* drop support for Node.js 14, 16, 19 and 21
+
 # 9.0.1 (2023-05-05)
 
 ## Bug Fixes
