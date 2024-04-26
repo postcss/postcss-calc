@@ -53,7 +53,7 @@
     "eslint": "^9.0.0",
     "eslint-config-prettier": "^9.1.0",
     "jison-gho": "^0.6.1-216",
-    "postcss": "^8.2.2",
+    "postcss": "^8.4.38",
     "prettier": "^3.2.5",
     "typescript": "~5.4.5",
     "uvu": "^0.5.6"
@@ -63,6 +63,6 @@
     "postcss-value-parser": "^4.2.0"
   },
   "peerDependencies": {
-    "postcss": "^8.2.2"
+    "postcss": "^8.4.38"
   }
 }
