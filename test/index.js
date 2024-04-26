@@ -1,6 +1,6 @@
 'use strict';
-const { test } = require('uvu');
-const assert = require('uvu/assert');
+const { test } = require('node:test');
+const assert = require('node:assert/strict');
 const postcss = require('postcss');
 
 const reduceCalc = require('../src/index.js');
@@ -16,7 +16,7 @@ function testValue(fixture, expected, opts = {}) {
       fixture,
       postcssOpts
     );
-    assert.is(result.css, expected);
+    assert.strictEqual(result.css, expected);
   };
 }
 
@@ -26,7 +26,7 @@ function testCss(fixture, expected, opts = {}) {
       fixture,
       postcssOpts
     );
-    assert.is(result.css, expected);
+    assert.strictEqual(result.css, expected);
   };
 }
 
@@ -40,8 +40,8 @@ function testThrows(fixture, expected, warning, opts = {}) {
       postcssOpts
     );
     const warnings = result.warnings();
-    assert.is(result.css, expected);
-    assert.is(warnings[0].text, warning);
+    assert.strictEqual(result.css, expected);
+    assert.strictEqual(warnings[0].text, warning);
   };
 }
 
@@ -910,5 +910,3 @@ test(
     'Lexical error on line 1: Unrecognized text.\n\n  Erroneous area:\n1: 10pc + unknown\n^.........^'
   )
 );
-
-test.run();
