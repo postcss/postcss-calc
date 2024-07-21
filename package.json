@@ -33,12 +33,12 @@
     "node": "^18.12 || ^20.9 || >=22.0"
   },
   "devDependencies": {
-    "@types/node": "^20.14.9",
-    "eslint": "^9.6.0",
+    "@types/node": "^20.14.11",
+    "eslint": "^9.7.0",
     "eslint-config-prettier": "^9.1.0",
     "jison-gho": "0.6.1-216",
     "postcss": "^8.4.39",
-    "prettier": "^3.3.2",
+    "prettier": "^3.3.3",
     "typescript": "~5.5.3"
   },
   "dependencies": {
