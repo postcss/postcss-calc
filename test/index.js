@@ -258,6 +258,16 @@ test(
 );
 
 test(
+  'should preserve calc with cqw units',
+  testValue('calc(12.72727px + 8.523cqw)', 'calc(12.72727px + 8.523cqw)')
+);
+
+test(
+  'should add numbers with cqw units',
+  testValue('calc(1cqw + 8cqw)', '9cqw')
+);
+
+test(
   'should parse fractions without leading zero',
   testValue('calc(2rem - .14285em)', 'calc(2rem - 0.14285em)')
 );

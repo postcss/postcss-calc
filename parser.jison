@@ -25,6 +25,7 @@
 (([0-9]+("."[0-9]+)?|"."[0-9]+)(e(\+|-)[0-9]+)?)vh\b              return 'VHS';
 (([0-9]+("."[0-9]+)?|"."[0-9]+)(e(\+|-)[0-9]+)?)vmin\b            return 'VMINS';
 (([0-9]+("."[0-9]+)?|"."[0-9]+)(e(\+|-)[0-9]+)?)vmax\b            return 'VMAXS';
+(([0-9]+("."[0-9]+)?|"."[0-9]+)(e(\+|-)[0-9]+)?)cqw\b             return 'CQWS';
 (([0-9]+("."[0-9]+)?|"."[0-9]+)(e(\+|-)[0-9]+)?)cm\b              return 'LENGTH';
 (([0-9]+("."[0-9]+)?|"."[0-9]+)(e(\+|-)[0-9]+)?)mm\b              return 'LENGTH';
 (([0-9]+("."[0-9]+)?|"."[0-9]+)(e(\+|-)[0-9]+)?)Q\b               return 'LENGTH';
@@ -99,6 +100,7 @@ expression
     | VWS { $$ = { type: 'VwValue', value: parseFloat($1), unit: 'vw' }; }
     | VMINS { $$ = { type: 'VminValue', value: parseFloat($1), unit: 'vmin' }; }
     | VMAXS { $$ = { type: 'VmaxValue', value: parseFloat($1), unit: 'vmax' }; }
+    | CQWS { $$ = { type: 'CqwValue', value: parseFloat($1), unit: 'cqw' }; }
     | PERCENTAGE { $$ = { type: 'PercentageValue', value: parseFloat($1), unit: '%' }; }
     | ADD dimension { var prev = $2; $$ = prev; }
     | SUB dimension { var prev = $2; prev.value *= -1; $$ = prev; }
