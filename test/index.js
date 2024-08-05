@@ -283,6 +283,16 @@ test(
 );
 
 test(
+  'should add numbers with cqmin units',
+  testValue('calc(1cqmin + 3cqmin)', '4cqmin')
+);
+
+test(
+  'should add numbers with cqmax units',
+  testValue('calc(1cqmax + 3cqmax)', '4cqmax')
+);
+
+test(
   'should parse fractions without leading zero',
   testValue('calc(2rem - .14285em)', 'calc(2rem - 0.14285em)')
 );

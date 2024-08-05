@@ -24,6 +24,8 @@ function isValueType(node) {
     case 'CqhValue':
     case 'CqiValue':
     case 'CqbValue':
+    case 'CqminValue':
+    case 'CqmaxValue':
     case 'PercentageValue':
     case 'Number':
       return true;
