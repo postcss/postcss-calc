@@ -27,6 +27,8 @@
 (([0-9]+("."[0-9]+)?|"."[0-9]+)(e(\+|-)[0-9]+)?)vmax\b            return 'VMAXS';
 (([0-9]+("."[0-9]+)?|"."[0-9]+)(e(\+|-)[0-9]+)?)cqw\b             return 'CQWS';
 (([0-9]+("."[0-9]+)?|"."[0-9]+)(e(\+|-)[0-9]+)?)cqh\b             return 'CQHS';
+(([0-9]+("."[0-9]+)?|"."[0-9]+)(e(\+|-)[0-9]+)?)cqi\b             return 'CQIS';
+(([0-9]+("."[0-9]+)?|"."[0-9]+)(e(\+|-)[0-9]+)?)cqb\b             return 'CQBS';
 (([0-9]+("."[0-9]+)?|"."[0-9]+)(e(\+|-)[0-9]+)?)cm\b              return 'LENGTH';
 (([0-9]+("."[0-9]+)?|"."[0-9]+)(e(\+|-)[0-9]+)?)mm\b              return 'LENGTH';
 (([0-9]+("."[0-9]+)?|"."[0-9]+)(e(\+|-)[0-9]+)?)Q\b               return 'LENGTH';
@@ -103,6 +105,8 @@ expression
     | VMAXS { $$ = { type: 'VmaxValue', value: parseFloat($1), unit: 'vmax' }; }
     | CQWS { $$ = { type: 'CqwValue', value: parseFloat($1), unit: 'cqw' }; }
     | CQHS { $$ = { type: 'CqhValue', value: parseFloat($1), unit: 'cqh' }; }
+    | CQIS { $$ = { type: 'CqiValue', value: parseFloat($1), unit: 'cqi' }; }
+    | CQBS { $$ = { type: 'CqbValue', value: parseFloat($1), unit: 'cqb' }; }        
     | PERCENTAGE { $$ = { type: 'PercentageValue', value: parseFloat($1), unit: '%' }; }
     | ADD dimension { var prev = $2; $$ = prev; }
     | SUB dimension { var prev = $2; prev.value *= -1; $$ = prev; }

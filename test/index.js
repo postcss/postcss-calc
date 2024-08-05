@@ -268,8 +268,18 @@ test(
 );
 
 test(
-  'should combine numbers with cqh units',
+  'should add numbers with cqh units',
   testValue('calc(1cqh + 3cqh)', '4cqh')
+);
+
+test(
+  'should add numbers with cqi units',
+  testValue('calc(1cqi + 3cqi)', '4cqi')
+);
+
+test(
+  'should add numbers with cqb units',
+  testValue('calc(1cqb + 3cqb)', '4cqb')
 );
 
 test(
