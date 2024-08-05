@@ -1,3 +1,13 @@
+# Changelog
+
+# [11.0.1](https://github.com/postcss/postcss-calc/compare/v10.0.0...v10.0.1) (2024-08-05)
+
+## Bug Fixes
+
+* add support for container query units ([#214](https://github.com/postcss/postcss-calc/issues/214)) ([3f2b43a](https://github.com/postcss/postcss-calc/commit/3f2b43a9d65589c907fa8cbb79a6141603c56c3d)), closes [#199](https://github.com/postcss/postcss-calc/issues/199)
+* update postcss-selector-parser ([3606777](https://github.com/postcss/postcss-calc/commit/3606777a1611bdfa67672e4dadd6c1b1871e163f))
+* update postcss-selector-parser ([a03fb73](https://github.com/postcss/postcss-calc/commit/a03fb73c0d60845c2f98918d8108e231b8f7f80d))
+
 # 10.0.0 (2024-04-26)
 
 ## Breaking Changes
