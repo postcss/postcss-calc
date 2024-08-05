@@ -20,6 +20,12 @@ function isValueType(node) {
     case 'VwValue':
     case 'VminValue':
     case 'VmaxValue':
+    case 'CqwValue':
+    case 'CqhValue':
+    case 'CqiValue':
+    case 'CqbValue':
+    case 'CqminValue':
+    case 'CqmaxValue':
     case 'PercentageValue':
     case 'Number':
       return true;

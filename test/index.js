@@ -258,6 +258,41 @@ test(
 );
 
 test(
+  'should preserve calc with cqw units',
+  testValue('calc(12.72727px + 8.523cqw)', 'calc(12.72727px + 8.523cqw)')
+);
+
+test(
+  'should add numbers with cqw units',
+  testValue('calc(1cqw + 8cqw)', '9cqw')
+);
+
+test(
+  'should add numbers with cqh units',
+  testValue('calc(1cqh + 3cqh)', '4cqh')
+);
+
+test(
+  'should add numbers with cqi units',
+  testValue('calc(1cqi + 3cqi)', '4cqi')
+);
+
+test(
+  'should add numbers with cqb units',
+  testValue('calc(1cqb + 3cqb)', '4cqb')
+);
+
+test(
+  'should add numbers with cqmin units',
+  testValue('calc(1cqmin + 3cqmin)', '4cqmin')
+);
+
+test(
+  'should add numbers with cqmax units',
+  testValue('calc(1cqmax + 3cqmax)', '4cqmax')
+);
+
+test(
   'should parse fractions without leading zero',
   testValue('calc(2rem - .14285em)', 'calc(2rem - 0.14285em)')
 );
