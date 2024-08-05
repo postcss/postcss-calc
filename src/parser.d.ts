@@ -26,7 +26,8 @@ export interface DimensionExpression {
     | 'VwValue'
     | 'VminValue'
     | 'VmaxValue'
-    | 'CqwValue';
+    | 'CqwValue'
+    | 'CqhValue';
   value: number;
   unit: string;
 }

@@ -268,6 +268,11 @@ test(
 );
 
 test(
+  'should combine numbers with cqh units',
+  testValue('calc(1cqh + 3cqh)', '4cqh')
+);
+
+test(
   'should parse fractions without leading zero',
   testValue('calc(2rem - .14285em)', 'calc(2rem - 0.14285em)')
 );
