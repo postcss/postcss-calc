@@ -17,9 +17,29 @@ function isValueType(node) {
     case 'ChValue':
     case 'RemValue':
     case 'VhValue':
+    case 'SvhValue':
+    case 'LvhValue':
+    case 'DvhValue':
     case 'VwValue':
+    case 'SvwValue':
+    case 'LvwValue':
+    case 'DvwValue':
     case 'VminValue':
+    case 'SvminValue':
+    case 'LvminValue':
+    case 'DvminValue':
     case 'VmaxValue':
+    case 'SvmaxValue':
+    case 'LvmaxValue':
+    case 'DvmaxValue':
+    case 'VbValue':
+    case 'SvbValue':
+    case 'LvbValue':
+    case 'DvbValue':
+    case 'ViValue':
+    case 'SviValue':
+    case 'LviValue':
+    case 'DviValue':
     case 'CqwValue':
     case 'CqhValue':
     case 'CqiValue':
