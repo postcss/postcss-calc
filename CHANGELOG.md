@@ -1,5 +1,14 @@
 # Changelog
 
+All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
+
+## [10.0.2](https://github.com/postcss/postcss-calc/compare/v10.0.1...v10.0.2) (2024-08-16)
+
+
+### Bug Fixes
+
+* add support for svh, lvh, dvh, svw, lvw, dvw, svmin, lvmin, dvmin, svmax, lvmax, dvmax units ([f5eaea1](https://github.com/postcss/postcss-calc/commit/f5eaea129f0546451638c6508009a5cfff1a6ddc))
+
 # [11.0.1](https://github.com/postcss/postcss-calc/compare/v10.0.0...v10.0.1) (2024-08-05)
 
 ## Bug Fixes
