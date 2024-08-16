@@ -293,6 +293,19 @@ test(
 );
 
 test(
+  'should add expressions with svh units',
+  testValue(
+    'calc(98% - 1.5rem - (85svh/8.2 + 1.9rem + 1.65svh))',
+    'calc(98% - 3.4rem - 12.01585svh)'
+  )
+);
+
+test(
+  'should not combine different viewport units',
+  testValue('calc(100svmax - 44.5svh)', 'calc(100svmax - 44.5svh)')
+);
+
+test(
   'should parse fractions without leading zero',
   testValue('calc(2rem - .14285em)', 'calc(2rem - 0.14285em)')
 );
