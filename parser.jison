@@ -51,6 +51,8 @@
 (([0-9]+("."[0-9]+)?|"."[0-9]+)(e(\+|-)[0-9]+)?)cqb\b             return 'CQBS';
 (([0-9]+("."[0-9]+)?|"."[0-9]+)(e(\+|-)[0-9]+)?)cqmin\b           return 'CQMINS';
 (([0-9]+("."[0-9]+)?|"."[0-9]+)(e(\+|-)[0-9]+)?)cqmax\b           return 'CQMAXS';
+(([0-9]+("."[0-9]+)?|"."[0-9]+)(e(\+|-)[0-9]+)?)lh\b              return 'LHS';
+(([0-9]+("."[0-9]+)?|"."[0-9]+)(e(\+|-)[0-9]+)?)rlh\b             return 'RLHS';
 (([0-9]+("."[0-9]+)?|"."[0-9]+)(e(\+|-)[0-9]+)?)cm\b              return 'LENGTH';
 (([0-9]+("."[0-9]+)?|"."[0-9]+)(e(\+|-)[0-9]+)?)mm\b              return 'LENGTH';
 (([0-9]+("."[0-9]+)?|"."[0-9]+)(e(\+|-)[0-9]+)?)Q\b               return 'LENGTH';
@@ -150,7 +152,9 @@ expression
     | CQIS { $$ = { type: 'CqiValue', value: parseFloat($1), unit: 'cqi' }; }
     | CQBS { $$ = { type: 'CqbValue', value: parseFloat($1), unit: 'cqb' }; }
     | CQMINS { $$ = { type: 'CqminValue', value: parseFloat($1), unit: 'cqmin' }; }
-    | CQMAXS { $$ = { type: 'CqmaxValue', value: parseFloat($1), unit: 'cqmax' }; }            
+    | CQMAXS { $$ = { type: 'CqmaxValue', value: parseFloat($1), unit: 'cqmax' }; }
+    | LHS { $$ = { type: 'LhValue', value: parseFloat($1), unit: 'lh' }; }
+    | RLHS { $$ = { type: 'RlhValue', value: parseFloat($1), unit: 'rlh' }; }
     | PERCENTAGE { $$ = { type: 'PercentageValue', value: parseFloat($1), unit: '%' }; }
     | ADD dimension { var prev = $2; $$ = prev; }
     | SUB dimension { var prev = $2; prev.value *= -1; $$ = prev; }
