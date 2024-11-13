@@ -47,6 +47,8 @@ function isValueType(node) {
     case 'CqminValue':
     case 'CqmaxValue':
     case 'PercentageValue':
+    case 'LhValue':
+    case 'RlhValue':
     case 'Number':
       return true;
   }

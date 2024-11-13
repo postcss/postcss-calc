@@ -51,7 +51,9 @@ export interface DimensionExpression {
     | 'CqbValue'
     | 'CqiValue'
     | 'CqminValue'
-    | 'CqmaxValue';    
+    | 'CqmaxValue'
+    | 'LhValue'
+    | 'RlhValue';
   value: number;
   unit: string;
 }

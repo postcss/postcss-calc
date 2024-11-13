@@ -306,6 +306,26 @@ test(
 );
 
 test(
+  'should add numbers with lh units',
+  testValue('calc(1lh + 4lh)', '5lh')
+);
+
+test(
+  'should add numbers with rlh units',
+  testValue('calc(1rlh + 4rlh)', '5rlh')
+);
+
+test(
+  'should not combine different lh units',
+  testValue('calc(1lh + 4rlh)', 'calc(1lh + 4rlh)')
+);
+
+test(
+  'should not combine different lh units',
+  testValue('calc(1lh + 20px)', 'calc(1lh + 20px)')
+);
+
+test(
   'should parse fractions without leading zero',
   testValue('calc(2rem - .14285em)', 'calc(2rem - 0.14285em)')
 );
