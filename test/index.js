@@ -30,6 +30,18 @@ function testCss(fixture, expected, opts = {}) {
   };
 }
 
+function testCssDoesNotThrow(fixture, expected, opts = {}) {
+  return async () => {
+    const result = await postcss(reduceCalc(opts)).process(
+      fixture,
+      postcssOpts
+    );
+    assert.strictEqual(result.css, expected);
+    const warnings = result.warnings();
+    assert.strictEqual(warnings.length, 0);
+  };
+}
+
 function testThrows(fixture, expected, warning, opts = {}) {
   fixture = `foo{bar:${fixture}}`;
   expected = `foo{bar:${expected}}`;
@@ -968,6 +980,11 @@ test(
 test(
   'unknown units with known (#1)',
   testValue('calc(1px + 2unknown)', 'calc(1px + 2unknown)')
+);
+
+test(
+  'calc-size should be ignored',
+  testCssDoesNotThrow('.foo{block-size: calc-size(auto, size)}', '.foo{block-size: calc-size(auto, size)}')
 );
 
 test(
