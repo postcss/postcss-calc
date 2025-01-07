@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [10.1.0](https://github.com/postcss/postcss-calc/compare/v10.0.2...v10.1.0) (2025-01-07)
+
+
+### Features
+
+* add support for lh & rlh units ([9b6d7a1](https://github.com/postcss/postcss-calc/commit/9b6d7a16553f9d61ef8097f4e5425ae0c8a7574f))
+
+
+### Bug Fixes
+
+* Ignore calc-size from detection ([#230](https://github.com/postcss/postcss-calc/issues/230)) ([cac6f39](https://github.com/postcss/postcss-calc/commit/cac6f39951617b45bc5bed84be3ed099df619bbf))
+
 ## [10.0.2](https://github.com/postcss/postcss-calc/compare/v10.0.1...v10.0.2) (2024-08-16)
 
 
