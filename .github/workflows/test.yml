@@ -12,13 +12,13 @@ jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4.1.3
-      - uses: pnpm/action-setup@v3.0.0
+      - uses: actions/checkout@v4.2.2
+      - uses: pnpm/action-setup@v4.0.0
         with:
           version: 9.0.6
-      - uses: actions/setup-node@v4.0.2
+      - uses: actions/setup-node@v4.2.0
         with:
-          node-version: 20
+          node-version: 22
           cache: 'pnpm'
       - run: pnpm install --frozen-lockfile
       - name: Lint
@@ -30,12 +30,12 @@ jobs:
       matrix:
         node-version: [18, 20, 22]
     steps:
-      - uses: actions/checkout@v4.1.3
-      - uses: pnpm/action-setup@v3.0.0
+      - uses: actions/checkout@v4.2.2
+      - uses: pnpm/action-setup@v4.0.0
         with:
           version: 9.0.6
       - name: Instal Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v4.0.2
+        uses: actions/setup-node@v4.2.0
         with:
           node-version: ${{ matrix.node-version }}
           cache: 'pnpm'
