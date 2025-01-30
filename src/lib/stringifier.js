@@ -31,6 +31,8 @@ function stringify(node, prec) {
       let str = '';
       if (left.type === 'MathExpression' && order[op] < order[left.operator]) {
         str += `(${stringify(left, prec)})`;
+      } else if (left.type === 'CalcKeyword') {
+        str += left.value;
       } else {
         str += stringify(left, prec);
       }
@@ -42,6 +44,8 @@ function stringify(node, prec) {
         order[op] < order[right.operator]
       ) {
         str += `(${stringify(right, prec)})`;
+      } else if (right.type === 'CalcKeyword') {
+        str += right.value;
       } else {
         str += stringify(right, prec);
       }
@@ -54,6 +58,8 @@ function stringify(node, prec) {
       return node.value.toString();
     case 'ParenthesizedExpression':
       return `(${stringify(node.content, prec)})`;
+    case 'CalcKeyword':
+      return node.value;
     default:
       return round(node.value, prec) + node.unit;
   }
@@ -74,7 +80,7 @@ module.exports = function (calc, node, originalValue, options, result, item) {
 
   const shouldPrintCalc =
     node.type === 'MathExpression' || node.type === 'Function' ||
-    node.type === 'ParenthesizedExpression';
+    node.type === 'ParenthesizedExpression' || node.type === 'CalcKeyword';
 
   if (shouldPrintCalc) {
     // if calc expression couldn't be resolved to a single value, re-wrap it as

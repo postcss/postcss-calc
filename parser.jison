@@ -73,6 +73,8 @@
 (([0-9]+("."[0-9]+)?|"."[0-9]+)(e(\+|-)[0-9]+)?)dppx\b            return 'RES';
 (([0-9]+("."[0-9]+)?|"."[0-9]+)(e(\+|-)[0-9]+)?)\%                return 'PERCENTAGE';
 (([0-9]+("."[0-9]+)?|"."[0-9]+)(e(\+|-)[0-9]+)?)\b                return 'NUMBER';
+("infinity"|"pi"|"e")\b                                           return 'CALC_KEYWORD';
+
 
 (([0-9]+("."[0-9]+)?|"."[0-9]+)(e(\+|-)[0-9]+)?)-?([a-zA-Z_]|[\240-\377]|(\\[0-9a-fA-F]{1,6}(\r\n|[ \t\r\n\f])?|\\[^\r\n\f0-9a-fA-F]))([a-zA-Z0-9_-]|[\240-\377]|(\\[0-9a-fA-F]{1,6}(\r\n|[ \t\r\n\f])?|\\[^\r\n\f0-9a-fA-F]))*\b       return 'UNKNOWN_DIMENSION';
 
@@ -106,6 +108,7 @@ expression
     | function { $$ = $1; }
     | dimension { $$ = $1; }
     | number { $$ = $1; }
+    | calc_keyword { $$ = $1; }
     ;
 
   function
@@ -158,6 +161,10 @@ expression
     | PERCENTAGE { $$ = { type: 'PercentageValue', value: parseFloat($1), unit: '%' }; }
     | ADD dimension { var prev = $2; $$ = prev; }
     | SUB dimension { var prev = $2; prev.value *= -1; $$ = prev; }
+    ;
+
+  calc_keyword
+    : CALC_KEYWORD { $$ = { type: 'CalcKeyword', value: $1 }; }
     ;
 
   number
