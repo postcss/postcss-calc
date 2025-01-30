@@ -361,7 +361,10 @@ function includesNoCssProperties(node) {
  * @return {import('../parser').CalcNode}
  */
 function reduce(node, precision) {
-  if (node.type === 'MathExpression' && (node.left.type === 'CalcKeyword' || node.right.type === 'CalcKeyword')) {
+  if (
+    node.type === 'MathExpression' &&
+    (node.left.type === 'CalcKeyword' || node.right.type === 'CalcKeyword')
+  ) {
     return node;
   }
   if (node.type === 'MathExpression') {
