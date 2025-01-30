@@ -79,8 +79,10 @@ module.exports = function (calc, node, originalValue, options, result, item) {
   let str = stringify(node, options.precision);
 
   const shouldPrintCalc =
-    node.type === 'MathExpression' || node.type === 'Function' ||
-    node.type === 'ParenthesizedExpression' || node.type === 'CalcKeyword';
+    node.type === 'MathExpression' ||
+    node.type === 'Function' ||
+    node.type === 'ParenthesizedExpression' ||
+    node.type === 'CalcKeyword';
 
   if (shouldPrintCalc) {
     // if calc expression couldn't be resolved to a single value, re-wrap it as

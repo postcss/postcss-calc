@@ -75,7 +75,12 @@ export interface CalcKeywordExpression {
 
 export type ValueExpression = DimensionExpression | NumberExpression;
 
-export type CalcNode = MathExpression | ValueExpression | FunctionExpression | ParenthesizedExpression  | CalcKeywordExpression;
+export type CalcNode =
+  | MathExpression
+  | ValueExpression
+  | FunctionExpression
+  | ParenthesizedExpression
+  | CalcKeywordExpression;
 
 export interface Parser {
   parse: (arg: string) => CalcNode;
