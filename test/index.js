@@ -259,6 +259,33 @@ test(
   )
 );
 
+
+test(
+ 'should ignore multiplication with infinity',
+testValue('calc(infinity * 1px)', 'calc(infinity*1px)')
+);
+
+test(
+ 'should ignore addition with infinity',
+testValue('calc(infinity + 1px)', 'calc(infinity + 1px)')
+);
+
+test(
+ 'should ignore multiplication with pi',
+testValue('calc(1px * pi)', 'calc(1px*pi)')
+);
+
+test(
+ 'should ignore addition with pi',
+testValue('calc(43 + pi)', 'calc(43 + pi)')
+);
+
+test(
+ 'should preserve e',
+testValue('calc(e)', 'calc(e)')
+);
+
+
 test(
   'should reduce calc with newline characters',
   testValue('calc(\n1rem \n* 2 \n* 1.5)', '3rem')
