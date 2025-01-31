@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [10.1.1](https://github.com/postcss/postcss-calc/compare/v10.1.0...v10.1.1) (2025-01-31)
+
+
+### Bug Fixes
+
+* handle calc keywords correctly ([#234](https://github.com/postcss/postcss-calc/issues/234)) ([87d57ef](https://github.com/postcss/postcss-calc/commit/87d57ef74d897fb2b9f1ecc759bedaecee3989e6)), closes [#210](https://github.com/postcss/postcss-calc/issues/210)
+
 ## [10.1.0](https://github.com/postcss/postcss-calc/compare/v10.0.2...v10.1.0) (2025-01-07)
 
 
