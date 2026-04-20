@@ -79,7 +79,7 @@ function transformSelector(value, options, result, item) {
  * @param {import("postcss").Result} result
  */
 module.exports = (node, property, options, result) => {
-  let value = node[property];
+  let value;
 
   try {
     value =
