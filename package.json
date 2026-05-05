@@ -26,12 +26,12 @@
     "prepare": "pnpm run build",
     "build": "tsc -p tsconfig.build.json",
     "build:jison": "jison ./parser.jison -o src/parser.js",
-    "lint": "eslint . && tsc && tsc -p tsconfig.pratt.json",
+    "lint": "eslint . && tsc",
     "test": "node --test",
     "test:pratt": "node --import tsx --test 'src/pratt/test/**/*.test.ts'",
     "test:mutation": "stryker run",
     "quality:knip": "knip",
-    "quality:type-coverage": "type-coverage -p tsconfig.pratt.json --at-least 99.5",
+    "quality:type-coverage": "type-coverage --at-least 99.5",
     "quality:depcruise": "depcruise src/pratt/src --config .dependency-cruiser.cjs",
     "quality:jscpd-src": "jscpd src/pratt/src --threshold 0.5 --min-lines 5 --min-tokens 50",
     "quality:jscpd-test": "jscpd src/pratt/test --ignore 'src/pratt/test/corpus/**' --threshold 3 --min-lines 5 --min-tokens 60",
@@ -40,7 +40,7 @@
   "author": "Andy Jansson",
   "license": "MIT",
   "engines": {
-    "node": "^18.12 || ^20.9 || >=22.0"
+    "node": ">=22.0"
   },
   "devDependencies": {
     "@csstools/css-calc": "^3.2.0",
