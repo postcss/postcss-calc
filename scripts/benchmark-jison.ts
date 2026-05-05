@@ -1,4 +1,4 @@
-// Benchmark: v10 (legacy jison) vs pratt against the harvested corpus.
+// Benchmark: legacy jison parser vs pratt against the harvested corpus.
 
 import { readFileSync, readdirSync } from 'node:fs';
 import { join, dirname } from 'node:path';
@@ -13,8 +13,8 @@ interface BenchResult {
 
 async function main(): Promise<void> {
   // Dynamic imports so CJS/ESM interop works under tsx.
-  const v10Plugin = (await import('../src/index.js')).default as () => AcceptedPlugin;
-  const v3Plugin = (await import('../src/pratt/src/plugin/plugin.ts')).default as () => AcceptedPlugin;
+  const jisonPlugin = (await import('../src/index.js')).default as () => AcceptedPlugin;
+  const prattPlugin = (await import('../src/pratt/src/plugin/plugin.ts')).default as () => AcceptedPlugin;
 
   const HERE = dirname(fileURLToPath(import.meta.url));
   const CORPUS_DIR = join(HERE, '..', 'src', 'pratt', 'test', 'corpus');
@@ -48,15 +48,15 @@ async function main(): Promise<void> {
   console.log(`CSS size: ${css.length} bytes, ${calcs.length} declarations`);
   console.log(`Iterations: ${ITERATIONS} each\n`);
 
-  const v10 = await bench('v10 (jison)', v10Plugin);
-  const v3 = await bench('v3 (pratt)', v3Plugin);
+  const jison = await bench('jison', jisonPlugin);
+  const pratt = await bench('pratt', prattPlugin);
 
-  console.log(`  ${v10.name}:  ${v10.perRun.toFixed(2)}ms / run  (${v10.total.toFixed(0)}ms total)`);
-  console.log(`  ${v3.name}:   ${v3.perRun.toFixed(2)}ms / run  (${v3.total.toFixed(0)}ms total)`);
+  console.log(`  ${jison.name}:  ${jison.perRun.toFixed(2)}ms / run  (${jison.total.toFixed(0)}ms total)`);
+  console.log(`  ${pratt.name}:  ${pratt.perRun.toFixed(2)}ms / run  (${pratt.total.toFixed(0)}ms total)`);
 
-  const ratio = v3.perRun / v10.perRun;
+  const ratio = pratt.perRun / jison.perRun;
   const direction = ratio < 1 ? 'faster' : 'slower';
-  console.log(`\n  v3 is ${(ratio < 1 ? 1 / ratio : ratio).toFixed(2)}x ${direction} than v10`);
+  console.log(`\n  pratt is ${(ratio < 1 ? 1 / ratio : ratio).toFixed(2)}x ${direction} than jison`);
 }
 
-main();
+main().catch((e: unknown) => { console.error(e); process.exit(1); });

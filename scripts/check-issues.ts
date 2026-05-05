@@ -167,10 +167,9 @@ async function main(): Promise<void> {
 
   for (const c of cases) {
     const r = await run(c.declaration);
-    const tag =
-      !r.ok                                  ? 'THROWS'
-      : r.warnings.length > 0                ? 'WARNS '
-                                             : 'OK    ';
+    let tag = 'OK    ';
+    if (!r.ok) tag = 'THROWS';
+    else if (r.warnings.length > 0) tag = 'WARNS ';
     console.log(`#${c.issue.toString().padStart(3)} [${tag}] ${c.title}`);
     console.log(`        in:  ${c.declaration}`);
     console.log(`        out: ${r.output}`);
@@ -192,4 +191,4 @@ async function main(): Promise<void> {
   console.log(`Summary: ${resolved} OK, ${unresolved} throws/warns, ${skipped.length} meta`);
 }
 
-main();
+main().catch((e: unknown) => { console.error(e); process.exit(1); });
