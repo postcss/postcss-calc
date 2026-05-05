@@ -1,0 +1,8 @@
+calc(.5625rem - 1px)
+calc(.5rem - 1px)
+calc(.625rem - 1px)
+calc(.6875rem - 1px)
+calc(.75rem - 1px)
+calc(.8125rem - 1px)
+calc(.875rem - 1px)
+calc(100% - 1em + 1px)
