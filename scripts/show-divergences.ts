@@ -1,0 +1,80 @@
+// Bucket github-pure corpus divergences against @csstools/css-calc.
+
+import { readFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+import { tokenize } from '../src/pratt/src/core/tokenizer.ts';
+import { parse } from '../src/pratt/src/core/parser.ts';
+import { simplify } from '../src/pratt/src/core/simplify.ts';
+import { serialize } from '../src/pratt/src/core/serialize.ts';
+import { calc as csstoolsCalc } from '@csstools/css-calc';
+
+const ROOT = dirname(fileURLToPath(import.meta.url));
+const CORPUS = join(ROOT, '..', 'src/pratt/test/corpus/github-pure.txt');
+
+const lines = readFileSync(CORPUS, 'utf8')
+  .split('\n')
+  .map((l) => l.trim())
+  .filter(Boolean);
+
+const ours = (s: string): string | null => {
+  try {
+    return serialize(simplify(parse(tokenize(s))), { precision: 10 });
+  } catch {
+    return null;
+  }
+};
+const theirs = (s: string): string | null => {
+  try {
+    const r = csstoolsCalc(s);
+    return typeof r === 'string' ? r : null;
+  } catch {
+    return null;
+  }
+};
+
+interface Diff {
+  input: string;
+  ours: string;
+  theirs: string;
+}
+
+const THREW = '<threw>';
+const div: Diff[] = [];
+for (const line of lines) {
+  const o = ours(line);
+  const t = theirs(line);
+  if (o === null && t === null) continue;
+  if (o === null || t === null) {
+    div.push({ input: line, ours: o ?? THREW, theirs: t ?? THREW });
+    continue;
+  }
+  if (o === t) continue;
+  // Re-feed csstools' output through our pipeline to absorb cosmetic noise.
+  const ct = ours(t);
+  if (ct !== null && o === ct) continue;
+  div.push({ input: line, ours: o, theirs: t });
+}
+
+console.log(`Total divergences: ${div.length}`);
+console.log('---');
+const buckets = {
+  we_threw: div.filter((d) => d.ours === THREW),
+  they_threw: div.filter((d) => d.theirs === THREW),
+  different_output: div.filter((d) => d.ours !== THREW && d.theirs !== THREW),
+};
+console.log(`we_threw:         ${buckets.we_threw.length}`);
+console.log(`they_threw:       ${buckets.they_threw.length}`);
+console.log(`different_output: ${buckets.different_output.length}`);
+console.log('---');
+console.log('=== we_threw ===');
+for (const d of buckets.we_threw) console.log(d.input);
+console.log('=== they_threw ===');
+for (const d of buckets.they_threw.slice(0, 15)) {
+  console.log(`IN:   ${d.input}\nOURS: ${d.ours}`);
+}
+console.log('=== different_output ===');
+for (const d of buckets.different_output.slice(0, 15)) {
+  console.log(`IN:     ${d.input}\nOURS:   ${d.ours}\nTHEIRS: ${d.theirs}\n`);
+}
