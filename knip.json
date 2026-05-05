@@ -1,0 +1,32 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  "workspaces": {
+    ".": {
+      "entry": [
+        "scripts/benchmark.mjs",
+        "test/**/*.{js,mjs}",
+        "src/pratt/test/**/*.test.ts",
+        "src/pratt/src/plugin/*.ts",
+        "stryker.conf.mjs",
+        "eslint.config.js",
+        ".dependency-cruiser.cjs"
+      ],
+      "project": [
+        "src/**/*.js",
+        "src/pratt/src/**/*.ts",
+        "src/pratt/test/**/*.ts"
+      ]
+    }
+  },
+  "ignoreDependencies": [
+    "@stryker-mutator/typescript-checker",
+    "@stryker-mutator/command-runner",
+    "@stryker-mutator/api",
+    "prettier"
+  ],
+  "ignoreExportsUsedInFile": true,
+  "rules": {
+    "exports": "off",
+    "types": "off"
+  }
+}
