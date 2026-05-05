@@ -69,6 +69,8 @@ function saveState(s: State): void {
 const state = loadState();
 
 function gh(argv: string[]): string {
+  // gh CLI is intentionally PATH-resolved — this is a CI/dev tool script.
+  // eslint-disable-next-line sonarjs/no-os-command-from-path
   return execFileSync('gh', argv, {
     encoding: 'utf8',
     maxBuffer: 64 * 1024 * 1024,
@@ -88,7 +90,7 @@ async function paceSearch(): Promise<void> {
 
 async function waitForSearchReset(): Promise<void> {
   try {
-    const j = JSON.parse(gh(['api', '/rate_limit']));
+    const j = JSON.parse(gh(['api', '/rate_limit'])) as RateLimit;
     const reset = j.resources?.code_search?.reset;
     if (reset) {
       const waitMs = Math.max(0, reset * 1000 - Date.now()) + 2000;
@@ -105,6 +107,13 @@ async function waitForSearchReset(): Promise<void> {
 interface SearchResult {
   repository?: { nameWithOwner?: string };
   path?: string;
+}
+
+interface RateLimit {
+  resources?: {
+    code_search?: { reset?: number };
+    core?: { reset?: number };
+  };
 }
 
 async function searchCode(query: string, language: string, limit = 100): Promise<SearchResult[]> {
@@ -144,7 +153,7 @@ async function paceFetch(): Promise<void> {
 
 async function waitForCoreReset(): Promise<void> {
   try {
-    const j = JSON.parse(gh(['api', '/rate_limit']));
+    const j = JSON.parse(gh(['api', '/rate_limit'])) as RateLimit;
     const reset = j.resources?.core?.reset;
     if (reset) {
       const waitMs = Math.max(0, reset * 1000 - Date.now()) + 5000;
@@ -213,7 +222,7 @@ function sanitize(src: string): string {
   return out;
 }
 
-const CALC_RE = /(?:^|[^a-zA-Z0-9_-])(?:-(?:webkit|moz|ms|o)-)?calc\(/gi;
+const CALC_RE = /(?:^|[^\w-])(?:-(?:webkit|moz|ms|o)-)?calc\(/gi;
 
 function extractCalcs(src: string): string[] {
   const sanitized = sanitize(src);
@@ -245,7 +254,7 @@ function extractCalcs(src: string): string[] {
 }
 
 function safeName(owner: string, repo: string, path: string): string {
-  return `${owner}__${repo}__${path}`.replace(/[/\\]/g, '_').replace(/[^A-Za-z0-9._-]/g, '_');
+  return `${owner}__${repo}__${path}`.replace(/[/\\]/g, '_').replace(/[^\w.-]/g, '_');
 }
 
 // Phase 1: discover paths.
@@ -298,7 +307,7 @@ for (const [key, { owner, repo, path }] of discovered) {
   if (!raw) { failed++; continue; }
   fetched++;
   const fname = safeName(owner, repo, path);
-  const ext = path.match(/\.(css|scss|less|stylus|styl)$/i)?.[1]?.toLowerCase() ?? 'css';
+  const ext = /\.(css|scss|less|stylus|styl)$/i.exec(path)?.[1]?.toLowerCase() ?? 'css';
   writeFileSync(join(FILES_DIR, `${fname}.${ext}`), raw);
   const calcs = extractCalcs(raw);
   for (const c of calcs) expressions.add(c);
@@ -307,13 +316,13 @@ for (const [key, { owner, repo, path }] of discovered) {
   if (fetched % 25 === 0) {
     state.expressions = [...expressions];
     saveState(state);
-    writeFileSync(EXPR_FILE, [...expressions].sort().join('\n') + '\n');
+    writeFileSync(EXPR_FILE, [...expressions].sort((a, b) => a.localeCompare(b)).join('\n') + '\n');
   }
 }
 
 state.expressions = [...expressions];
 saveState(state);
-writeFileSync(EXPR_FILE, [...expressions].sort().join('\n') + '\n');
+writeFileSync(EXPR_FILE, [...expressions].sort((a, b) => a.localeCompare(b)).join('\n') + '\n');
 
 process.stderr.write(`\nDone. fetched=${fetched} skipped=${skipped} failed=${failed} calc-occurrences=${calcCount} unique-expressions=${expressions.size}\n`);
 process.stderr.write(`Files: ${FILES_DIR}\nExpressions: ${EXPR_FILE}\n`);

@@ -10,6 +10,7 @@ module.exports = [
       'node_modules/**',
       '.stryker-tmp/**',
       'reports/**',
+      'dist/**',
     ],
   },
   js.configs.recommended,
@@ -20,7 +21,7 @@ module.exports = [
     languageOptions: {
       ...(c.languageOptions || {}),
       parserOptions: {
-        project: './tsconfig.pratt.json',
+        project: './tsconfig.json',
         tsconfigRootDir: __dirname,
       },
     },
