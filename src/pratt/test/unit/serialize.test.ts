@@ -7,8 +7,8 @@ import { mkSum, mkProduct, type Node } from '../../src/core/node.ts';
 // Direct serialize() tests — build canonical AST nodes by hand to pin
 // output shape without depending on the parser/simplify.
 
-// With v3's signed-leaf canonical form, negatives live directly in the
-// Num/Dim value — no wrapper needed.
+// Signed-leaf canonical form: negatives live directly in the Num/Dim
+// value — no wrapper needed.
 const num = (v: number): Node => ({ type: 'Num', value: v });
 const dim = (v: number, u: string): Node => ({ type: 'Dim', value: v, unit: u });
 
@@ -68,7 +68,7 @@ test('serialize: Sum inside Product gets parens', () => {
 });
 
 test('serialize: negative Dim via signed leaf → bare -Xpx', () => {
-  // v3: negatives live directly in the Dim value. The constructor helper
+  // Negatives live directly in the Dim value. The constructor helper
   // `dim(-1, 'px')` returns a Dim with value -1, no Sum wrapper.
   assert.equal(serialize(dim(-1, 'px')), '-1px');
 });

@@ -169,14 +169,14 @@ calc({dropZeroIdentities: true})
 | `calc(99.99% * 1/1 - 0rem)` | `calc(99.99% + 0rem)` | `99.99%` |
 | `calc((100px - 1em) + (-50px + 1em))` | `calc(50px + 0em)` | `50px` |
 
-### Migrating from `postcss-calc` 10.x
+### Behavior differences from the legacy parser
 
-10.x used a [jison][jison]-generated parser; 11.x ships a hand-written
+The legacy [jison][jison]-generated parser was replaced by a hand-written
 Pratt parser whose simplifier follows [CSS Values 4][css-values-4]. Most
-inputs reduce to identical output, but some 10.x results were jison
-implementation choices rather than spec-required behavior. The three opt-
-in flags above recover the most visible differences. Setting all three
-matches 10.x as closely as 11.x will go:
+inputs reduce to identical output, but some legacy results were jison
+implementation choices rather than spec-required behavior. The three
+opt-in flags above recover the most visible differences. Setting all
+three matches the legacy output as closely as possible:
 
 ```js
 calc({
@@ -186,14 +186,14 @@ calc({
 })
 ```
 
-A handful of 11.x behaviors aren't flag-controlled — they're spec-aligned
+A handful of behaviors aren't flag-controlled — they're spec-aligned
 or canonical-form decisions:
 
 - **Constant folding.** `calc(43 + pi)` now folds to `46.14159` (§10.7.1).
-  10.x kept `pi` / `e` symbolic.
+  Previously `pi` / `e` stayed symbolic.
 - **Reciprocal conversion.** `calc(var(--x) / 2)` becomes
-  `calc(var(--x) * 0.5)`. The two are mathematically equivalent; 10.x kept
-  the division shape.
+  `calc(var(--x) * 0.5)`. The two are mathematically equivalent;
+  previously the division shape was kept.
 - **Distributive multiplication.** `calc(0.5 * (100vw - 10px))` becomes
   `calc(50vw - 5px)`.
 - **Unit case normalization.** `2PX` becomes `2px` (CSS units are case-

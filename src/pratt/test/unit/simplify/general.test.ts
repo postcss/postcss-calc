@@ -18,9 +18,9 @@ test('simplify: sum with dim terms only (hasNum stays false)', () => {
 });
 
 test('simplify: division by Dim(0, unit) flows through (no throw)', () => {
-  // Pre-v11.3 this threw; per §10.9.1 the Product simplifier now produces
-  // an opaque Call shape — `1 / 0px` is invalid typed-arith (number /
-  // length) and stays unreduced.
+  // Per §10.9.1 the Product simplifier produces an opaque Call shape —
+  // `1 / 0px` is invalid typed-arith (number / length) and stays
+  // unreduced rather than throwing.
   assert.equal(out('calc(1 / 0px)'), 'calc(1 / 0px)');
 });
 

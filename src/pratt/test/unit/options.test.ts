@@ -1,7 +1,8 @@
-// Coverage for the three opt-in flags that recover v10 / jison behavior:
-// strictWhitespace (tokenizer-level), preserveOrder (simplifier output
-// order), dropZeroIdentities (simplifier zero-bucket pruning). Defaults
-// match the spec; each flag is independent and composes cleanly.
+// Coverage for the three opt-in flags that recover legacy jison
+// behavior: strictWhitespace (tokenizer-level), preserveOrder
+// (simplifier output order), dropZeroIdentities (simplifier zero-bucket
+// pruning). Defaults match the spec; each flag is independent and
+// composes cleanly.
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';

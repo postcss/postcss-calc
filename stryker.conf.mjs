@@ -1,12 +1,12 @@
 // Stryker mutation testing config.
 //
-// Mutates the core v3 logic (simplify + serialize + node constructors) and
+// Mutates the core pipeline (simplify + serialize + node constructors) and
 // reports the kill rate. A surviving mutant means the test suite would
 // accept a wrong implementation — i.e. a real coverage hole.
 //
 // We use the `command` runner since our test harness is `node --test` via
-// tsx. Each mutant runs the whole v11 suite; the suite is fast
-// enough (<400ms) that this is practical.
+// tsx. Each mutant runs the whole pratt suite; the suite is fast enough
+// (<400ms) that this is practical.
 
 /** @type {import('@stryker-mutator/api/core').PartialStrykerOptions} */
 export default {
