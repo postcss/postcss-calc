@@ -1,20 +1,14 @@
+// Build config. Emits dist/ with declarations from the shipped sources only.
 {
+  "extends": "./tsconfig.base.json",
   "compilerOptions": {
-    "target": "es2022",
-    "lib": ["es2022"],
     "module": "nodenext",
     "moduleResolution": "nodenext",
-    "strict": true,
-    "noUncheckedIndexedAccess": true,
-    "noImplicitOverride": true,
     "esModuleInterop": true,
-    "allowImportingTsExtensions": true,
     "rewriteRelativeImportExtensions": true,
     "declaration": true,
-    "skipLibCheck": true,
     "outDir": "dist",
-    "rootDir": ".",
-    "types": ["node"]
+    "rootDir": "."
   },
   "include": ["src/index.ts", "src/pratt/src/**/*.ts"],
   "exclude": ["src/pratt/src/plugin/plugin-csstools.ts"]
