@@ -65,7 +65,7 @@ export function simplifyProduct(
 
   // §10.10 distributive multiplication: `0.5 * (100vw - 10px)` → `50vw - 5px`.
   // Only distribute when every Sum term is Num/Dim — partial distribution
-  // over opaque terms matches neither v10 nor csstools.
+  // over opaque terms matches neither the legacy implementation nor csstools.
   if (
     remainingDims.length === 0 &&
     opaque.length === 1 &&

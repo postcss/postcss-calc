@@ -9,7 +9,7 @@
 //   - infinity / NaN serialization (covered when full IEEE-754 fold lands).
 //
 // Trig (§10.4: sin/cos/tan/asin/acos/atan/atan2) is covered below; the
-// exponential family (pow/sqrt/hypot/log/exp) lands in v11.3.
+// exponential family (pow/sqrt/hypot/log/exp) is a planned follow-up.
 //
 // Divergences are documented with `DIVERGE:` comments.
 

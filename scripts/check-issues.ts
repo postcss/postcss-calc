@@ -1,6 +1,6 @@
 // Run each open issue's test case through the pratt pipeline and report
-// whether v3 resolves the v10-era complaint. See gh issue list --repo
-// postcss/postcss-calc --state open.
+// whether the new implementation resolves the legacy complaint. See
+// `gh issue list --repo postcss/postcss-calc --state open`.
 
 import postcss from 'postcss';
 import plugin from '../src/pratt/src/plugin/plugin.ts';
@@ -130,7 +130,7 @@ const cases: Case[] = [
 ];
 
 const META_NOTES: Record<number, string> = {
-  198: 'Meta: hand-written Pratt parser is exactly what v3 ships.',
+  198: 'Meta: hand-written Pratt parser is exactly what this rewrite ships.',
   67:  'Meta: browserlist integration is out of scope (cssnano territory).',
 };
 
@@ -159,7 +159,7 @@ async function run(declaration: string): Promise<Run> {
 }
 
 async function main(): Promise<void> {
-  console.log(`Running ${cases.length} test cases against pratt v3.\n`);
+  console.log(`Running ${cases.length} test cases against the pratt pipeline.\n`);
 
   let resolved = 0;
   let unresolved = 0;

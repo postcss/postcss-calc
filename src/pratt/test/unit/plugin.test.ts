@@ -136,8 +136,8 @@ test('plugin: onParseError receives the inner calc body, not the full decl', asy
 });
 
 test('plugin: division by zero now folds to infinity (no error)', async () => {
-  // Pre-v11.3 this threw; §10.9.1 specifies IEEE-754 propagation, so the
-  // simplifier yields Dim(Infinity, px) which serializes as the canonical
+  // §10.9.1 specifies IEEE-754 propagation, so the simplifier yields
+  // Dim(Infinity, px) which serializes as the canonical
   // calc(infinity * 1px) form.
   const captured: Error[] = [];
   const { css } = await process('a{b:calc(1px / 0)}', {
@@ -173,8 +173,8 @@ test('plugin: preserve + warnWhenCannotResolve — both fire together', async ()
     warnWhenCannotResolve: true,
   });
   // preserve clones the original alongside — both have the same
-  // serialized value since v3 can't fully simplify this expression,
-  // but the clone step still runs.
+  // serialized value since the simplifier can't fully reduce this
+  // expression, but the clone step still runs.
   assert.match(css, /calc\(100% \+ var\(--x\)\)/);
   assert.equal(warnings.length, 1);
 });

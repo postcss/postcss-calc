@@ -1,5 +1,5 @@
 // dependency-cruiser config — enforces module-boundary rules for the
-// TypeScript v11 sources. Keeps `core/` PostCSS-free so it stays portable,
+// TypeScript sources. Keeps `core/` PostCSS-free so it stays portable,
 // and stops test code from being reachable from production.
 
 module.exports = {
