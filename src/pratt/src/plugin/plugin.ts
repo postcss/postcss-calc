@@ -1,7 +1,7 @@
 // PostCSS adapter. Walks declaration values (and optionally @rule params
 // and selectors), feeds calc() bodies through tokenize → parse → simplify
 // → serialize, and writes the result back. Drop-in compatible with the
-// v10 public option surface.
+// legacy public option surface.
 
 import valueParser from 'postcss-value-parser';
 import type { PluginCreator, Result, ChildNode } from 'postcss';

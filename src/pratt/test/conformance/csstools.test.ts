@@ -5,7 +5,7 @@
 // produces the same output as csstools. Deliberately excluded:
 //   - csstools `globals` option (variable substitution) — not in our scope
 //   - relative-color math (`rgb(from ...)`) — out of scope
-//   - exponential family (pow/sqrt/hypot/log/exp) — not yet implemented (v11.3)
+//   - exponential family (pow/sqrt/hypot/log/exp) — not yet implemented
 //   - cases where floating-point serialization precision differs (we use
 //     `precision: false` to emit full-float, but csstools occasionally
 //     rounds at ~15 significant figures in its own way)

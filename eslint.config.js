@@ -14,7 +14,7 @@ module.exports = [
     ],
   },
   js.configs.recommended,
-  // Type-aware lint for the v11 TypeScript sources.
+  // Type-aware lint for the TypeScript sources.
   ...tseslint.configs.recommendedTypeChecked.map((c) => ({
     ...c,
     files: ['src/pratt/**/*.ts', 'scripts/**/*.ts'],
@@ -32,7 +32,7 @@ module.exports = [
     plugins: { sonarjs },
     rules: sonarjs.configs.recommended.rules,
   },
-  // Project-specific lint adjustments for the v11 TypeScript sources.
+  // Project-specific lint adjustments for the TypeScript sources.
   {
     files: ['src/pratt/**/*.ts', 'scripts/**/*.ts'],
     rules: {

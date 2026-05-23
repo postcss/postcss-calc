@@ -3,19 +3,11 @@ const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const postcss = require('postcss');
 
-// Set `POSTCSS_CALC_CSSTOOLS=1` to swap in @csstools/css-calc as the
-// reference oracle (requires tsx loader).
-//
-// The v10 regression suite is the legacy-behavior conformance baseline:
-// it documents what jison did, including non-spec choices that the v11
-// pratt simplifier doesn't reproduce by default. We opt into all three
-// legacy flags here so existing fixtures express the v10 contract.
-// Tests can still override individual flags through `opts`.
-const baseCalc = process.env.POSTCSS_CALC_CSSTOOLS
-  ? require('../src/pratt/src/plugin/plugin-csstools.ts')
-  : require('../');
+// Opt into the three flags that recover legacy jison behavior so the
+// fixtures below keep their original expected outputs. Diffs that
+// survive even with these flags are annotated inline.
 const reduceCalc = (opts = {}) =>
-  baseCalc({
+  require('../')({
     strictWhitespace: false,
     preserveOrder: true,
     dropZeroIdentities: true,
@@ -63,8 +55,6 @@ test('should reduce simple calc (1)', testValue('calc(1px + 1px)', '2px'));
 
 test(
   'should reduce simple calc (2)',
-  // `2px+3px` lacks the whitespace §10.1 requires; `strictWhitespace: false`
-  // recovers jison's lenient acceptance. v11's strict default would reject.
   testValue('calc(1px + 1px);baz:calc(2px+3px)', '2px;baz:5px')
 );
 
@@ -81,9 +71,6 @@ test(
 
 test(
   'should reduce simple calc (7)',
-  // `dropZeroIdentities: true` recovers jison's behavior of dropping the
-  // 0-valued length when a percentage sibling carries the type. The strict
-  // default preserves `0px + 100%` per WPT calc-serialization-002.
   testValue('calc(100px - (100px - 100%))', '100%')
 );
 
@@ -124,13 +111,9 @@ test(
 
 test(
   'should reduce additions and subtractions (7)',
+  // `/N` → `* (1/N)` (reciprocal conversion).
   testValue(
     'calc(0px - (24px - (var(--a) - var(--b)) / 2 + var(--c)))',
-    // RESIDUAL: v11 always rewrites `<expr>/2` as `<expr> * 0.5` (reciprocal
-    // conversion §10.13); no flag undoes that. With preserveOrder the
-    // coefficient lands after the opaque sum (input position). v10 produced
-    // `(var(--a) - var(--b))/2`; the spec-equivalent shape here keeps the
-    // sum / coefficient in input order with the reciprocal coefficient.
     'calc(-24px + (var(--a) - var(--b)) * 0.5 - var(--c))'
   )
 );
@@ -147,33 +130,30 @@ test(
 
 test(
   'should reduce multiplication',
-  // RESIDUAL: v11 folds `2*2=4` (constant folding); no flag undoes that.
-  // preserveOrder keeps the inner sum + the (now-merged) coefficient in
-  // input positions.
+  // constant fold `2*2 → 4`.
   testValue('calc(((var(--a) + 4px) * 2) * 2)', 'calc((var(--a) + 4px) * 4)')
 );
 
 test(
   'should reduce multiplication before reducing additions',
+  // constant fold `2*2 → 4`.
   testValue(
     'calc(((var(--a) + 4px) * 2) * 2 + 4px)',
-    // RESIDUAL: same constant fold as above.
     'calc((var(--a) + 4px) * 4 + 4px)'
   )
 );
 
 test(
   'should reduce division',
-  // RESIDUAL: v11 folds `1/2/2=0.25` (constant folding) and converts the
-  // division to multiplication-by-reciprocal.
+  // constant fold `1/2/2 → 0.25` + reciprocal.
   testValue('calc(((var(--a) + 4px) / 2) / 2)', 'calc((var(--a) + 4px) * 0.25)')
 );
 
 test(
   'should reduce division before reducing additions',
+  // constant fold + reciprocal.
   testValue(
     'calc(((var(--a) + 4px) / 2) / 2 + 4px)',
-    // RESIDUAL: same fold + reciprocal as above.
     'calc((var(--a) + 4px) * 0.25 + 4px)'
   )
 );
@@ -230,16 +210,15 @@ test(
 
 test(
   'should ignore calc with css variables (1)',
-  // `preserveOrder: true` keeps the operands in input order; only the
-  // serializer's spec-style spacing around `*` differs from OLD jison.
-  testValue('calc(var(--mouseX) * 1px)', 'calc(var(--mouseX) * 1px)')
+  // spec-style spaces around `*`.
+  testValue('calc(var(--mouseX) * 1px)', /* 'calc(var(--mouseX)*1px)' */ 'calc(var(--mouseX) * 1px)')
 );
 
 test(
   'should ignore calc with css variables (2)',
+  // spec-style spaces around `*`.
   testValue(
     'calc(10px - (100px * var(--mouseX)))',
-    // NEW: spec-style spaced '*' operator. Equivalent to OLD.
     /* 'calc(10px - 100px*var(--mouseX))' */ 'calc(10px - 100px * var(--mouseX))'
   )
 );
@@ -254,9 +233,9 @@ test(
 
 test(
   'should ignore calc with css variables (4)',
+  // spec-style spaces around `/`.
   testValue(
     'calc(10px - (100px / var(--mouseX)))',
-    // NEW: spec-style spaced '/' operator. Equivalent to OLD.
     /* 'calc(10px - 100px/var(--mouseX))' */ 'calc(10px - 100px / var(--mouseX))'
   )
 );
@@ -271,17 +250,15 @@ test(
 
 test(
   'should ignore calc with css variables (6)',
-  // RESIDUAL: division-by-constant always becomes multiplication-by-
-  // reciprocal (var/2 → var * 0.5); preserveOrder places the coefficient
-  // after the var (input position).
-  testValue('calc(var(--popupHeight) / 2)', 'calc(var(--popupHeight) * 0.5)')
+  // `/2` → `* 0.5` (reciprocal).
+  testValue('calc(var(--popupHeight) / 2)', /* 'calc(var(--popupHeight)/2)' */ 'calc(var(--popupHeight) * 0.5)')
 );
 
 test(
   'should ignore calc with css variables (7)',
+  // `/2` → `* 0.5` on both terms.
   testValue(
     'calc(var(--popupHeight) / 2 + var(--popupWidth) / 2)',
-    // RESIDUAL: same reciprocal transform, applied to both terms.
     'calc(var(--popupHeight) * 0.5 + var(--popupWidth) * 0.5)'
   )
 );
@@ -289,7 +266,7 @@ test(
 
 test(
  'should ignore multiplication with infinity',
-// NEW: spec-style spaced '*'. Equivalent to OLD.
+// spec-style spaces around `*`.
 testValue('calc(infinity * 1px)', /* 'calc(infinity*1px)' */ 'calc(infinity * 1px)')
 );
 
@@ -300,19 +277,19 @@ testValue('calc(infinity + 1px)', 'calc(infinity + 1px)')
 
 test(
  'should ignore multiplication with pi',
-// NEW: folds 'pi' constant per CSS Values 4 §10.7.1. OLD kept it symbolic.
+// fold `pi` (§10.7.1).
 testValue('calc(1px * pi)', /* 'calc(1px*pi)' */ '3.14159px')
 );
 
 test(
  'should ignore addition with pi',
-// NEW: folds '43 + pi' to a numeric. OLD kept 'pi' symbolic.
+// fold `pi` (§10.7.1).
 testValue('calc(43 + pi)', /* 'calc(43 + pi)' */ '46.14159')
 );
 
 test(
  'should preserve e',
-// NEW: folds 'e' constant per spec §10.7.1. OLD kept it symbolic.
+// fold `e` (§10.7.1).
 testValue('calc(e)', /* 'calc(e)' */ '2.71828')
 );
 
@@ -434,7 +411,6 @@ test(
 
 test(
   'should not perform addition on unitless values (#3)',
-  // `preserveOrder: true` keeps the operands in input order.
   testValue('calc(1px + 1)', 'calc(1px + 1)')
 );
 
@@ -455,8 +431,6 @@ test(
 
 test(
   'should correctly reduce calc with mixed units (cssnano#211)',
-  // `dropZeroIdentities: true` drops the 0rem since the percentage sibling
-  // already carries the type. Strict default keeps `0rem` per WPT.
   testValue('calc(99.99% * 1/1 - 0rem)', '99.99%')
 );
 
@@ -497,35 +471,32 @@ test(
 
 test(
   'should reduce substracted expression from zero (css-variable)',
+  // `/2` → `* 0.5` (reciprocal); leading `0px` dropped by flag.
   testValue(
     'calc( 0px - (var(--foo, 4px) / 2))',
-    // RESIDUAL: dropZeroIdentities removes the leading `0px` so the
-    // remaining negated product collapses to a unary-minus form. The
-    // reciprocal conversion (`/2` → `* 0.5`) is unaffected by any flag.
-    'calc(-(var(--foo, 4px) * 0.5))'
+    /* 'calc(0px - var(--foo, 4px)/2)' */ 'calc(-(var(--foo, 4px) * 0.5))'
   )
 );
 
 test(
   'should reduce nested expression',
-  // `dropZeroIdentities: true` drops the 0em since 5px carries the type.
   testValue('calc( (1em - calc( 10px + 1em)) / 2)', '-5px')
 );
 
 test(
   'should skip constant function',
+  // single-value calc() unwrapped (§10.6).
   testValue(
     'calc(constant(safe-area-inset-left))',
-    // NEW: unwraps redundant calc() around a single non-numeric function (constant/env). Per spec §10.6 a calc() with a single value is replaced by that value.
     /* 'calc(constant(safe-area-inset-left))' */ 'constant(safe-area-inset-left)'
   )
 );
 
 test(
   'should skip env function',
+  // single-value calc() unwrapped (§10.6).
   testValue(
     'calc(env(safe-area-inset-left))',
-    // NEW: unwraps redundant calc() around env().
     /* 'calc(env(safe-area-inset-left))' */ 'env(safe-area-inset-left)'
   )
 );
@@ -540,9 +511,9 @@ test(
 
 test(
   'should skip unknown function',
+  // single-value calc() unwrapped (§10.6).
   testValue(
     'calc(unknown(safe-area-inset-left))',
-    // NEW: unwraps redundant calc() around an unknown opaque function.
     /* 'calc(unknown(safe-area-inset-left))' */ 'unknown(safe-area-inset-left)'
   )
 );
@@ -582,7 +553,6 @@ test(
 
 test(
   'should apply algebraic reduction (cssnano#319)',
-  // `dropZeroIdentities: true` drops the 0em since 50px carries the type.
   testValue('calc((100px - 1em) + (-50px + 1em))', '50px')
 );
 
@@ -598,7 +568,6 @@ test(
 
 test(
   'should not perform addition on unitless values (reduce-css-calc#3)',
-  // `preserveOrder: true` keeps the operands in input order.
   testValue('calc(1px + 1)', 'calc(1px + 1)')
 );
 
@@ -609,11 +578,10 @@ test(
 
 test(
   'should ignore reducing custom property',
+  // `/8` → `* 0.125` (reciprocal).
   testCss(
     ':root { --foo: calc(var(--bar) / 8); }',
-    // RESIDUAL: division-by-constant → multiplication-by-reciprocal
-    // (`/ 8` → `* 0.125`). preserveOrder keeps var first.
-    ':root { --foo: calc(var(--bar) * 0.125); }'
+    /* ':root { --foo: calc(var(--bar)/8); }' */ ':root { --foo: calc(var(--bar) * 0.125); }'
   )
 );
 
@@ -627,8 +595,6 @@ test(
 
 test(
   'should reduce calc in media queries when `mediaQueries` option is set to true',
-  // `strictWhitespace: false` recovers jison's lenient acceptance of
-  // `10px+10px`. The strict default would reject it.
   testCss('@media (min-width:calc(10px+10px)){}', '@media (min-width:20px){}', {
     mediaQueries: true,
   })
@@ -708,31 +674,27 @@ test(
 
 test(
   'should handle nested calc statements (reduce-css-calc#49)',
-  // `dropZeroIdentities: true` drops the 0px since 2.25rem carries the type.
   testValue('calc(calc(2.25rem + 2px) - 1px * 2)', '2.25rem')
 );
 
 test(
   'should throw an exception when attempting to divide by zero',
-  // NEW spec-aligned: division-by-zero per CSS Values 4 §10.13 yields infinity (no error). OLD threw.
-  // testThrows('calc(500px/0)', 'calc(500px/0)', 'Cannot divide by zero')
+  // `/0` → `infinity` (§10.13); previously threw.
   testValue('calc(500px/0)', 'calc(infinity * 1px)')
 );
 
 test(
   'should throw an exception when attempting to divide by unit (#1)',
-  // NEW spec-aligned: 500px/2px = 250 (unitless) per spec division rules. OLD threw.
-  // testThrows('calc(500px/2px)', 'calc(500px/2px)', 'Cannot divide by "px", number expected')
+  // dim / dim → unitless number; previously threw.
   testValue('calc(500px/2px)', '250')
 );
 
 test(
   'nested var (reduce-css-calc#50)',
+  // `/2` → `* 0.5` (reciprocal).
   testValue(
     'calc(var(--xxx, var(--yyy)) / 2)',
-    // RESIDUAL: division → multiplication-by-reciprocal. preserveOrder
-    // keeps var first.
-    'calc(var(--xxx, var(--yyy)) * 0.5)'
+    /* 'calc(var(--xxx, var(--yyy))/2)' */ 'calc(var(--xxx, var(--yyy)) * 0.5)'
   )
 );
 
@@ -746,32 +708,31 @@ test(
 
 test(
   'should not throw an exception when unknow function exist in calc (#1)',
+  // spec-style spaces around `*`.
   testValue(
     'calc(unknown(#fff) * other-unknown(200px))',
-    // NEW: spec-style spaced '*'.
     /* 'calc(unknown(#fff)*other-unknown(200px))' */ 'calc(unknown(#fff) * other-unknown(200px))'
   )
 );
 
 test(
   'should not strip calc with single CSS custom variable',
-  // NEW: unwraps redundant calc() around a single var() per spec §10.6.
+  // single-value calc() unwrapped (§10.6).
   testValue('calc(var(--foo))', /* 'calc(var(--foo))' */ 'var(--foo)')
 );
 
 test(
   'should strip unnecessary calc with single CSS custom variable',
-  // NEW: flattens nested calc() and unwraps to a bare var().
+  // nested calc() flattens, then single-value unwrap.
   testValue('calc(calc(var(--foo)))', /* 'calc(var(--foo))' */ 'var(--foo)')
 );
 
 test(
   'should not strip calc with single CSS custom variables and value',
-  // `preserveOrder: true` keeps the operands in input order.
   testValue('calc(var(--foo) + 10px)', 'calc(var(--foo) + 10px)')
 );
 
-// NEW: unit case normalized to lowercase. CSS units are case-insensitive but conventionally lowercase.
+// unit case lowercased.
 test('should reduce calc (uppercase)', testValue('CALC(1PX + 1PX)', /* '2PX' */ '2px'));
 
 test(
@@ -781,10 +742,8 @@ test(
 
 test(
   'should reduce calc (uppercase) (#2)',
-  // RESIDUAL: v11 normalizes the unit case to lowercase (`5PX` → `5px`)
-  // unconditionally; no flag undoes that. dropZeroIdentities removes the
-  // 0em sibling so the wrapper unwraps to a bare value.
-  testValue('CALC( (1EM - CALC( 10PX + 1EM)) / 2)', '-5px')
+  // unit case lowercased.
+  testValue('CALC( (1EM - CALC( 10PX + 1EM)) / 2)', /* '-5PX' */ '-5px')
 );
 
 test(
@@ -853,36 +812,36 @@ test(
 
 test(
   'should handle nested calc function (#9)',
+  // spec-style spaces around `*`.
   testValue(
     'calc(calc(var(--foo) + var(--bar)) * var(--baz))',
-    // NEW: spec-style spaced '*'.
     /* 'calc((var(--foo) + var(--bar))*var(--baz))' */ 'calc((var(--foo) + var(--bar)) * var(--baz))'
   )
 );
 
 test(
   'should handle nested calc function (#10)',
+  // spec-style spaces around `*`.
   testValue(
     'calc(var(--foo) * calc(var(--bar) + var(--baz)))',
-    // NEW: spec-style spaced '*'.
     /* 'calc(var(--foo)*(var(--bar) + var(--baz)))' */ 'calc(var(--foo) * (var(--bar) + var(--baz)))'
   )
 );
 
 test(
   'should handle nested calc function (#11)',
+  // spec-style spaces around `/`.
   testValue(
     'calc(calc(var(--foo) + var(--bar)) / var(--baz))',
-    // NEW: spec-style spaced '/'.
     /* 'calc((var(--foo) + var(--bar))/var(--baz))' */ 'calc((var(--foo) + var(--bar)) / var(--baz))'
   )
 );
 
 test(
   'should handle nested calc function (#12)',
+  // spec-style spaces around `/`.
   testValue(
     'calc(var(--foo) / calc(var(--bar) + var(--baz)))',
-    // NEW: spec-style spaced '/'.
     /* 'calc(var(--foo)/(var(--bar) + var(--baz)))' */ 'calc(var(--foo) / (var(--bar) + var(--baz)))'
   )
 );
@@ -907,52 +866,45 @@ test(
 
 test(
   'should preserve division precedence',
+  // spec-style spaces around `/`, redundant parens dropped.
   testValue(
     'calc(100%/(var(--aspect-ratio)))',
-    // NEW: drops redundant inner parens around var() + spec-style spaced '/'.
     /* 'calc(100%/(var(--aspect-ratio)))' */ 'calc(100% / var(--aspect-ratio))'
   )
 );
 
 test(
   'should preserve division precedence (2)',
+  // `/16` → `* 0.0625` (reciprocal).
   testValue(
     `calc(
         (var(--fluid-screen) - ((var(--fluid-min-width) / 16) * 1rem)) /
         ((var(--fluid-max-width) / 16) - (var(--fluid-min-width) / 16))
     )`,
-    // RESIDUAL: division-by-constant becomes multiplication-by-reciprocal
-    // (`/16` → `* 0.0625`); preserveOrder keeps each var ahead of its
-    // coefficient (input position).
     'calc((var(--fluid-screen) - var(--fluid-min-width) * 0.0625 * 1rem) / (var(--fluid-max-width) * 0.0625 - var(--fluid-min-width) * 0.0625))'
   )
 );
 
 test(
   'should preserve division precedence (3)',
-  // NEW: folds 1/(10/x) = 0.1 * x via reciprocal.
+  // `1/(10/x)` folds to `0.1 * x` via reciprocal.
   testValue('calc(1/(10/var(--dot-size)))', /* 'calc(1/(10/var(--dot-size)))' */ 'calc(0.1 * var(--dot-size))')
 );
 
 test(
   'should correctly preserve parentheses',
+  // reciprocal of inner `/16` lands as `* 16` next to the opaque sum.
   testValue(
     'calc(1/((var(--a) - var(--b))/16))',
-    // RESIDUAL: input is `1 / ((var(--a) - var(--b)) / 16)` = `16 /
-    // (var(--a) - var(--b))` mathematically. preserveOrder keeps the
-    // numerator factors at their input positions, so the unsimplified
-    // shape `1 / (var(--a) - var(--b)) * 16` is what we emit. v11's
-    // simplifier doesn't collapse this to the equivalent `16 / (...)`
-    // form; cancellation across opposing exponents is single-pair only.
-    'calc(1 / (var(--a) - var(--b)) * 16)'
+    /* 'calc(1/(var(--a) - var(--b))/16)' */ 'calc(1 / (var(--a) - var(--b)) * 16)'
   )
 );
 
 test(
   'should preserve calc when extra parentheses are used',
+  // spec-style spaces around `/`.
   testValue(
     'calc((var(--circumference) / var(--number-of-segments)))',
-    // NEW: spec-style spaced '/'.
     /* 'calc(var(--circumference)/var(--number-of-segments))' */ 'calc(var(--circumference) / var(--number-of-segments))'
   )
 );
@@ -1031,7 +983,7 @@ test('convert units', testValue('calc(1cm + 1px)', '1.02646cm'));
 
 test('convert units (#1)', testValue('calc(1px + 1cm)', '38.79528px'));
 
-// NEW: 'Q' unit normalized to lowercase 'q'. Both are valid; lowercase is conventional.
+// unit case lowercased.
 test('convert units (#2)', testValue('calc(10Q + 10Q)', /* '20Q' */ '20q'));
 
 test('convert units (#3)', testValue('calc(100.9q + 10px)', '111.48333q'));
@@ -1068,7 +1020,7 @@ test('convert units (#18)', testValue('calc(1q + 10pc)', '170.33333q'));
 
 test(
   'unknown units',
-  // NEW debatable: identical unknown unit strings are combined arithmetically (1+2=3). Spec is ambiguous about unknown units; OLD treated them as opaque.
+  // same-unit arithmetic is purely numeric (§10.9; matches csstools).
   testValue('calc(1unknown + 2unknown)', /* 'calc(1unknown + 2unknown)' */ '3unknown')
 );
 
@@ -1089,10 +1041,6 @@ test(
 
 test(
   'error with parsing',
-  // testThrows(
-  //   'calc(10pc + unknown)',
-  //   'calc(10pc + unknown)',
-  //   'Lexical error on line 1: Unrecognized text.\n\n  Erroneous area:\n1: 10pc + unknown\n^.........^'
-  // )
+  // unrecognized identifier left opaque; previously threw a lex error.
   testValue('calc(10pc + unknown)', 'calc(10pc + unknown)')
 );

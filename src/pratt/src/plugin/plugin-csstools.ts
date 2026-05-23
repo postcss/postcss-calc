@@ -1,5 +1,5 @@
 // Drop-in alternative that delegates to @csstools/css-calc, used for
-// head-to-head comparison against the v10 regression suite.
+// head-to-head comparison against the legacy regression suite.
 
 import type { PluginCreator } from 'postcss';
 import { calc as csstoolsCalc } from '@csstools/css-calc';

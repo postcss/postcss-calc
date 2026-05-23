@@ -79,8 +79,8 @@ export function simplifySum(
   });
   for (const bucket of finalBuckets) {
     // Default: emit `0<unit>` for type info (WPT calc-serialization-002).
-    // dropZeroIdentities flips to v10's "drop zero terms when typed siblings
-    // survive" behavior.
+    // dropZeroIdentities flips to the legacy "drop zero terms when typed
+    // siblings survive" behavior.
     if (
       options.dropZeroIdentities &&
       bucket.total === 0 &&

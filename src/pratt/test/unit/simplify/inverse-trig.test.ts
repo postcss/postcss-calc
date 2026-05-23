@@ -5,8 +5,8 @@ import { out } from '../../helpers/out.ts';
 
 //
 // Numbers in (spec §10.4 line 1046: "must resolve to a <number>"); result
-// in degrees. NaN out-of-domain results stay as bare NaN until the
-// degenerate-numeric serialization (calc(NaN * 1deg)) lands in v11.3.
+// in degrees. NaN out-of-domain results stay as bare NaN — degenerate-
+// numeric serialization (calc(NaN * 1deg)) is a planned follow-up.
 
 test('asin: 0 → 0deg', () => {
   assert.equal(out('asin(0)'), '0deg');
