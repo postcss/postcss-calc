@@ -49,13 +49,22 @@ function transformValue(
   value: string,
   options: ResolvedOptions,
   result: Result,
-  item: ChildNode
+  item: ChildNode,
+  /** Recurse into quoted strings — needed for selectors where calc()
+   *  hides inside attribute values like `[data-size="calc(3*3)"]`.
+   *  Off by default: a declaration value like `content: "calc(...)"`
+   *  is a literal display string, not arithmetic. */
+  descendIntoStrings = false
 ): string {
   // postcss-value-parser's walk() returns the parser for chaining and has
   // a custom toString(). ESLint can't see the custom toString.
   // eslint-disable-next-line @typescript-eslint/no-base-to-string
   return valueParser(value)
     .walk((node) => {
+      if (node.type === 'string' && descendIntoStrings) {
+        node.value = transformValue(node.value, options, result, item, true);
+        return;
+      }
       if (node.type !== 'function') return;
       const isCalc = MATCH_CALC.test(node.value);
       const isMath = !isCalc && MATH_FUNCTIONS.has(node.value.toLowerCase());
@@ -139,7 +148,11 @@ const pluginCreator: PluginCreator<PluginOptions> = (opts) => {
           }
         }
         if (node.type === 'rule' && options.selectors) {
-          const next = transformValue(node.selector, options, result, node);
+          // Selectors carry calc() in two places: pseudo-class arguments
+          // (`:nth-child(...)` — caught by the function walk) and quoted
+          // attribute values (`[data-size="calc(3*3)"]` — needs string
+          // recursion).
+          const next = transformValue(node.selector, options, result, node, true);
           if (options.preserve && node.selector !== next) {
             const clone = node.clone();
             clone.selector = next;

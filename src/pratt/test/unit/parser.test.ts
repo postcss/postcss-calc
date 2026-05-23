@@ -75,7 +75,10 @@ test('parser: unary - on Dim absorbs into value', () => {
 });
 
 test('parser: double unary - cancels', () => {
-  assert.equal(ast('--5'), '5');
+  // Bare `--5` tokenizes as a single ident per CSS Syntax L3 (leading
+  // `-` followed by `-` starts an ident), so use a grouped form to
+  // exercise two unary-minus parses.
+  assert.equal(ast('-(-5)'), '5');
 });
 
 test('parser: unary + is a no-op', () => {
@@ -83,7 +86,9 @@ test('parser: unary + is a no-op', () => {
 });
 
 test('parser: unary - on opaque wraps in single-term negative Sum', () => {
-  assert.equal(ast('-x'), '(+ (- x))');
+  // `-x` tokenizes as one ident per CSS Syntax L3. Parenthesize so the
+  // leading `-` lives next to a `(` and stays a punctuator.
+  assert.equal(ast('-(x)'), '(+ (- x))');
 });
 
 // --- Grouping -------------------------------------------------------------
