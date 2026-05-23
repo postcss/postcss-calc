@@ -258,5 +258,5 @@ npm test
 [PostCSS]: https://github.com/postcss
 [PostCSS Calc]: https://github.com/postcss/postcss-calc
 [PostCSS Custom Properties]: https://github.com/postcss/postcss-custom-properties
-[tests]: src/__tests__/index.js
+[tests]: test/index.js
 [W3C calc() implementation]: https://www.w3.org/TR/css3-values/#calc-notation
