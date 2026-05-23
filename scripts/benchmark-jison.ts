@@ -5,6 +5,9 @@ import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import postcss, { type AcceptedPlugin } from 'postcss';
 
+import jisonPlugin from '../src/index.js';
+import prattPlugin from '../src/pratt/src/plugin/plugin.ts';
+
 interface BenchResult {
   name: string;
   perRun: number;
@@ -12,10 +15,6 @@ interface BenchResult {
 }
 
 async function main(): Promise<void> {
-  // Dynamic imports so CJS/ESM interop works under tsx.
-  const jisonPlugin = (await import('../src/index.js')).default as () => AcceptedPlugin;
-  const prattPlugin = (await import('../src/pratt/src/plugin/plugin.ts')).default as () => AcceptedPlugin;
-
   const HERE = dirname(fileURLToPath(import.meta.url));
   const CORPUS_DIR = join(HERE, '..', 'src', 'pratt', 'test', 'corpus');
 
@@ -48,8 +47,8 @@ async function main(): Promise<void> {
   console.log(`CSS size: ${css.length} bytes, ${calcs.length} declarations`);
   console.log(`Iterations: ${ITERATIONS} each\n`);
 
-  const jison = await bench('jison', jisonPlugin);
-  const pratt = await bench('pratt', prattPlugin);
+  const jison = await bench('jison', jisonPlugin as () => AcceptedPlugin);
+  const pratt = await bench('pratt', prattPlugin as () => AcceptedPlugin);
 
   console.log(`  ${jison.name}:  ${jison.perRun.toFixed(2)}ms / run  (${jison.total.toFixed(0)}ms total)`);
   console.log(`  ${pratt.name}:  ${pratt.perRun.toFixed(2)}ms / run  (${pratt.total.toFixed(0)}ms total)`);
