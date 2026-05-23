@@ -157,15 +157,16 @@ export function tokenize(
       continue;
     }
 
-    // CSS custom property reference `--name` — keeps `var(--x)` as one
-    // ident, not `-`, `-`, `x`.
+    // CSS Syntax L3: `-` followed by `-` or by an ident-start code point
+    // begins an <ident-token>. Catches both custom properties (`--name`,
+    // keeping `var(--x)` as one ident) and vendor-prefixed idents
+    // (`-webkit-calc`, `-moz-calc`).
     if (
       c === '-' &&
-      input[i + 1] === '-' &&
-      IS_IDENT_START.test(input[i + 2] ?? '')
+      (input[i + 1] === '-' || IS_IDENT_START.test(input[i + 1] ?? ''))
     ) {
       const start = i;
-      i += 2;
+      i++;
       i = readIdentBody(input, i);
       push({ type: 'ident', value: input.slice(start, i), pos: start });
       continue;

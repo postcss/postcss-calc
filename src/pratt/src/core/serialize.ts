@@ -90,18 +90,21 @@ function serializeExpr(node: Node, prec: number | false): string {
 }
 
 /** Combine the term's sign with a negative Num/Dim value's sign so
- *  `{sign:+1, Num(-5)}` renders as `-5`, not `+ -5`. */
+ *  `{sign:+1, Num(-5)}` renders as `-5`, not `+ -5`. Skip degenerate
+ *  (Infinity/NaN) values — the `degenerateKeyword` path emits `-infinity`
+ *  inline, and a leading minus on `calc(infinity*1<unit>)` would now
+ *  tokenize as a `-calc` function. */
 function displaySign(
   term: { sign: 1 | -1; node: Node }
 ): { sign: 1 | -1; magnitude: Node } {
   const { sign, node } = term;
-  if (node.type === 'Num' && node.value < 0) {
+  if (node.type === 'Num' && isFinite(node.value) && node.value < 0) {
     return {
       sign: (-sign) as 1 | -1,
       magnitude: { type: 'Num', value: -node.value },
     };
   }
-  if (node.type === 'Dim' && node.value < 0) {
+  if (node.type === 'Dim' && isFinite(node.value) && node.value < 0) {
     return {
       sign: (-sign) as 1 | -1,
       magnitude: { type: 'Dim', value: -node.value, unit: node.unit },

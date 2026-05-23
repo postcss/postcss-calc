@@ -18,7 +18,10 @@ interface InfixParselet {
 
 /** §10.9 — case-insensitive except for NaN. */
 function foldCalcKeyword(name: string): Node | null {
-  if (name === 'NaN') {
+  // `NaN` and `-NaN` are spec-defined math constants (§10.7.1). The signed
+  // form arrives as a single ident because CSS Syntax tokenizes leading
+  // `-` + ident-start as one ident-token.
+  if (name === 'NaN' || name === '-NaN') {
     return { type: 'Num', value: NaN };
   }
   switch (name.toLowerCase()) {
@@ -28,6 +31,8 @@ function foldCalcKeyword(name: string): Node | null {
       return { type: 'Num', value: Math.E };
     case 'infinity':
       return { type: 'Num', value: Infinity };
+    case '-infinity':
+      return { type: 'Num', value: -Infinity };
   }
   return null;
 }
