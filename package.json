@@ -16,6 +16,13 @@
   },
   "main": "dist/src/index.js",
   "types": "dist/src/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/src/index.d.ts",
+      "default": "./dist/src/index.js"
+    },
+    "./package.json": "./package.json"
+  },
   "files": [
     "dist",
     "src",
@@ -24,6 +31,7 @@
   ],
   "scripts": {
     "prepare": "pnpm run build",
+    "prebuild": "rm -rf dist",
     "build": "tsc -p tsconfig.build.json",
     "build:jison": "jison ./parser.jison -o src/parser.js",
     "lint": "eslint . && tsc",
