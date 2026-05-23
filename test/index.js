@@ -207,8 +207,7 @@ test(
   'should reduce vendor-prefixed nested calc',
   testValue(
     '-webkit-calc(100% - -webkit-calc(50% + 25px))',
-    // NEW BUG: nested vendor-prefixed calc loses the inner '-webkit-' leading dash. Should reduce to '-webkit-calc(50% - 25px)' like OLD.
-    /* '-webkit-calc(50% - 25px)' */ '-webkit-calc(100% + webkit-calc(50% + 25px))'
+    '-webkit-calc(50% - 25px)'
   )
 );
 
@@ -226,8 +225,7 @@ test(
 
 test(
   'should reduce uppercase calc (4)',
-  // NEW BUG: same vendor-prefix dash loss + uppercase preserved + nested calc not reduced.
-  testValue('-WEBKIT-CALC(1px + -WEBKIT-CALC(2px / 2))', /* '2px' */ '-WEBKIT-CALC(1px - WEBKIT-CALC(1px))')
+  testValue('-WEBKIT-CALC(1px + -WEBKIT-CALC(2px / 2))', '2px')
 );
 
 test(
@@ -648,8 +646,7 @@ test(
 
 test(
   'should reduce calc in selectors when `selectors` option is set to true (1)',
-  // NEW REGRESSION: `selectors:true` no longer parses quoted attribute values; the new plugin runs valueParser directly on the selector string. Needs postcss-selector-parser to dive into attributes (planned).
-  testCss('div[data-size="calc(3*3)"]{}', /* 'div[data-size="9"]{}' */ 'div[data-size="calc(3*3)"]{}', {
+  testCss('div[data-size="calc(3*3)"]{}', 'div[data-size="9"]{}', {
     selectors: true,
   })
 );
