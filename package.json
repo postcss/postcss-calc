@@ -34,16 +34,16 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
-    "@types/node": "^25.9.1",
-    "eslint": "^10.4.0",
+    "@types/node": "^25.9.3",
+    "eslint": "^10.4.1",
     "eslint-config-prettier": "^10.1.8",
     "jison-gho": "0.6.1-216",
     "postcss": "^8.5.15",
-    "prettier": "^3.8.3",
+    "prettier": "^3.8.4",
     "typescript": "~6.0.3"
   },
   "dependencies": {
-    "postcss-selector-parser": "^7.1.1",
+    "postcss-selector-parser": "^7.1.4",
     "postcss-value-parser": "^4.2.0"
   },
   "peerDependencies": {
