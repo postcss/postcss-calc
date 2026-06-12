@@ -29,15 +29,6 @@ export interface PluginOptions {
   warnWhenCannotResolve?: boolean;
   mediaQueries?: boolean;
   selectors?: boolean;
-  /** §10.1 requires whitespace around binary `+`/`-`. Default true (strict).
-   *  Set false to accept jison-style lenient input like `2px+3px`. */
-  strictWhitespace?: boolean;
-  /** Sort each Sum / Product back into outer-expression input order rather
-   *  than the simplifier's canonical (numeric-first) shape. Default false. */
-  preserveOrder?: boolean;
-  /** Drop `+ 0px` identities from sums when other terms carry type info.
-   *  Default false (WPT calc-serialization-002 requires preservation). */
-  dropZeroIdentities?: boolean;
   /** Invoked when parse/simplify throws. Replaces the default `result.warn`. */
   onParseError?: (error: Error, input: string) => void;
 }
@@ -74,15 +65,7 @@ function transformValue(
       const inner = valueParser.stringify(node.nodes);
       const contents = isCalc ? inner : `${node.value}(${inner})`;
       try {
-        const simplified = simplify(
-          parse(
-            tokenize(contents, { lenientWhitespace: !options.strictWhitespace })
-          ),
-          {
-            preserveOrder: options.preserveOrder,
-            dropZeroIdentities: options.dropZeroIdentities,
-          }
-        );
+        const simplified = simplify(parse(tokenize(contents)));
         const str = serialize(simplified, {
           precision: options.precision,
           calcName: isCalc ? node.value : 'calc', // preserve vendor prefix on calc()
@@ -117,9 +100,6 @@ const pluginCreator: PluginCreator<PluginOptions> = (opts) => {
     warnWhenCannotResolve: false,
     mediaQueries: false,
     selectors: false,
-    strictWhitespace: true,
-    preserveOrder: false,
-    dropZeroIdentities: false,
     ...opts,
   };
 

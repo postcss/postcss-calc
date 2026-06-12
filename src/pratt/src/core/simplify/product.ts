@@ -1,35 +1,17 @@
-import type { Node, Product } from '../node.ts';
+import type { Node, Product, ProductFactor } from '../node.ts';
 import { mkSum, mkProduct, num, dim } from '../node.ts';
-import type { SimplifyOptions, SimplifyFn } from './types.ts';
+import type { SimplifyFn } from './types.ts';
 import { tryCancelPair } from './cancel.ts';
 
-export function simplifyProduct(
-  product: Product,
-  options: SimplifyOptions,
-  simplify: SimplifyFn
-): Node {
+export function simplifyProduct(product: Product, simplify: SimplifyFn): Node {
   let coeff = 1;
-  let coeffFirstIndex = -1;
-  const dims: {
-    exponent: 1 | -1;
-    value: number;
-    unit: string;
-    originIndex: number;
-  }[] = [];
-  const opaque: { exponent: 1 | -1; node: Node; originIndex: number }[] = [];
+  const dims: { exponent: 1 | -1; value: number; unit: string }[] = [];
+  const opaque: ProductFactor[] = [];
 
-  function processFactor(
-    exponent: 1 | -1,
-    n: Node,
-    originIndex: number
-  ): void {
+  function processFactor(exponent: 1 | -1, n: Node): void {
     if (n.type === 'Product') {
       for (const inner of n.factors) {
-        processFactor(
-          (exponent * inner.exponent) as 1 | -1,
-          inner.node,
-          originIndex
-        );
+        processFactor((exponent * inner.exponent) as 1 | -1, inner.node);
       }
       return;
     }
@@ -39,19 +21,17 @@ export function simplifyProduct(
       } else {
         coeff /= n.value; // §10.9.1: 1/0 → ±Infinity, 0/0 → NaN per IEEE-754
       }
-      if (coeffFirstIndex < 0) coeffFirstIndex = originIndex;
       return;
     }
     if (n.type === 'Dim') {
-      dims.push({ exponent, value: n.value, unit: n.unit, originIndex });
+      dims.push({ exponent, value: n.value, unit: n.unit });
       return;
     }
-    opaque.push({ exponent, node: n, originIndex });
+    opaque.push({ exponent, node: n });
   }
 
-  let topIndex = 0;
   for (const f of product.factors) {
-    processFactor(f.exponent, simplify(f.node, options), topIndex++);
+    processFactor(f.exponent, simplify(f.node));
   }
 
   // §10.2 typed division. Higher-power cancellation (`px^2 / px`) is left
@@ -59,7 +39,6 @@ export function simplifyProduct(
   const cancelled = tryCancelPair(dims);
   if (cancelled !== null) {
     coeff *= cancelled.factor;
-    if (coeffFirstIndex < 0) coeffFirstIndex = dims[0]!.originIndex;
   }
   const remainingDims = cancelled ? cancelled.remaining : dims;
 
@@ -82,8 +61,7 @@ export function simplifyProduct(
         mkProduct([
           { exponent: 1, node: num(coeff) },
           { exponent: 1, node: t.node },
-        ]),
-        options
+        ])
       ),
     }));
     return mkSum(distributed);
@@ -102,34 +80,14 @@ export function simplifyProduct(
     return num(coeff);
   }
 
-  interface FactorSlot {
-    factor: { exponent: 1 | -1; node: Node };
-    originIndex: number;
-  }
-  const slots: FactorSlot[] = [];
+  const factors: ProductFactor[] = [];
   if (coeff !== 1) {
-    // coeff !== 1 implies a Num was processed or tryCancelPair fired,
-    // either of which sets coeffFirstIndex to a non-negative value.
-    slots.push({
-      factor: { exponent: 1, node: num(coeff) },
-      originIndex: coeffFirstIndex,
-    });
+    factors.push({ exponent: 1, node: num(coeff) });
   }
   for (const d of remainingDims) {
-    slots.push({
-      factor: { exponent: d.exponent, node: dim(d.value, d.unit) },
-      originIndex: d.originIndex,
-    });
+    factors.push({ exponent: d.exponent, node: dim(d.value, d.unit) });
   }
-  for (const o of opaque) {
-    slots.push({
-      factor: { exponent: o.exponent, node: o.node },
-      originIndex: o.originIndex,
-    });
-  }
-  if (options.preserveOrder) {
-    slots.sort((a, b) => a.originIndex - b.originIndex);
-  }
+  factors.push(...opaque);
 
-  return mkProduct(slots.map((s) => s.factor));
+  return mkProduct(factors);
 }

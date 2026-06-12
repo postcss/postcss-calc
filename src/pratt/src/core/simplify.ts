@@ -7,20 +7,17 @@ import { simplifySum } from './simplify/sum.ts';
 import { simplifyProduct } from './simplify/product.ts';
 import { simplifyCall } from './simplify/call.ts';
 
-export type { SimplifyOptions } from './simplify/types.ts';
-import type { SimplifyOptions } from './simplify/types.ts';
-
-export function simplify(node: Node, options: SimplifyOptions = {}): Node {
+export function simplify(node: Node): Node {
   switch (node.type) {
     case 'Num':
     case 'Dim':
     case 'Ident':
       return node;
     case 'Call':
-      return simplifyCall(node, options, simplify);
+      return simplifyCall(node, simplify);
     case 'Sum':
-      return simplifySum(node, options, simplify);
+      return simplifySum(node, simplify);
     case 'Product':
-      return simplifyProduct(node, options, simplify);
+      return simplifyProduct(node, simplify);
   }
 }
