@@ -3,16 +3,7 @@ const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const postcss = require('postcss');
 
-// Opt into the three flags that recover legacy jison behavior so the
-// fixtures below keep their original expected outputs. Diffs that
-// survive even with these flags are annotated inline.
-const reduceCalc = (opts = {}) =>
-  require('../')({
-    strictWhitespace: false,
-    preserveOrder: true,
-    dropZeroIdentities: true,
-    ...opts,
-  });
+const reduceCalc = (opts = {}) => require('../')(opts);
 
 const postcssOpts = { from: undefined };
 
@@ -55,7 +46,8 @@ test('should reduce simple calc (1)', testValue('calc(1px + 1px)', '2px'));
 
 test(
   'should reduce simple calc (2)',
-  testValue('calc(1px + 1px);baz:calc(2px+3px)', '2px;baz:5px')
+  // `2px+3px` violates §10.1 whitespace → preserved with a warning.
+  testValue('calc(1px + 1px);baz:calc(2px+3px)', /* '2px;baz:5px' */ '2px;baz:calc(2px+3px)')
 );
 
 test('should reduce simple calc (3)', testValue('calc(1rem * 1.5)', '1.5rem'));
@@ -71,7 +63,8 @@ test(
 
 test(
   'should reduce simple calc (7)',
-  testValue('calc(100px - (100px - 100%))', '100%')
+  // zero bucket kept for type info (WPT calc-serialization-002).
+  testValue('calc(100px - (100px - 100%))', /* '100%' */ 'calc(0px + 100%)')
 );
 
 test(
@@ -111,10 +104,10 @@ test(
 
 test(
   'should reduce additions and subtractions (7)',
-  // `/N` → `* (1/N)` (reciprocal conversion).
+  // reciprocal + canonical coefficient-first order.
   testValue(
     'calc(0px - (24px - (var(--a) - var(--b)) / 2 + var(--c)))',
-    'calc(-24px + (var(--a) - var(--b)) * 0.5 - var(--c))'
+    'calc(-24px + 0.5 * (var(--a) - var(--b)) - var(--c))'
   )
 );
 
@@ -130,31 +123,31 @@ test(
 
 test(
   'should reduce multiplication',
-  // constant fold `2*2 → 4`.
-  testValue('calc(((var(--a) + 4px) * 2) * 2)', 'calc((var(--a) + 4px) * 4)')
+  // constant fold `2*2 → 4`; coefficient first.
+  testValue('calc(((var(--a) + 4px) * 2) * 2)', 'calc(4 * (4px + var(--a)))')
 );
 
 test(
   'should reduce multiplication before reducing additions',
-  // constant fold `2*2 → 4`.
+  // constant fold `2*2 → 4`; canonical order.
   testValue(
     'calc(((var(--a) + 4px) * 2) * 2 + 4px)',
-    'calc((var(--a) + 4px) * 4 + 4px)'
+    'calc(4px + 4 * (4px + var(--a)))'
   )
 );
 
 test(
   'should reduce division',
-  // constant fold `1/2/2 → 0.25` + reciprocal.
-  testValue('calc(((var(--a) + 4px) / 2) / 2)', 'calc((var(--a) + 4px) * 0.25)')
+  // constant fold `1/2/2 → 0.25` + reciprocal; coefficient first.
+  testValue('calc(((var(--a) + 4px) / 2) / 2)', 'calc(0.25 * (4px + var(--a)))')
 );
 
 test(
   'should reduce division before reducing additions',
-  // constant fold + reciprocal.
+  // constant fold + reciprocal; canonical order.
   testValue(
     'calc(((var(--a) + 4px) / 2) / 2 + 4px)',
-    'calc((var(--a) + 4px) * 0.25 + 4px)'
+    'calc(4px + 0.25 * (4px + var(--a)))'
   )
 );
 
@@ -210,8 +203,8 @@ test(
 
 test(
   'should ignore calc with css variables (1)',
-  // spec-style spaces around `*`.
-  testValue('calc(var(--mouseX) * 1px)', /* 'calc(var(--mouseX)*1px)' */ 'calc(var(--mouseX) * 1px)')
+  // spec-style spaces; canonical order puts the dim first.
+  testValue('calc(var(--mouseX) * 1px)', /* 'calc(var(--mouseX)*1px)' */ 'calc(1px * var(--mouseX))')
 );
 
 test(
@@ -250,16 +243,16 @@ test(
 
 test(
   'should ignore calc with css variables (6)',
-  // `/2` → `* 0.5` (reciprocal).
-  testValue('calc(var(--popupHeight) / 2)', /* 'calc(var(--popupHeight)/2)' */ 'calc(var(--popupHeight) * 0.5)')
+  // `/2` → `* 0.5` (reciprocal); coefficient first.
+  testValue('calc(var(--popupHeight) / 2)', /* 'calc(var(--popupHeight)/2)' */ 'calc(0.5 * var(--popupHeight))')
 );
 
 test(
   'should ignore calc with css variables (7)',
-  // `/2` → `* 0.5` on both terms.
+  // `/2` → `* 0.5` on both terms; coefficient first.
   testValue(
     'calc(var(--popupHeight) / 2 + var(--popupWidth) / 2)',
-    'calc(var(--popupHeight) * 0.5 + var(--popupWidth) * 0.5)'
+    'calc(0.5 * var(--popupHeight) + 0.5 * var(--popupWidth))'
   )
 );
 
@@ -411,7 +404,8 @@ test(
 
 test(
   'should not perform addition on unitless values (#3)',
-  testValue('calc(1px + 1)', 'calc(1px + 1)')
+  // canonical order: number before dim.
+  testValue('calc(1px + 1)', /* 'calc(1px + 1)' */ 'calc(1 + 1px)')
 );
 
 test(
@@ -431,7 +425,8 @@ test(
 
 test(
   'should correctly reduce calc with mixed units (cssnano#211)',
-  testValue('calc(99.99% * 1/1 - 0rem)', '99.99%')
+  // zero bucket kept for type info.
+  testValue('calc(99.99% * 1/1 - 0rem)', /* '99.99%' */ 'calc(99.99% + 0rem)')
 );
 
 test(
@@ -471,16 +466,17 @@ test(
 
 test(
   'should reduce substracted expression from zero (css-variable)',
-  // `/2` → `* 0.5` (reciprocal); leading `0px` dropped by flag.
+  // reciprocal; zero bucket kept; coefficient first.
   testValue(
     'calc( 0px - (var(--foo, 4px) / 2))',
-    /* 'calc(0px - var(--foo, 4px)/2)' */ 'calc(-(var(--foo, 4px) * 0.5))'
+    /* 'calc(0px - var(--foo, 4px)/2)' */ 'calc(0px - 0.5 * var(--foo, 4px))'
   )
 );
 
 test(
   'should reduce nested expression',
-  testValue('calc( (1em - calc( 10px + 1em)) / 2)', '-5px')
+  // zero bucket kept for type info.
+  testValue('calc( (1em - calc( 10px + 1em)) / 2)', /* '-5px' */ 'calc(0em - 5px)')
 );
 
 test(
@@ -553,7 +549,8 @@ test(
 
 test(
   'should apply algebraic reduction (cssnano#319)',
-  testValue('calc((100px - 1em) + (-50px + 1em))', '50px')
+  // zero bucket kept for type info.
+  testValue('calc((100px - 1em) + (-50px + 1em))', /* '50px' */ 'calc(50px + 0em)')
 );
 
 test(
@@ -568,7 +565,8 @@ test(
 
 test(
   'should not perform addition on unitless values (reduce-css-calc#3)',
-  testValue('calc(1px + 1)', 'calc(1px + 1)')
+  // canonical order: number before dim.
+  testValue('calc(1px + 1)', /* 'calc(1px + 1)' */ 'calc(1 + 1px)')
 );
 
 test(
@@ -578,10 +576,10 @@ test(
 
 test(
   'should ignore reducing custom property',
-  // `/8` → `* 0.125` (reciprocal).
+  // `/8` → `* 0.125` (reciprocal); coefficient first.
   testCss(
     ':root { --foo: calc(var(--bar) / 8); }',
-    /* ':root { --foo: calc(var(--bar)/8); }' */ ':root { --foo: calc(var(--bar) * 0.125); }'
+    /* ':root { --foo: calc(var(--bar)/8); }' */ ':root { --foo: calc(0.125 * var(--bar)); }'
   )
 );
 
@@ -595,7 +593,8 @@ test(
 
 test(
   'should reduce calc in media queries when `mediaQueries` option is set to true',
-  testCss('@media (min-width:calc(10px+10px)){}', '@media (min-width:20px){}', {
+  // `10px+10px` violates §10.1 whitespace → preserved with a warning.
+  testCss('@media (min-width:calc(10px+10px)){}', /* '@media (min-width:20px){}' */ '@media (min-width:calc(10px+10px)){}', {
     mediaQueries: true,
   })
 );
@@ -674,7 +673,8 @@ test(
 
 test(
   'should handle nested calc statements (reduce-css-calc#49)',
-  testValue('calc(calc(2.25rem + 2px) - 1px * 2)', '2.25rem')
+  // zero bucket kept for type info.
+  testValue('calc(calc(2.25rem + 2px) - 1px * 2)', /* '2.25rem' */ 'calc(2.25rem + 0px)')
 );
 
 test(
@@ -691,10 +691,10 @@ test(
 
 test(
   'nested var (reduce-css-calc#50)',
-  // `/2` → `* 0.5` (reciprocal).
+  // `/2` → `* 0.5` (reciprocal); coefficient first.
   testValue(
     'calc(var(--xxx, var(--yyy)) / 2)',
-    /* 'calc(var(--xxx, var(--yyy))/2)' */ 'calc(var(--xxx, var(--yyy)) * 0.5)'
+    /* 'calc(var(--xxx, var(--yyy))/2)' */ 'calc(0.5 * var(--xxx, var(--yyy)))'
   )
 );
 
@@ -729,7 +729,8 @@ test(
 
 test(
   'should not strip calc with single CSS custom variables and value',
-  testValue('calc(var(--foo) + 10px)', 'calc(var(--foo) + 10px)')
+  // canonical order: dim before opaque var().
+  testValue('calc(var(--foo) + 10px)', /* 'calc(var(--foo) + 10px)' */ 'calc(10px + var(--foo))')
 );
 
 // unit case lowercased.
@@ -742,8 +743,8 @@ test(
 
 test(
   'should reduce calc (uppercase) (#2)',
-  // unit case lowercased.
-  testValue('CALC( (1EM - CALC( 10PX + 1EM)) / 2)', /* '-5PX' */ '-5px')
+  // zero bucket kept → calc() wrapper survives (name case preserved).
+  testValue('CALC( (1EM - CALC( 10PX + 1EM)) / 2)', /* '-5PX' */ 'CALC(0em - 5px)')
 );
 
 test(
@@ -875,13 +876,13 @@ test(
 
 test(
   'should preserve division precedence (2)',
-  // `/16` → `* 0.0625` (reciprocal).
+  // `/16` → `* 0.0625` (reciprocal); coefficient first.
   testValue(
     `calc(
         (var(--fluid-screen) - ((var(--fluid-min-width) / 16) * 1rem)) /
         ((var(--fluid-max-width) / 16) - (var(--fluid-min-width) / 16))
     )`,
-    'calc((var(--fluid-screen) - var(--fluid-min-width) * 0.0625 * 1rem) / (var(--fluid-max-width) * 0.0625 - var(--fluid-min-width) * 0.0625))'
+    'calc((var(--fluid-screen) - 0.0625 * 1rem * var(--fluid-min-width)) / (0.0625 * var(--fluid-max-width) - 0.0625 * var(--fluid-min-width)))'
   )
 );
 
@@ -893,10 +894,10 @@ test(
 
 test(
   'should correctly preserve parentheses',
-  // reciprocal of inner `/16` lands as `* 16` next to the opaque sum.
+  // reciprocal of inner `/16` folds into the coefficient: `16 / (...)`.
   testValue(
     'calc(1/((var(--a) - var(--b))/16))',
-    /* 'calc(1/(var(--a) - var(--b))/16)' */ 'calc(1 / (var(--a) - var(--b)) * 16)'
+    /* 'calc(1/(var(--a) - var(--b))/16)' */ 'calc(16 / (var(--a) - var(--b)))'
   )
 );
 

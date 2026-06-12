@@ -19,20 +19,11 @@ export interface Token {
   ws: boolean;
 }
 
-export interface TokenizeOptions {
-  /** Force `ws` true on every token to accept legacy input like `2px+3px`. */
-  lenientWhitespace?: boolean;
-}
-
 const PUNCT_DELIMS = new Set(['+', '-', '*', '/']);
 
 const NUMERIC_RAW = /^[+-]?(?:\d+(?:\.\d+)?|\.\d+)(?:[eE][+-]?\d+)?/;
 
-export function tokenize(
-  input: string,
-  options: TokenizeOptions = {}
-): Token[] {
-  const lenient = options.lenientWhitespace === true;
+export function tokenize(input: string): Token[] {
   const tokens: Token[] = [];
   let ws = true;
 
@@ -46,15 +37,15 @@ export function tokenize(
     let value = NUMERIC_RAW.exec(raw)![0];
     const sign = value[0];
     if (sign === '+' || sign === '-') {
-      tokens.push({ type: 'punct', value: sign, pos, ws: lenient || ws });
+      tokens.push({ type: 'punct', value: sign, pos, ws });
       value = value.slice(1);
       pos += 1;
       ws = false;
     }
     if (unit === undefined) {
-      tokens.push({ type: 'number', value, pos, ws: lenient || ws });
+      tokens.push({ type: 'number', value, pos, ws });
     } else {
-      tokens.push({ type: 'dimension', value, unit, pos, ws: lenient || ws });
+      tokens.push({ type: 'dimension', value, unit, pos, ws });
     }
     ws = false;
   }
@@ -75,20 +66,20 @@ export function tokenize(
         pushNumeric(t[1], '%', t[2]);
         continue;
       case CssType.Ident:
-        tokens.push({ type: 'ident', value: t[4].value, pos: t[2], ws: lenient || ws });
+        tokens.push({ type: 'ident', value: t[4].value, pos: t[2], ws });
         break;
       case CssType.Function:
-        tokens.push({ type: 'ident', value: t[4].value, pos: t[2], ws: lenient || ws });
-        tokens.push({ type: 'punct', value: '(', pos: t[2] + t[1].length - 1, ws: lenient });
+        tokens.push({ type: 'ident', value: t[4].value, pos: t[2], ws });
+        tokens.push({ type: 'punct', value: '(', pos: t[2] + t[1].length - 1, ws: false });
         break;
       case CssType.OpenParen:
-        tokens.push({ type: 'punct', value: '(', pos: t[2], ws: lenient || ws });
+        tokens.push({ type: 'punct', value: '(', pos: t[2], ws });
         break;
       case CssType.CloseParen:
-        tokens.push({ type: 'punct', value: ')', pos: t[2], ws: lenient || ws });
+        tokens.push({ type: 'punct', value: ')', pos: t[2], ws });
         break;
       case CssType.Comma:
-        tokens.push({ type: 'punct', value: ',', pos: t[2], ws: lenient || ws });
+        tokens.push({ type: 'punct', value: ',', pos: t[2], ws });
         break;
       case CssType.Delim:
         if (!PUNCT_DELIMS.has(t[4].value)) {
@@ -96,10 +87,10 @@ export function tokenize(
             `Unexpected character "${t[4].value}" at position ${t[2]}`
           );
         }
-        tokens.push({ type: 'punct', value: t[4].value, pos: t[2], ws: lenient || ws });
+        tokens.push({ type: 'punct', value: t[4].value, pos: t[2], ws });
         break;
       case CssType.EOF:
-        tokens.push({ type: 'eof', value: '', pos: input.length, ws: lenient || ws });
+        tokens.push({ type: 'eof', value: '', pos: input.length, ws });
         break;
       default:
         throw new Error(

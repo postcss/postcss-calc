@@ -2,7 +2,7 @@
 // args so they don't need to recurse into `simplify` themselves.
 
 import type { Node } from '../node.ts';
-import type { SimplifyOptions, SimplifyFn } from './types.ts';
+import type { SimplifyFn } from './types.ts';
 
 import { simplifyMinMax } from './min-max.ts';
 import { simplifyClamp } from './clamp.ts';
@@ -21,7 +21,6 @@ import { simplifyHypot } from './hypot.ts';
 
 export function simplifyCall(
   node: Extract<Node, { type: 'Call' }>,
-  options: SimplifyOptions,
   simplify: SimplifyFn
 ): Node {
   const name = node.name.toLowerCase();
@@ -30,10 +29,10 @@ export function simplifyCall(
     if (node.args.length !== 1) {
       throw new Error(`${node.name}() takes exactly one argument`);
     }
-    return simplify(node.args[0]!, options);
+    return simplify(node.args[0]!);
   }
 
-  const args = node.args.map((a) => simplify(a, options));
+  const args = node.args.map((a) => simplify(a));
 
   if (name === 'min' || name === 'max') return simplifyMinMax(node.name, args);
   if (name === 'clamp') return simplifyClamp(args);

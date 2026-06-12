@@ -10,7 +10,6 @@ export interface UnitBucket {
   total: number;
   base: BaseType | null;
   order: number;
-  originIndex: number;
 }
 
 /** Mutates `buckets` in place — totals of survivor buckets accumulate the
