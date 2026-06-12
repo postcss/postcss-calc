@@ -2,7 +2,12 @@
 
 // Folds @csstools/css-tokenizer output into the calc() token subset.
 
-const { tokenize: tokenizeCss, TokenType: CssType } = require('@csstools/css-tokenizer');
+// @csstools/css-tokenizer is ESM-only and this package is CJS. require(esm)
+// must happen at first use, not at module evaluation — a consumer's ESM
+// graph may also link the tokenizer (other csstools plugins do), and a
+// load-time require would hit ERR_REQUIRE_CYCLE_MODULE there.
+/** @type {typeof import('@csstools/css-tokenizer') | undefined} */
+let cssTokenizer;
 
 /**
  * @typedef {'number' | 'dimension' | 'ident' | 'punct' | 'eof'} TokenType
@@ -23,6 +28,8 @@ const NUMERIC_RAW = /^[+-]?(?:\d+(?:\.\d+)?|\.\d+)(?:[eE][+-]?\d+)?/;
  * @return {Token[]}
  */
 function tokenize(input) {
+  cssTokenizer ??= require('@csstools/css-tokenizer');
+  const { tokenize: tokenizeCss, TokenType: CssType } = cssTokenizer;
   /** @type {Token[]} */
   const tokens = [];
   let ws = true;

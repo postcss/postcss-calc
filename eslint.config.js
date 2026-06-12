@@ -1,45 +1,18 @@
 const js = require('@eslint/js');
 const eslintConfigPrettier = require('eslint-config-prettier');
 const sonarjs = require('eslint-plugin-sonarjs');
-const tseslint = require('typescript-eslint');
 
 module.exports = [
   {
-    ignores: [
-      'node_modules/**',
-      '.stryker-tmp/**',
-      'reports/**',
-      'types/**',
-    ],
+    ignores: ['node_modules/**', '.stryker-tmp/**', 'reports/**', 'types/**'],
   },
   js.configs.recommended,
-  // Type-aware lint for the TypeScript sources.
-  ...tseslint.configs.recommendedTypeChecked.map((c) => ({
-    ...c,
-    files: ['src/pratt/**/*.ts', 'scripts/**/*.ts'],
-    languageOptions: {
-      ...(c.languageOptions || {}),
-      parserOptions: {
-        project: './tsconfig.test.json',
-        tsconfigRootDir: __dirname,
-      },
-    },
-  })),
   // SonarJS — code smells, cognitive complexity, dead stores, etc.
   {
-    files: ['src/pratt/**/*.ts', 'scripts/**/*.ts'],
+    files: ['src/**/*.js', 'test/**/*.mjs', 'scripts/**/*.mjs'],
     plugins: { sonarjs },
-    rules: sonarjs.configs.recommended.rules,
-  },
-  // Project-specific lint adjustments for the TypeScript sources.
-  {
-    files: ['src/pratt/**/*.ts', 'scripts/**/*.ts'],
     rules: {
-      // Underscore-prefix is the convention for "intentionally unused".
-      '@typescript-eslint/no-unused-vars': [
-        'error',
-        { argsIgnorePattern: '^_', varsIgnorePattern: '^_' },
-      ],
+      ...sonarjs.configs.recommended.rules,
       // Math hot paths (simplify, tokenizer, foldConstArgs, naive oracles)
       // have intrinsic complexity that's not extractable without diluting
       // single-pass intent. Default 15 is too tight; 25 still flags real
@@ -47,12 +20,13 @@ module.exports = [
       'sonarjs/cognitive-complexity': ['error', 25],
     },
   },
-  // node:test's `test()` returns a Promise we deliberately don't await —
-  // the harness handles it. Silence no-floating-promises for test files.
   {
-    files: ['src/pratt/test/**/*.ts'],
     rules: {
-      '@typescript-eslint/no-floating-promises': 'off',
+      // Underscore-prefix is the convention for "intentionally unused".
+      'no-unused-vars': [
+        'error',
+        { argsIgnorePattern: '^_', varsIgnorePattern: '^_' },
+      ],
     },
   },
   eslintConfigPrettier,
@@ -80,6 +54,9 @@ module.exports = [
         console: 'readonly',
         performance: 'readonly',
         process: 'readonly',
+        fetch: 'readonly',
+        URL: 'readonly',
+        setTimeout: 'readonly',
       },
     },
   },

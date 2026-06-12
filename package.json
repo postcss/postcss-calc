@@ -32,13 +32,12 @@
     "prepare": "tsc",
     "lint": "eslint . && tsc",
     "test": "node --test",
-    "test:pratt": "node --import tsx --test 'src/pratt/test/**/*.test.ts'",
     "test:mutation": "stryker run",
     "quality:knip": "knip",
     "quality:type-coverage": "type-coverage --at-least 99.5",
     "quality:depcruise": "depcruise src --config .dependency-cruiser.cjs",
     "quality:jscpd-src": "jscpd src/index.js src/lib --threshold 0.5 --min-lines 5 --min-tokens 50",
-    "quality:jscpd-test": "jscpd src/pratt/test --ignore 'src/pratt/test/corpus/**' --threshold 3 --min-lines 5 --min-tokens 60",
+    "quality:jscpd-test": "jscpd test --ignore 'test/corpus/**' --threshold 3 --min-lines 5 --min-tokens 60",
     "quality": "pnpm quality:knip && pnpm quality:type-coverage && pnpm quality:depcruise && pnpm quality:jscpd-src && pnpm quality:jscpd-test && pnpm lint"
   },
   "author": "Andy Jansson",
@@ -62,10 +61,8 @@
     "knip": "^6.6.3",
     "postcss": "^8.5.16",
     "prettier": "^3.9.5",
-    "tsx": "^4.21.0",
     "type-coverage": "^2.29.7",
-    "typescript": "~6.0.3",
-    "typescript-eslint": "^8.59.0"
+    "typescript": "~6.0.3"
   },
   "dependencies": {
     "@csstools/css-tokenizer": "^4.0.0",
