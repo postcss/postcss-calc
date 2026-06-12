@@ -12,7 +12,7 @@
 export default {
   testRunner: 'command',
   commandRunner: {
-    command: "node --import tsx --test 'src/pratt/test/**/*.test.ts'",
+    command: 'node --test',
   },
   mutate: [
     'src/lib/simplify.js',

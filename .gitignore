@@ -4,5 +4,5 @@ test/fixtures/*.actual.css
 yarn-error.log
 reports/
 .stryker-tmp/
-src/pratt/test/corpus/github/files/
-src/pratt/test/corpus/github/.harvest-state.json
+test/corpus/github/files/
+test/corpus/github/.harvest-state.json
