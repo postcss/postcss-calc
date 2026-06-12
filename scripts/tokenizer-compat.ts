@@ -3,8 +3,8 @@
 // Compares decoded values, normalizing the two designed differences:
 // function-token ≡ ident + `(`, and signed numeric ≡ punct sign + numeric.
 
-import { tokenize as ourTokenize } from '../src/pratt/src/core/tokenizer.ts';
-import type { Token as OurToken } from '../src/pratt/src/core/tokenizer.ts';
+import { tokenize as ourTokenize } from '../src/lib/tokenizer.js';
+import type { Token as OurToken } from '../src/lib/tokenizer.js';
 
 export interface SimpleToken {
   type: 'number' | 'dimension' | 'ident' | 'punct';

@@ -5,8 +5,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { tokenize } from '../../src/core/tokenizer.ts';
-import { parse, Parser, defaultPrefix, defaultInfix } from '../../src/core/parser.ts';
+import { tokenize } from '../../../lib/tokenizer.js';
+import { parse } from '../../../lib/parser.js';
 import { sexpr } from '../helpers/sexpr.ts';
 
 /** Parse input, return its S-expression. */
@@ -263,33 +263,14 @@ test('parser: stacked operators throw', () => {
   assert.throws(() => parse(tokenize('1 * * 2')), /Unexpected token/);
 });
 
-// --- Parser class directly ------------------------------------------------
+// --- expect() failures (unclosed groups) -----------------------------------
 
-test('Parser: peek and next advance the cursor', () => {
-  const p = new Parser(tokenize('1 + 2'), defaultPrefix(), defaultInfix());
-  const first = p.peek();
-  assert.equal(first.value, '1');
-  p.next();
-  assert.equal(p.peek().value, '+');
+test('parser: unclosed paren throws with expected-token message', () => {
+  assert.throws(() => parse(tokenize('(1 + 2')), /Expected \)/);
 });
 
-test('Parser: expect() consumes a matching token', () => {
-  const p = new Parser(tokenize('1 + 2'), defaultPrefix(), defaultInfix());
-  p.next(); // consume 1
-  const t = p.expect('punct', '+');
-  assert.equal(t.value, '+');
-});
-
-test('Parser: expect() throws with position on mismatch', () => {
-  const p = new Parser(tokenize('1 + 2'), defaultPrefix(), defaultInfix());
-  p.next(); // consume 1
-  assert.throws(() => p.expect('punct', '*'), /Expected \*/);
-});
-
-test('Parser: parseExpr returns a Node', () => {
-  const p = new Parser(tokenize('1 + 2'), defaultPrefix(), defaultInfix());
-  const n = p.parseExpr();
-  assert.equal((n as { type: 'Sum' }).type, 'Sum');
+test('parser: unclosed call throws with expected-token message', () => {
+  assert.throws(() => parse(tokenize('min(1, 2')), /Expected \)/);
 });
 
 // --- Trailing tokens ------------------------------------------------------

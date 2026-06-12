@@ -5,7 +5,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import postcss from 'postcss';
 
-import plugin from '../../src/plugin/plugin.ts';
+import plugin from '../../../index.js';
 
 const POSTCSS_OPTS = { from: undefined };
 

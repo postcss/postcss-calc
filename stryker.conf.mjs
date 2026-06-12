@@ -15,11 +15,11 @@ export default {
     command: "node --import tsx --test 'src/pratt/test/**/*.test.ts'",
   },
   mutate: [
-    'src/pratt/src/core/simplify.ts',
-    'src/pratt/src/core/serialize.ts',
-    'src/pratt/src/core/node.ts',
+    'src/lib/simplify.js',
+    'src/lib/serialize.js',
+    'src/lib/node.js',
   ],
-  ignorePatterns: ['node_modules', 'types', 'src/parser.js'],
+  ignorePatterns: ['node_modules', 'types'],
   // Mutation score targets — anything below 70 fails CI.
   thresholds: { high: 85, low: 70, break: 70 },
   reporters: ['clear-text', 'html', 'progress', 'json'],

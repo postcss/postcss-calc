@@ -13,7 +13,7 @@ import {
   mkProduct,
   negate,
   type Node,
-} from '../../src/core/node.ts';
+} from '../../../lib/node.js';
 
 // --- Leaf constructors ----------------------------------------------------
 //

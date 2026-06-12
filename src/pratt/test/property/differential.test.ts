@@ -10,10 +10,10 @@ import { test } from 'node:test';
 import fc from 'fast-check';
 import { calc as csstoolsCalc } from '@csstools/css-calc';
 
-import { tokenize } from '../../src/core/tokenizer.ts';
-import { parse } from '../../src/core/parser.ts';
-import { simplify } from '../../src/core/simplify.ts';
-import { serialize } from '../../src/core/serialize.ts';
+import { tokenize } from '../../../lib/tokenizer.js';
+import { parse } from '../../../lib/parser.js';
+import { simplify } from '../../../lib/simplify.js';
+import { serialize } from '../../../lib/serialize.js';
 import { astArb, astToCalc, trigExpFlatArb } from '../helpers/arbitraries.ts';
 
 const NUM_RUNS = 2000;

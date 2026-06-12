@@ -1,0 +1,45 @@
+'use strict';
+
+const { num, dim } = require('../node.js');
+const { foldConstArgs } = require('./fold.js');
+
+/** @typedef {import('../node.js').Node} Node */
+
+/**
+ * @param {'mod' | 'rem'} name
+ * @param {Node[]} args
+ * @return {Node}
+ */
+function simplifyModRem(name, args) {
+  if (args.length !== 2) {return { type: 'Call', name, args };}
+  const fold = foldConstArgs(args);
+  if (fold === null) {return { type: 'Call', name, args };}
+  const [a, b] = /** @type {[number, number]} */ (fold.values);
+  const result = applyModRem(name, a, b);
+  // NaN results drop the unit (`mod(5px, 0px)` → `calc(NaN)`, not
+  // `calc(NaN * 1px)`). §10.12 unit-preserving form is a known divergence.
+  if (isNaN(result)) {return num(NaN);}
+  return fold.unit === '' ? num(result) : dim(result, fold.unit);
+}
+
+/**
+ * @param {'mod' | 'rem'} name
+ * @param {number} a
+ * @param {number} b
+ * @return {number}
+ */
+function applyModRem(name, a, b) {
+  if (b === 0) {return NaN;}
+  if (!isFinite(a)) {return NaN;}
+  if (!isFinite(b)) {
+    // mod: result is NaN when A has opposite sign to B; otherwise A.
+    // rem: result is A regardless of signs.
+    if (name === 'mod' && a !== 0 && Math.sign(a) !== Math.sign(b)) {return NaN;}
+    return a;
+  }
+  return name === 'mod'
+    ? a - b * Math.floor(a / b) // sign follows divisor
+    : a - b * Math.trunc(a / b); // sign follows dividend (≡ JS %)
+}
+
+module.exports = { simplifyModRem };

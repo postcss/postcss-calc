@@ -2,7 +2,7 @@
 
 import { testCorpus } from '@rmenke/css-tokenizer-tests';
 
-import { tokenize as ourTokenize } from '../src/pratt/src/core/tokenizer.ts';
+import { tokenize as ourTokenize } from '../src/lib/tokenizer.js';
 import {
   fromCsstools,
   fromOurs,

@@ -3,9 +3,9 @@
 
 import fc from 'fast-check';
 
-import type { Node, SumTerm, ProductFactor } from '../../src/core/node.ts';
-import { mkSum, mkProduct } from '../../src/core/node.ts';
-import { serialize } from '../../src/core/serialize.ts';
+import type { Node, SumTerm, ProductFactor } from '../../../lib/node.js';
+import { mkSum, mkProduct } from '../../../lib/node.js';
+import { serialize } from '../../../lib/serialize.js';
 
 const KNOWN_UNITS = [
   'px', 'em', 'rem', 'vw',

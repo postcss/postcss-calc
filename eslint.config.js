@@ -6,11 +6,10 @@ const tseslint = require('typescript-eslint');
 module.exports = [
   {
     ignores: [
-      'src/parser.js',
       'node_modules/**',
       '.stryker-tmp/**',
       'reports/**',
-      'dist/**',
+      'types/**',
     ],
   },
   js.configs.recommended,
@@ -21,7 +20,7 @@ module.exports = [
     languageOptions: {
       ...(c.languageOptions || {}),
       parserOptions: {
-        project: './tsconfig.json',
+        project: './tsconfig.test.json',
         tsconfigRootDir: __dirname,
       },
     },

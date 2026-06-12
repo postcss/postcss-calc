@@ -23,11 +23,11 @@ import { readdirSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { tokenize } from '../../src/core/tokenizer.ts';
-import { parse } from '../../src/core/parser.ts';
-import { simplify } from '../../src/core/simplify.ts';
-import { serialize } from '../../src/core/serialize.ts';
-import type { Node } from '../../src/core/node.ts';
+import { tokenize } from '../../../lib/tokenizer.js';
+import { parse } from '../../../lib/parser.js';
+import { simplify } from '../../../lib/simplify.js';
+import { serialize } from '../../../lib/serialize.js';
+import type { Node } from '../../../lib/node.js';
 import { astArb } from '../helpers/arbitraries.ts';
 
 const FUZZ_RUNS = 2000;
