@@ -1,6 +1,6 @@
-// dependency-cruiser config — enforces module-boundary rules for the
-// TypeScript sources. Keeps `core/` PostCSS-free so it stays portable,
-// and stops test code from being reachable from production.
+// dependency-cruiser config — enforces module-boundary rules.
+// Keeps `lib/` PostCSS-free so it stays portable; the PostCSS adapter
+// lives in src/index.js. Test code must not be reachable from production.
 
 module.exports = {
   forbidden: [
@@ -19,33 +19,32 @@ module.exports = {
         orphan: true,
         pathNot: [
           '\\.(spec|test)\\.ts$',
-          'src/pratt/src/plugin/plugin\\.ts$',
-          'src/pratt/src/plugin/plugin-csstools\\.ts$',
+          'src/index\\.js$',
           '\\.eslintrc\\.|\\.config\\.|\\.cjs$|\\.mjs$',
         ],
       },
       to: {},
     },
     {
-      name: 'core-no-postcss',
+      name: 'lib-no-postcss',
       severity: 'error',
       comment:
-        'core/ is the pure calc engine — no PostCSS imports. Adapters live in plugin/.',
-      from: { path: '^src/pratt/src/core/' },
+        'lib/ is the pure calc engine — no PostCSS imports. The adapter is src/index.js.',
+      from: { path: '^src/lib/' },
       to: { path: 'postcss' },
     },
     {
-      name: 'core-no-plugin-import',
+      name: 'lib-no-entry-import',
       severity: 'error',
-      comment: 'core/ must not depend on plugin/ — adapter direction is one-way.',
-      from: { path: '^src/pratt/src/core/' },
-      to: { path: '^src/pratt/src/plugin/' },
+      comment: 'lib/ must not depend on the plugin entry — adapter direction is one-way.',
+      from: { path: '^src/lib/' },
+      to: { path: '^src/index\\.js$' },
     },
     {
       name: 'src-no-test-import',
       severity: 'error',
       comment: 'Production code must not reach into test/.',
-      from: { path: '^src/pratt/src/' },
+      from: { path: '^src/(lib/|index\\.js)' },
       to: { path: '^src/pratt/test/' },
     },
     {

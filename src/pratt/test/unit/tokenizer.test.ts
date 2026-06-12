@@ -4,7 +4,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { tokenize, type Token } from '../../src/core/tokenizer.ts';
+import { tokenize, type Token } from '../../../lib/tokenizer.js';
 
 /** Helper: strip trailing EOF for compact assertions. */
 function toks(input: string): Array<Omit<Token, 'pos'>> {

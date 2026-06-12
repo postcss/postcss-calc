@@ -11,9 +11,9 @@
 import { test } from 'node:test';
 import fc from 'fast-check';
 
-import type { Node, Num, Dim } from '../../src/core/node.ts';
-import { simplify } from '../../src/core/simplify.ts';
-import { serialize } from '../../src/core/serialize.ts';
+import type { Node, Num, Dim } from '../../../lib/node.js';
+import { simplify } from '../../../lib/simplify.js';
+import { serialize } from '../../../lib/serialize.js';
 
 const NUM_RUNS = 500;
 

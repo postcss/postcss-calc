@@ -11,7 +11,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { num, dim, ident, call, mkSum, mkProduct } from '../../src/core/node.ts';
+import { num, dim, ident, call, mkSum, mkProduct } from '../../../lib/node.js';
 import { sexpr } from '../helpers/sexpr.ts';
 
 test('sexpr: leaves render as raw values (sign baked into Num/Dim)', () => {

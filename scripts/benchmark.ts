@@ -5,10 +5,10 @@ import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { tokenize } from '../src/pratt/src/core/tokenizer.ts';
-import { parse } from '../src/pratt/src/core/parser.ts';
-import { simplify } from '../src/pratt/src/core/simplify.ts';
-import { serialize } from '../src/pratt/src/core/serialize.ts';
+import { tokenize } from '../src/lib/tokenizer.js';
+import { parse } from '../src/lib/parser.js';
+import { simplify } from '../src/lib/simplify.js';
+import { serialize } from '../src/lib/serialize.js';
 import { calc as csstoolsCalc } from '@csstools/css-calc';
 
 const ROOT = dirname(fileURLToPath(import.meta.url));

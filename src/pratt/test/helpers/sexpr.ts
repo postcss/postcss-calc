@@ -1,4 +1,4 @@
-import type { Node } from '../../src/core/node.ts';
+import type { Node } from '../../../lib/node.js';
 
 /**
  * Render an AST as an S-expression for snapshot assertions. Makes the

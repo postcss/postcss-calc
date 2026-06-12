@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { baseOf, convert } from '../../src/core/type.ts';
+import { baseOf, convert } from '../../../lib/type.js';
 
 test('baseOf: returns base type for known units', () => {
   assert.equal(baseOf('px'), 'length');

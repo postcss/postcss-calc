@@ -3,10 +3,10 @@
 
 import { readFileSync } from 'node:fs';
 
-import { tokenize } from '../../src/core/tokenizer.ts';
-import { parse } from '../../src/core/parser.ts';
-import { simplify } from '../../src/core/simplify.ts';
-import { serialize } from '../../src/core/serialize.ts';
+import { tokenize } from '../../../lib/tokenizer.js';
+import { parse } from '../../../lib/parser.js';
+import { simplify } from '../../../lib/simplify.js';
+import { serialize } from '../../../lib/serialize.js';
 
 /** Per-expression budget in ms. Exceeding this signals a likely infinite loop. */
 export const PER_EXPR_BUDGET_MS = 250;

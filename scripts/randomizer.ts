@@ -12,17 +12,17 @@ import { fileURLToPath } from 'node:url';
 import fc from 'fast-check';
 import { calc as csstoolsCalc } from '@csstools/css-calc';
 
-import { tokenize } from '../src/pratt/src/core/tokenizer.ts';
-import { parse } from '../src/pratt/src/core/parser.ts';
-import { simplify } from '../src/pratt/src/core/simplify.ts';
-import { serialize } from '../src/pratt/src/core/serialize.ts';
+import { tokenize } from '../src/lib/tokenizer.js';
+import { parse } from '../src/lib/parser.js';
+import { simplify } from '../src/lib/simplify.js';
+import { serialize } from '../src/lib/serialize.js';
 import {
   astArb,
   astArbWithDegenerate,
   astToCalc,
 } from '../src/pratt/test/helpers/arbitraries.ts';
-import type { Node, SumTerm, ProductFactor } from '../src/pratt/src/core/node.ts';
-import { mkSum, mkProduct } from '../src/pratt/src/core/node.ts';
+import type { Node, SumTerm, ProductFactor } from '../src/lib/node.js';
+import { mkSum, mkProduct } from '../src/lib/node.js';
 
 const ROOT = dirname(fileURLToPath(import.meta.url));
 const REPORT_DEFAULT = join(ROOT, '..', 'reports', 'randomizer-finds.jsonl');

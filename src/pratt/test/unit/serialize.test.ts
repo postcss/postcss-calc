@@ -1,8 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { serialize } from '../../src/core/serialize.ts';
-import { mkSum, mkProduct, type Node } from '../../src/core/node.ts';
+import { serialize } from '../../../lib/serialize.js';
+import { mkSum, mkProduct, type Node } from '../../../lib/node.js';
 
 // Direct serialize() tests — build canonical AST nodes by hand to pin
 // output shape without depending on the parser/simplify.

@@ -11,16 +11,16 @@
 import { test } from 'node:test';
 import fc from 'fast-check';
 
-import { tokenize } from '../../src/core/tokenizer.ts';
-import { parse } from '../../src/core/parser.ts';
-import { simplify } from '../../src/core/simplify.ts';
-import { serialize } from '../../src/core/serialize.ts';
+import { tokenize } from '../../../lib/tokenizer.js';
+import { parse } from '../../../lib/parser.js';
+import { simplify } from '../../../lib/simplify.js';
+import { serialize } from '../../../lib/serialize.js';
 import {
   astArb,
   astArbWithDegenerate,
   numericAstArb,
 } from '../helpers/arbitraries.ts';
-import { mkProduct, mkSum, negate, type Node } from '../../src/core/node.ts';
+import { mkProduct, mkSum, negate, type Node } from '../../../lib/node.js';
 
 const NUM_RUNS = 500;
 

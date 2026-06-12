@@ -17,10 +17,10 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { calc as csstoolsCalc } from '@csstools/css-calc';
 
-import { tokenize } from '../../src/core/tokenizer.ts';
-import { parse } from '../../src/core/parser.ts';
-import { simplify } from '../../src/core/simplify.ts';
-import { serialize } from '../../src/core/serialize.ts';
+import { tokenize } from '../../../lib/tokenizer.js';
+import { parse } from '../../../lib/parser.js';
+import { simplify } from '../../../lib/simplify.js';
+import { serialize } from '../../../lib/serialize.js';
 
 const CORPUS_DIR = join(dirname(fileURLToPath(import.meta.url)), '..', 'corpus');
 const COMPARE_PRECISION = 10;

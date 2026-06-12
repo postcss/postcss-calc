@@ -1,11 +1,18 @@
-// Lint / IDE / typecheck config. Covers src + scripts + tests, emits nothing.
 {
-  "extends": "./tsconfig.base.json",
   "compilerOptions": {
-    "module": "esnext",
-    "moduleResolution": "bundler",
-    "verbatimModuleSyntax": true,
-    "noEmit": true
+    "target": "es2022",
+    "lib": ["es2022"],
+    "module": "nodenext",
+    "allowJs": true,
+    "checkJs": true,
+    "declaration": true,
+    "emitDeclarationOnly": true,
+    "noEmitOnError": true,
+    "newLine": "lf",
+    "outDir": "types",
+    "allowSyntheticDefaultImports": true,
+    "forceConsistentCasingInFileNames": true,
+    "strict": true
   },
-  "include": ["src/index.ts", "src/pratt/**/*.ts", "scripts/**/*.ts"]
+  "include": ["src/index.js", "src/lib/**/*.js"]
 }

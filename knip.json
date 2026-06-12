@@ -6,14 +6,12 @@
         "scripts/*.ts",
         "test/**/*.{js,mjs}",
         "src/pratt/test/**/*.test.ts",
-        "src/pratt/src/plugin/*.ts",
         "stryker.conf.mjs",
         "eslint.config.js",
         ".dependency-cruiser.cjs"
       ],
       "project": [
         "src/**/*.js",
-        "src/pratt/src/**/*.ts",
         "src/pratt/test/**/*.ts"
       ]
     }

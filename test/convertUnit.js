@@ -2,7 +2,11 @@
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
 
-const convertUnit = require('../src/lib/convertUnit.js');
+const { convert } = require('../src/lib/type.js');
+
+// Legacy convertUnit rounded to a precision (default 5) and threw on
+// cross-family conversions; convert() returns the raw value and null.
+const round = (v, prec) => Math.round(v * 10 ** prec) / 10 ** prec;
 
 test('valid conversions', () => {
   const conversions = [
@@ -79,14 +83,17 @@ test('valid conversions', () => {
     [10, 'Hz', 0.01, 'kHz'],
     [10, 'kHz', 10000, 'Hz'],
     [10, 'kHz', 10, 'kHz'],
+    // Resolution rows differ from the legacy convertUnit module, which had
+    // these conversions inverted (it claimed 10dpi = 960dppx; 1dppx = 96dpi,
+    // so 10dpi = 0.10417dppx).
     [10, 'dpi', 10, 'dpi'],
-    [10, 'dpi', 25.4, 'dpcm'],
-    [10, 'dpi', 960, 'dppx'],
-    [10, 'dpcm', 3.93701, 'dpi'],
+    [10, 'dpi', 3.93701, 'dpcm'],
+    [10, 'dpi', 0.10417, 'dppx'],
+    [10, 'dpcm', 25.4, 'dpi'],
     [10, 'dpcm', 10, 'dpcm'],
-    [10, 'dpcm', 377.95276, 'dppx'],
-    [10, 'dppx', 0.10417, 'dpi'],
-    [10, 'dppx', 0.26458, 'dpcm'],
+    [10, 'dpcm', 0.26458, 'dppx'],
+    [10, 'dppx', 960, 'dpi'],
+    [10, 'dppx', 377.95276, 'dpcm'],
     [10, 'dppx', 10, 'dppx'],
   ];
 
@@ -96,325 +103,45 @@ test('valid conversions', () => {
     const expected = e[2];
     const targetUnit = e[3];
 
-    assert.strictEqual(
-      convertUnit(value, unit, targetUnit),
-      expected,
-      unit + ' -> ' + targetUnit
-    );
+    const actual = convert(value, unit, targetUnit);
+    assert.ok(actual !== null, unit + ' -> ' + targetUnit);
+    assert.strictEqual(round(actual, 5), expected, unit + ' -> ' + targetUnit);
   });
 });
 
 test('invalid conversions', () => {
   const invalid_units = {
-    px: [
-      'deg',
-      'grad',
-      'rad',
-      'turn',
-      's',
-      'ms',
-      'Hz',
-      'kHz',
-      'dpi',
-      'dpcm',
-      'dppx',
-    ],
-    cm: [
-      'deg',
-      'grad',
-      'rad',
-      'turn',
-      's',
-      'ms',
-      'Hz',
-      'kHz',
-      'dpi',
-      'dpcm',
-      'dppx',
-    ],
-    mm: [
-      'deg',
-      'grad',
-      'rad',
-      'turn',
-      's',
-      'ms',
-      'Hz',
-      'kHz',
-      'dpi',
-      'dpcm',
-      'dppx',
-    ],
-    q: [
-      'deg',
-      'grad',
-      'rad',
-      'turn',
-      's',
-      'ms',
-      'Hz',
-      'kHz',
-      'dpi',
-      'dpcm',
-      'dppx',
-    ],
-    in: [
-      'deg',
-      'grad',
-      'rad',
-      'turn',
-      's',
-      'ms',
-      'Hz',
-      'kHz',
-      'dpi',
-      'dpcm',
-      'dppx',
-    ],
-    pt: [
-      'deg',
-      'grad',
-      'rad',
-      'turn',
-      's',
-      'ms',
-      'Hz',
-      'kHz',
-      'dpi',
-      'dpcm',
-      'dppx',
-    ],
-    pc: [
-      'deg',
-      'grad',
-      'rad',
-      'turn',
-      's',
-      'ms',
-      'Hz',
-      'kHz',
-      'dpi',
-      'dpcm',
-      'dppx',
-    ],
-    deg: [
-      'px',
-      'cm',
-      'mm',
-      'in',
-      'pt',
-      'pc',
-      's',
-      'ms',
-      'Hz',
-      'kHz',
-      'dpi',
-      'dpcm',
-      'dppx',
-    ],
-    grad: [
-      'px',
-      'cm',
-      'mm',
-      'in',
-      'pt',
-      'pc',
-      's',
-      'ms',
-      'Hz',
-      'kHz',
-      'dpi',
-      'dpcm',
-      'dppx',
-    ],
-    rad: [
-      'px',
-      'cm',
-      'mm',
-      'in',
-      'pt',
-      'pc',
-      's',
-      'ms',
-      'Hz',
-      'kHz',
-      'dpi',
-      'dpcm',
-      'dppx',
-    ],
-    turn: [
-      'px',
-      'cm',
-      'mm',
-      'in',
-      'pt',
-      'pc',
-      's',
-      'ms',
-      'Hz',
-      'kHz',
-      'dpi',
-      'dpcm',
-      'dppx',
-    ],
-    s: [
-      'px',
-      'cm',
-      'mm',
-      'in',
-      'pt',
-      'pc',
-      'deg',
-      'grad',
-      'rad',
-      'turn',
-      'Hz',
-      'kHz',
-      'dpi',
-      'dpcm',
-      'dppx',
-    ],
-    ms: [
-      'px',
-      'cm',
-      'mm',
-      'in',
-      'pt',
-      'pc',
-      'deg',
-      'grad',
-      'rad',
-      'turn',
-      'Hz',
-      'kHz',
-      'dpi',
-      'dpcm',
-      'dppx',
-    ],
-    Hz: [
-      'px',
-      'cm',
-      'mm',
-      'in',
-      'pt',
-      'pc',
-      'deg',
-      'grad',
-      'rad',
-      'turn',
-      's',
-      'ms',
-      'dpi',
-      'dpcm',
-      'dppx',
-    ],
-    kHz: [
-      'px',
-      'cm',
-      'mm',
-      'in',
-      'pt',
-      'pc',
-      'deg',
-      'grad',
-      'rad',
-      'turn',
-      's',
-      'ms',
-      'dpi',
-      'dpcm',
-      'dppx',
-    ],
-    dpi: [
-      'px',
-      'cm',
-      'mm',
-      'in',
-      'pt',
-      'pc',
-      'deg',
-      'grad',
-      'rad',
-      'turn',
-      's',
-      'ms',
-      'Hz',
-      'kHz',
-    ],
-    dpcm: [
-      'px',
-      'cm',
-      'mm',
-      'in',
-      'pt',
-      'pc',
-      'deg',
-      'grad',
-      'rad',
-      'turn',
-      's',
-      'ms',
-      'Hz',
-      'kHz',
-    ],
-    dppx: [
-      'px',
-      'cm',
-      'mm',
-      'in',
-      'pt',
-      'pc',
-      'deg',
-      'grad',
-      'rad',
-      'turn',
-      's',
-      'ms',
-      'Hz',
-      'kHz',
-    ],
+    px: ['deg', 'grad', 'rad', 'turn', 's', 'ms', 'Hz', 'kHz', 'dpi', 'dpcm', 'dppx'],
+    cm: ['deg', 'grad', 'rad', 'turn', 's', 'ms', 'Hz', 'kHz', 'dpi', 'dpcm', 'dppx'],
+    mm: ['deg', 'grad', 'rad', 'turn', 's', 'ms', 'Hz', 'kHz', 'dpi', 'dpcm', 'dppx'],
+    q: ['deg', 'grad', 'rad', 'turn', 's', 'ms', 'Hz', 'kHz', 'dpi', 'dpcm', 'dppx'],
+    in: ['deg', 'grad', 'rad', 'turn', 's', 'ms', 'Hz', 'kHz', 'dpi', 'dpcm', 'dppx'],
+    pt: ['deg', 'grad', 'rad', 'turn', 's', 'ms', 'Hz', 'kHz', 'dpi', 'dpcm', 'dppx'],
+    pc: ['deg', 'grad', 'rad', 'turn', 's', 'ms', 'Hz', 'kHz', 'dpi', 'dpcm', 'dppx'],
+    deg: ['px', 'cm', 'mm', 'in', 'pt', 'pc', 's', 'ms', 'Hz', 'kHz', 'dpi', 'dpcm', 'dppx'],
+    grad: ['px', 'cm', 'mm', 'in', 'pt', 'pc', 's', 'ms', 'Hz', 'kHz', 'dpi', 'dpcm', 'dppx'],
+    rad: ['px', 'cm', 'mm', 'in', 'pt', 'pc', 's', 'ms', 'Hz', 'kHz', 'dpi', 'dpcm', 'dppx'],
+    turn: ['px', 'cm', 'mm', 'in', 'pt', 'pc', 's', 'ms', 'Hz', 'kHz', 'dpi', 'dpcm', 'dppx'],
+    s: ['px', 'cm', 'mm', 'in', 'pt', 'pc', 'deg', 'grad', 'rad', 'turn', 'Hz', 'kHz', 'dpi', 'dpcm', 'dppx'],
+    ms: ['px', 'cm', 'mm', 'in', 'pt', 'pc', 'deg', 'grad', 'rad', 'turn', 'Hz', 'kHz', 'dpi', 'dpcm', 'dppx'],
+    Hz: ['px', 'cm', 'mm', 'in', 'pt', 'pc', 'deg', 'grad', 'rad', 'turn', 's', 'ms', 'dpi', 'dpcm', 'dppx'],
+    kHz: ['px', 'cm', 'mm', 'in', 'pt', 'pc', 'deg', 'grad', 'rad', 'turn', 's', 'ms', 'dpi', 'dpcm', 'dppx'],
+    dpi: ['px', 'cm', 'mm', 'in', 'pt', 'pc', 'deg', 'grad', 'rad', 'turn', 's', 'ms', 'Hz', 'kHz'],
+    dpcm: ['px', 'cm', 'mm', 'in', 'pt', 'pc', 'deg', 'grad', 'rad', 'turn', 's', 'ms', 'Hz', 'kHz'],
+    dppx: ['px', 'cm', 'mm', 'in', 'pt', 'pc', 'deg', 'grad', 'rad', 'turn', 's', 'ms', 'Hz', 'kHz'],
   };
 
   for (const unit in invalid_units) {
     invalid_units[unit].forEach((targetUnit) => {
-      let failed = false;
-
-      try {
-        convertUnit(10, unit, targetUnit);
-      } catch {
-        failed = true;
-      }
-
-      assert.ok(failed, unit + ' -> ' + targetUnit);
+      assert.strictEqual(
+        convert(10, unit, targetUnit),
+        null,
+        unit + ' -> ' + targetUnit
+      );
     });
   }
 });
 
-test('precision', () => {
-  const precision = 10;
-  const conversions = [
-    // source value, source unit, expected value, target unit
-    [10, 'px', 0.2645833333, 'cm'],
-    [10, 'px', 2.6458333333, 'mm'],
-    [10, 'px', 0.1041666667, 'in'],
-    [10, 'cm', 377.9527559055, 'px'],
-  ];
-
-  conversions.forEach((e) => {
-    const value = e[0];
-    const unit = e[1];
-    const expected = e[2];
-    const targetUnit = e[3];
-
-    assert.strictEqual(
-      convertUnit(value, unit, targetUnit, precision),
-      expected,
-      unit + ' -> ' + targetUnit
-    );
-  });
+test('unrounded conversion', () => {
+  assert.strictEqual(convert(10, 'px', 'cm'), 0.26458333333333334);
 });
-
-test('falsey precision', () => {
-  assert.strictEqual(convertUnit(10, 'px', 'cm', false), 0.26458333333333334);
-});
-
