@@ -53,6 +53,7 @@
   "devDependencies": {
     "@csstools/css-calc": "^3.2.0",
     "@eslint/js": "^10.0.1",
+    "@rmenke/css-tokenizer-tests": "^1.2.0",
     "@stryker-mutator/core": "^9.6.1",
     "@stryker-mutator/typescript-checker": "^9.6.1",
     "@types/node": "^26.1.1",
@@ -72,6 +73,7 @@
     "typescript-eslint": "^8.59.0"
   },
   "dependencies": {
+    "@csstools/css-tokenizer": "^4.0.0",
     "postcss-value-parser": "^4.2.0"
   },
   "peerDependencies": {

@@ -69,6 +69,13 @@ const KNOWN_DIVERGENCES = new Set<string>([
   // numeric folding is done the sum can't be expressed without a unit
   // choice anyway.
   'calc(atan(.5) + 90deg - (var(--dir)*90deg))',
+  // Emoji/math-symbol custom properties: the current CSS Syntax draft
+  // excludes these code points from idents, so `--➕` splits and we warn +
+  // preserve; css-calc silently passes through. Same output either way.
+  'calc(1 / var(--√𝟤))',
+  'calc(var(--➕) * -1)',
+  'calc(var(--➕) * var(--✖️))',
+  'calc(var(--➖) * var(--✖️))',
 ]);
 
 interface LibResult {

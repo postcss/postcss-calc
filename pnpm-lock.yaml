@@ -8,6 +8,9 @@ importers:
 
   .:
     dependencies:
+      '@csstools/css-tokenizer':
+        specifier: ^4.0.0
+        version: 4.0.0
       postcss-value-parser:
         specifier: ^4.2.0
         version: 4.2.0
@@ -18,6 +21,9 @@ importers:
       '@eslint/js':
         specifier: ^9.25.1
         version: 9.25.1
+      '@rmenke/css-tokenizer-tests':
+        specifier: ^1.2.0
+        version: 1.2.0
       '@stryker-mutator/core':
         specifier: ^9.6.1
         version: 9.6.1(@types/node@22.15.17)
@@ -935,6 +941,9 @@ packages:
     resolution: {integrity: sha512-6hIU3RQu45B+VNTY4Ru8ppFwjVS/S5qwYyGhBotmjxfEKk41I2DlGtRfGJndZ5+6lneE2pwloqunlOyZuX/XAw==}
     cpu: [x64]
     os: [win32]
+
+  '@rmenke/css-tokenizer-tests@1.2.0':
+    resolution: {integrity: sha512-XfdeXzW5QGc3inl69eid2FTLGY/514xs+VXQWlEzdUVm1QdU6MicU5S2hcEbHoC9WMzIMALTzxiZb49w+xJk0Q==}
 
   '@sec-ant/readable-stream@0.4.1':
     resolution: {integrity: sha512-831qok9r2t8AlxLko40y2ebgSDhenenCatLVeW/uBtnHPyhHOvG0C7TvfgecV+wHzIm5KUICgzmVpWS+IMEAeg==}
@@ -3228,6 +3237,8 @@ snapshots:
 
   '@oxc-resolver/binding-win32-x64-msvc@11.19.1':
     optional: true
+
+  '@rmenke/css-tokenizer-tests@1.2.0': {}
 
   '@sec-ant/readable-stream@0.4.1': {}
 

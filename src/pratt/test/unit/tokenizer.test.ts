@@ -197,11 +197,8 @@ test('tok: empty comment /**/ is allowed', () => {
   assert.deepEqual(values('1/**/+ 2'), ['1', '+', '2']);
 });
 
-test('tok: unterminated comment throws', () => {
-  assert.throws(
-    () => tokenize('1px /* unterminated'),
-    /Unterminated \/\* comment at position 4/
-  );
+test('tok: unterminated comment is consumed to EOF as whitespace (§4.3.2)', () => {
+  assert.deepEqual(values('1px /* unterminated'), ['1px']);
 });
 
 // --- Errors ---------------------------------------------------------------

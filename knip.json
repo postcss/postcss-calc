@@ -3,7 +3,7 @@
   "workspaces": {
     ".": {
       "entry": [
-        "scripts/benchmark.mjs",
+        "scripts/*.ts",
         "test/**/*.{js,mjs}",
         "src/pratt/test/**/*.test.ts",
         "src/pratt/src/plugin/*.ts",
