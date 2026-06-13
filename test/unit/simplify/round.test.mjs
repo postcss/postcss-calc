@@ -91,6 +91,29 @@ test('round: A infinite, B finite → same infinity (§10.3.1 line 1022)', () =>
   assert.equal(out('round(up, infinity, 10)'), 'calc(infinity)');
   assert.equal(out('round(down, calc(0 - infinity), 10)'), 'calc(-infinity)');
 });
+test('round: A finite, B infinite → strategy-dependent (§10.3.1)', () => {
+  // Multiples of an infinite step are {-∞, 0, +∞}.
+  // up (ceiling) lands on +∞ for positive A; down (floor) lands on -∞ for
+  // negative A; every other case folds to ±0 carrying A's sign.
+  assert.equal(out('round(up, 5, infinity)'), 'calc(infinity)');
+  assert.equal(out('round(down, calc(0 - 5), infinity)'), 'calc(-infinity)');
+  assert.equal(out('round(down, 5, infinity)'), '0');
+  assert.equal(out('round(up, calc(0 - 5), infinity)'), '0');
+  assert.equal(out('round(nearest, 5, infinity)'), '0');
+  assert.equal(out('round(to-zero, 5, infinity)'), '0');
+  // Dimensional A with an infinite dim step keeps the unit.
+  assert.equal(
+    out('round(up, 5px, calc(infinity * 1px))'),
+    'calc(infinity * 1px)'
+  );
+  assert.equal(
+    out('round(down, calc(0px - 5px), calc(infinity * 1px))'),
+    'calc(-infinity * 1px)'
+  );
+});
+test('round: A and B both infinite → NaN', () => {
+  assert.equal(out('round(infinity, infinity)'), 'calc(NaN)');
+});
 test('round: zero A → 0 (exact multiple)', () => {
   assert.equal(out('round(0, 5)'), '0');
   assert.equal(out('round(up, 0, 5)'), '0');
