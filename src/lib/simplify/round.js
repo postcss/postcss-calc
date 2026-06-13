@@ -42,16 +42,25 @@ function simplifyRound(args) {
   if (!fold) {return passthrough();}
 
   const [a, b] = /** @type {[number, number]} */ (fold.values);
-  // Spec §10.7.1 non-finite step: NaN propagates; infinite step with
-  // finite A folds to ±0 carrying A's sign (every strategy picks the same
-  // single point); both infinite cancels to NaN. Infinite-A / finite-B
-  // falls through to applyRound, where floor*b===ceil*b===±∞ collapses
-  // back to A (§10.3.1 "result is the same infinity").
+  // Spec §10.7.1 non-finite step: NaN propagates; both infinite cancels to
+  // NaN. Infinite step with finite A is strategy-dependent — the multiples
+  // of an infinite step are {-∞, 0, +∞}, so `up` (ceiling) lands on +∞ for
+  // positive A and `down` (floor) lands on -∞ for negative A; every other
+  // case folds to ±0 carrying A's sign. Infinite-A / finite-B falls through
+  // to applyRound, where floor*b===ceil*b===±∞ collapses back to A
+  // (§10.3.1 "result is the same infinity").
   if (isNaN(b)) {return num(NaN);}
   if (!isFinite(b)) {
     if (!isFinite(a)) {return num(NaN);}
-    const signedZero = a < 0 || Object.is(a, -0) ? -0 : 0;
-    return fold.unit === '' ? num(signedZero) : dim(signedZero, fold.unit);
+    let result;
+    if (strategy === 'up' && a > 0) {
+      result = Infinity;
+    } else if (strategy === 'down' && a < 0) {
+      result = -Infinity;
+    } else {
+      result = a < 0 || Object.is(a, -0) ? -0 : 0;
+    }
+    return fold.unit === '' ? num(result) : dim(result, fold.unit);
   }
 
   const result = applyRound(strategy, a, b);

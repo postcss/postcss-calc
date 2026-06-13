@@ -221,16 +221,16 @@ test('spec §10.3.1 line 1020: round(A, 0) is NaN', () => {
   assert.equal(out('round(down, 5, 0)'), 'calc(NaN)');
   assert.equal(out('round(to-zero, 5, 0)'), 'calc(NaN)');
 });
-test("spec §10.7.1: round(finite, ±infinity) → 0 carrying A's sign", () => {
-  // floor(A/±∞) = ceil(A/±∞) = ±0; the spec collapses that interval to
-  // the nearest multiple of step, which is 0 with sign of A. Strategy
-  // doesn't change the result. Found by the differential randomizer.
-  assert.equal(out('round(5, infinity)'), '0');
-  assert.equal(out('round(up, 5, infinity)'), '0');
-  // The simplifier produces -0 for negative A here, but the serializer
-  // collapses sign-of-zero to match CSS's numeric `-0 === 0` and the
-  // existing test expectations across abs/sign/etc.
-  assert.equal(out('round(down, calc(0 - 5), infinity)'), '0');
+test('spec §10.7.1: round(finite, ±infinity) is strategy-dependent', () => {
+  // The multiples of an infinite step are {-∞, 0, +∞}. up (ceiling) lands
+  // on +∞ for positive A; down (floor) lands on -∞ for negative A; nearest
+  // and to-zero collapse to 0 carrying A's sign. The serializer collapses
+  // sign-of-zero to match CSS's numeric `-0 === 0`.
+  assert.equal(out('round(5, infinity)'), '0'); // nearest default
+  assert.equal(out('round(up, 5, infinity)'), 'calc(infinity)');
+  assert.equal(out('round(down, calc(0 - 5), infinity)'), 'calc(-infinity)');
+  assert.equal(out('round(down, 5, infinity)'), '0');
+  assert.equal(out('round(up, calc(0 - 5), infinity)'), '0');
   assert.equal(out('round(3, calc(0 - infinity))'), '0');
 });
 test('spec §10.7.1: round(_, NaN) is NaN', () => {
