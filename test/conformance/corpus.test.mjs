@@ -10,13 +10,13 @@
 // assert they agree. Any divergence is either a real bug or a known
 // design choice documented in `KNOWN_DIVERGENCES`.
 import { readdirSync, readFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
+import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { calc as csstoolsCalc } from '@csstools/css-calc';
 import { out } from '../helpers/out.mjs';
-const CORPUS_DIR = join(dirname(fileURLToPath(import.meta.url)), '../corpus');
+const CORPUS_DIR = fileURLToPath(new URL('../corpus/', import.meta.url));
 const COMPARE_PRECISION = 10;
 function ourOut(input) {
   try {
