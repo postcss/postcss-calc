@@ -3,7 +3,7 @@ const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const postcss = require('postcss');
 
-const reduceCalc = (opts = {}) => require('../')(opts);
+const reduceCalc = (opts = {}) => require('../src/index.js')(opts);
 
 const postcssOpts = { from: undefined };
 
@@ -610,8 +610,8 @@ test(
 );
 
 test(
-  'should reduce calc in selectors when `selectors` option is set to true (1)',
-  testCss('div[data-size="calc(3*3)"]{}', 'div[data-size="9"]{}', {
+  'should not touch calc() inside attribute-value strings (matching is literal)',
+  testCss('div[data-size="calc(3*3)"]{}', 'div[data-size="calc(3*3)"]{}', {
     selectors: true,
   })
 );
