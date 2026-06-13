@@ -10,19 +10,12 @@
 //
 // Goal: every input must throw a real synchronous `Error`. No hangs, no
 // non-Error throws.
-import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { runCorpus, assertResilience } from '../helpers/resilience.mjs';
 const r = runCorpus(
-  join(
-    dirname(fileURLToPath(import.meta.url)),
-    '..',
-    'corpus',
-    'github',
-    'invalid.txt'
-  )
+  fileURLToPath(new URL('../corpus/github/invalid.txt', import.meta.url))
 );
 test(`invalid corpus: ${r.total} expressions parse-or-throw cleanly`, () => {
   assertResilience(r, 'invalid', assert);

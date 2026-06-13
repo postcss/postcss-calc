@@ -14,21 +14,14 @@
     "type": "git",
     "url": "https://github.com/postcss/postcss-calc.git"
   },
+  "main": "src/index.js",
   "types": "types/index.d.ts",
-  "exports": {
-    ".": {
-      "types": "./types/index.d.ts",
-      "default": "./src/index.js"
-    },
-    "./package.json": "./package.json"
-  },
   "files": [
     "src",
     "types",
     "LICENSE"
   ],
   "scripts": {
-    "prepare": "tsc",
     "lint": "eslint . && tsc",
     "test": "node --test",
     "test:mutation": "stryker run",

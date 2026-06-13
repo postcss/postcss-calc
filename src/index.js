@@ -67,6 +67,8 @@ function transformValue(value, options, result, item) {
           });
         }
 
+        // Re-tag as `word` so value-parser emits `str` verbatim instead of
+        // re-wrapping it as `name(...)`. Cast widens the `'function'` literal.
         /** @type {{type: string}} */ (node).type = 'word';
         node.value = str;
       } catch (error) {
