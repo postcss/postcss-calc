@@ -9,6 +9,7 @@
     "emitDeclarationOnly": true,
     "noEmitOnError": true,
     "newLine": "lf",
+    "rootDir": "src",
     "outDir": "types",
     "allowSyntheticDefaultImports": true,
     "forceConsistentCasingInFileNames": true,

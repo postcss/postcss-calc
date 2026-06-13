@@ -15,21 +15,12 @@ import { fileURLToPath } from 'node:url';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { calc as csstoolsCalc } from '@csstools/css-calc';
-import { tokenize } from '../../src/lib/tokenizer.js';
-import { parse } from '../../src/lib/parser.js';
-import { simplify } from '../../src/lib/simplify.js';
-import { serialize } from '../../src/lib/serialize.js';
-const CORPUS_DIR = join(
-  dirname(fileURLToPath(import.meta.url)),
-  '..',
-  'corpus'
-);
+import { out } from '../helpers/out.mjs';
+const CORPUS_DIR = join(dirname(fileURLToPath(import.meta.url)), '../corpus');
 const COMPARE_PRECISION = 10;
 function ourOut(input) {
   try {
-    return serialize(simplify(parse(tokenize(input))), {
-      precision: COMPARE_PRECISION,
-    });
+    return out(input, { precision: COMPARE_PRECISION });
   } catch {
     return null;
   }
@@ -38,16 +29,6 @@ function theirOut(input) {
   try {
     const r = csstoolsCalc(input);
     return typeof r === 'string' ? r : null;
-  } catch {
-    return null;
-  }
-}
-/** Canonicalize a CSS-value string through our parser at compare precision. */
-function canonicalize(s) {
-  try {
-    return serialize(simplify(parse(tokenize(s))), {
-      precision: COMPARE_PRECISION,
-    });
   } catch {
     return null;
   }
@@ -103,7 +84,7 @@ function runLibrary(lib, calcs) {
       result.agree++;
       continue;
     }
-    const canonicalTheirs = canonicalize(theirs);
+    const canonicalTheirs = ourOut(theirs);
     if (canonicalTheirs === null) {
       // csstools produced something our parser couldn't read — rare.
       if (!KNOWN_DIVERGENCES.has(input)) {

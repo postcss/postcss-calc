@@ -40,19 +40,11 @@ const MATH_FUNCTIONS = new Set([
  * @param {ResolvedOptions} options
  * @param {import('postcss').Result} result
  * @param {import('postcss').ChildNode} item
- * @param {boolean} [descendIntoStrings] Recurse into quoted strings — needed for selectors where calc()
- *   hides inside attribute values like `[data-size="calc(3*3)"]`.
- *   Off by default: a declaration value like `content: "calc(...)"`
- *   is a literal display string, not arithmetic.
  * @return {string}
  */
-function transformValue(value, options, result, item, descendIntoStrings = false) {
+function transformValue(value, options, result, item) {
   return valueParser(value)
     .walk((node) => {
-      if (node.type === 'string' && descendIntoStrings) {
-        node.value = transformValue(node.value, options, result, item, true);
-        return;
-      }
       if (node.type !== 'function') {return;}
       const isCalc = MATCH_CALC.test(node.value);
       const isMath = !isCalc && MATH_FUNCTIONS.has(node.value.toLowerCase());
@@ -131,11 +123,9 @@ function pluginCreator(opts) {
           }
         }
         if (node.type === 'rule' && options.selectors) {
-          // Selectors carry calc() in two places: pseudo-class arguments
-          // (`:nth-child(...)` — caught by the function walk) and quoted
-          // attribute values (`[data-size="calc(3*3)"]` — needs string
-          // recursion).
-          const next = transformValue(node.selector, options, result, node, true);
+          // Reduces `:nth-child(calc(...))` via the function walk. calc() in a
+          // quoted attribute value is a literal match, so it's left untouched.
+          const next = transformValue(node.selector, options, result, node);
           if (options.preserve && node.selector !== next && node.parent) {
             const clone = node.clone();
             clone.selector = next;
