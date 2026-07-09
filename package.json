@@ -30,7 +30,7 @@
   "author": "Andy Jansson",
   "license": "MIT",
   "engines": {
-    "node": "^18.12 || ^20.9 || >=22.0"
+    "node": "^22.12 || ^24.11 || >=26.0"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
