@@ -1,7 +1,7 @@
 'use strict';
 
 const { mkSum, num, dim } = require('../node.js');
-const { baseOf } = require('../type.js');
+const { baseOf } = require('../convertUnits.js');
 const { mergeConvertibleBuckets } = require('./bucket.js');
 
 /**

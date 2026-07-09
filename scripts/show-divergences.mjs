@@ -1,18 +1,11 @@
 // Bucket github-pure corpus divergences against @csstools/css-calc.
-import { readFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { tokenize } from '../src/lib/tokenizer.js';
 import { parse } from '../src/lib/parser.js';
 import { simplify } from '../src/lib/simplify.js';
 import { serialize } from '../src/lib/serialize.js';
 import { calc as csstoolsCalc } from '@csstools/css-calc';
-const ROOT = dirname(fileURLToPath(import.meta.url));
-const CORPUS = join(ROOT, '..', 'test/corpus/github-pure.txt');
-const lines = readFileSync(CORPUS, 'utf8')
-  .split('\n')
-  .map((l) => l.trim())
-  .filter(Boolean);
+import { loadCorpus } from './lib/corpus.mjs';
+const lines = loadCorpus();
 const ours = (s) => {
   try {
     return serialize(simplify(parse(tokenize(s))), { precision: 10 });

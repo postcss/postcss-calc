@@ -4,10 +4,10 @@
 // Percentages never fold — ordering depends on property-context
 // resolution we don't have. Matches csstools.
 
-const { baseOf, convert } = require('../type.js');
+const { baseOf, convert } = require('../convertUnits.js');
 
 /** @typedef {import('../node.js').Node} Node */
-/** @typedef {import('../type.js').BaseType} BaseType */
+/** @typedef {import('../convertUnits.js').BaseType} BaseType */
 
 /**
  * @param {Node[]} args
