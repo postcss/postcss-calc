@@ -5,13 +5,13 @@
 // rad/grad/turn, …). Buckets with `base === null` (relative or unknown
 // units) keep their own slot.
 
-const { convert } = require('../type.js');
+const { convert } = require('../convertUnits.js');
 
 /**
  * @typedef {object} UnitBucket
  * @property {string} unit
  * @property {number} total
- * @property {import('../type.js').BaseType | null} base
+ * @property {import('../convertUnits.js').BaseType | null} base
  * @property {number} order
  */
 

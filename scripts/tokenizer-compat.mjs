@@ -2,7 +2,6 @@
 // @rmenke/css-tokenizer-tests JSON) onto one shape and diffs the streams.
 // Compares decoded values, normalizing the two designed differences:
 // function-token ≡ ident + `(`, and signed numeric ≡ punct sign + numeric.
-import { tokenize as ourTokenize } from '../src/lib/tokenizer.js';
 const PUNCT_DELIMS = new Set(['+', '-', '*', '/']);
 export class OutOfSubsetError extends Error {
   tokenType;
@@ -92,9 +91,6 @@ export function fromOurs(tokens) {
     }
   }
   return out;
-}
-export function tokenizeOursSimple(css) {
-  return fromOurs(ourTokenize(css));
 }
 const isNumeric = (t) => t.type === 'number' || t.type === 'dimension';
 const tokenEq = (a, b) =>

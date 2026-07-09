@@ -2,7 +2,7 @@
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
 
-const { convert } = require('../src/lib/type.js');
+const { convert } = require('../src/lib/convertUnits.js');
 
 // Legacy convertUnit rounded to a precision (default 5) and threw on
 // cross-family conversions; convert() returns the raw value and null.

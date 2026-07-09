@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { baseOf, convert } from '../../src/lib/type.js';
+import { baseOf, convert } from '../../src/lib/convertUnits.js';
 test('baseOf: returns base type for known units', () => {
   assert.equal(baseOf('px'), 'length');
   assert.equal(baseOf('em'), 'length');

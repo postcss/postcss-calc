@@ -3,7 +3,7 @@
 // §10.4 — sin/cos/tan. <number> is radians; <angle> dim is converted.
 
 const { num } = require('../node.js');
-const { baseOf, convert } = require('../type.js');
+const { baseOf, convert } = require('../convertUnits.js');
 
 /** @typedef {import('../node.js').Node} Node */
 

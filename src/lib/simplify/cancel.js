@@ -1,6 +1,6 @@
 'use strict';
 
-const { baseOf, convert } = require('../type.js');
+const { baseOf, convert } = require('../convertUnits.js');
 
 /**
  * If `dims` contain exactly one numerator / one denominator pair with the

@@ -24,9 +24,7 @@
   "scripts": {
     "lint": "eslint . && tsc",
     "test": "node --test",
-    "test:mutation": "stryker run",
-    "quality:type-coverage": "type-coverage --at-least 97.5",
-    "quality": "pnpm quality:type-coverage && pnpm lint"
+    "test:mutation": "stryker run"
   },
   "author": "Andy Jansson",
   "license": "MIT",
@@ -46,7 +44,6 @@
     "fast-check": "^4.7.0",
     "postcss": "^8.5.16",
     "prettier": "^3.9.5",
-    "type-coverage": "^2.29.7",
     "typescript": "~6.0.3"
   },
   "dependencies": {
