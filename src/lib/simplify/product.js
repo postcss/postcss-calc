@@ -39,6 +39,13 @@ function simplifyProduct(product, simplify) {
       }
       return;
     }
+    // Canonical negation form (see node.js's `negate`); flatten through it
+    // like a nested Product so cancellation below can see what's inside.
+    if (n.type === 'Sum' && n.terms.length === 1) {
+      processFactor(exponent, num(-1));
+      processFactor(exponent, n.terms[0].node);
+      return;
+    }
     if (n.type === 'Num') {
       if (exponent === 1) {
         coeff *= n.value;
