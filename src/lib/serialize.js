@@ -176,14 +176,21 @@ function serializeLeadingNeg(node, prec) {
     node.factors.length > 0 &&
     node.factors[0].exponent === 1 &&
     node.factors[0].node.type === 'Num' &&
-    isFinite(node.factors[0].node.value)
+    isFinite(node.factors[0].node.value) &&
+    node.factors[0].node.value !== 0
   ) {
     const head = node.factors[0].node;
+    const negatedValue = -head.value;
+    const rest = node.factors.slice(1);
+    // A coefficient of 1 is a no-op factor, matching mkProduct.
     /** @type {ProductFactor[]} */
-    const negatedFactors = [
-      { exponent: 1, node: { type: 'Num', value: -head.value } },
-      ...node.factors.slice(1),
-    ];
+    const negatedFactors =
+      negatedValue === 1
+        ? rest
+        : [
+            { exponent: 1, node: { type: 'Num', value: negatedValue } },
+            ...rest,
+          ];
     return serializeProduct({ type: 'Product', factors: negatedFactors }, prec);
   }
   const body = serializeExpr(node, prec);
