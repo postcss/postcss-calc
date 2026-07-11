@@ -37,9 +37,11 @@ function applyModRem(name, a, b) {
     if (name === 'mod' && a !== 0 && Math.sign(a) !== Math.sign(b)) {return NaN;}
     return a;
   }
-  return name === 'mod'
-    ? a - b * Math.floor(a / b) // sign follows divisor
-    : a - b * Math.trunc(a / b); // sign follows dividend (≡ JS %)
+  if (name === 'rem') {
+    return a % b; // sign follows dividend
+  }
+  const result = a - b * Math.floor(a / b); // sign follows divisor
+  return result === 0 ? b * 0 : result;
 }
 
 module.exports = { simplifyModRem };
