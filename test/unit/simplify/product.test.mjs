@@ -148,3 +148,13 @@ test('arithmetic: -infinity * 1px → calc(-infinity * 1px)', () => {
   // Dim(-Infinity, px).
   assert.equal(out('calc(-infinity * 1px)'), 'calc(-infinity * 1px)');
 });
+test('precision: dim value folds in original left-to-right position, not last', () => {
+  assert.equal(
+    out('calc(-11px * -57 * -80 * -70 / 17 * -19)', { precision: false }),
+    '-3924282.3529411764px'
+  );
+  assert.equal(
+    out('calc(-57 * -11px * -80 * -70 / 17 * -19)', { precision: false }),
+    '-3924282.3529411764px'
+  );
+});
