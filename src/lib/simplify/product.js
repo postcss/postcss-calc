@@ -21,6 +21,8 @@ function simplifyProduct(product, simplify) {
   const dims = [];
   /** @type {ProductFactor[]} */
   const opaque = [];
+  /** @type {{exponent: 1 | -1, value: number}[]} */
+  const scalarChain = [];
 
   /**
    * @param {1 | -1} exponent
@@ -43,10 +45,12 @@ function simplifyProduct(product, simplify) {
       } else {
         coeff /= n.value; // §10.9.1: 1/0 → ±Infinity, 0/0 → NaN per IEEE-754
       }
+      scalarChain.push({ exponent, value: n.value });
       return;
     }
     if (n.type === 'Dim') {
       dims.push({ exponent, value: n.value, unit: n.unit });
+      scalarChain.push({ exponent, value: n.value });
       return;
     }
     opaque.push({ exponent, node: n });
@@ -95,7 +99,11 @@ function simplifyProduct(product, simplify) {
     opaque.length === 0
   ) {
     const d = remainingDims[0];
-    return dim(coeff * d.value, d.unit);
+    const value = scalarChain.reduce(
+      (acc, f) => (f.exponent === 1 ? acc * f.value : acc / f.value),
+      1
+    );
+    return dim(value, d.unit);
   }
 
   if (remainingDims.length === 0 && opaque.length === 0) {
