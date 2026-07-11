@@ -32,7 +32,7 @@
     "node": "^22.12 || ^24.11 || >=26.0"
   },
   "devDependencies": {
-    "@csstools/css-calc": "^3.2.0",
+    "@csstools/css-calc": "^3.2.1",
     "@eslint/js": "^10.0.1",
     "@rmenke/css-tokenizer-tests": "^1.2.0",
     "@stryker-mutator/core": "^9.6.1",
@@ -40,8 +40,8 @@
     "@types/node": "^26.1.1",
     "eslint": "^10.6.0",
     "eslint-config-prettier": "^10.1.8",
-    "eslint-plugin-sonarjs": "^4.0.3",
-    "fast-check": "^4.7.0",
+    "eslint-plugin-sonarjs": "^4.1.0",
+    "fast-check": "^4.9.0",
     "postcss": "^8.5.16",
     "prettier": "^3.9.5",
     "typescript": "~6.0.3"
