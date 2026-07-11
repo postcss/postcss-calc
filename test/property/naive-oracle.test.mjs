@@ -23,8 +23,7 @@ const out = (s) => serialize(simplify(parse(tokenize(s))), { precision: 10 });
 //     candidates first and picks via min/max + abs comparisons.
 //   - naiveMod uses iterative subtraction (capped); the production code
 //     uses A − B·floor(A/B).
-//   - naiveRem uses A − B·trunc(A/B) directly (same as prod) — kept for
-//     completeness but won't catch shape bugs.
+//   - naiveRem mirrors production's native `%` directly (see below).
 function naiveRound(strategy, a, b) {
   if (b === 0) return NaN;
   if (!isFinite(b)) return NaN; // out of scope here; production passthroughs
@@ -78,7 +77,9 @@ function naiveRem(a, b) {
   if (b === 0) return NaN;
   if (!isFinite(a)) return NaN;
   if (!isFinite(b)) return a;
-  return a - b * Math.trunc(a / b);
+  // `%` is exact IEEE-754 remainder; any division-based formula adds its
+  // own rounding and disagrees at near-exact-quotient inputs (see [small B]).
+  return a % b;
 }
 const rows = [
   // Exact multiples
