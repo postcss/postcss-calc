@@ -130,7 +130,7 @@ for (const r of results) {
           `(showing first 5):\n\n${sample}`
       );
     }
-    assert.ok(true, `${r.agree}/${r.total} agree`);
+    console.log(`${r.agree}/${r.total} agree`);
   });
 }
 // --- Summary --------------------------------------------------------------
