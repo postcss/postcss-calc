@@ -35,4 +35,6 @@ function simplify(node) {
   }
 }
 
+// Stryker disable next-line all: instrumenting this line breaks Node's
+// cjs-module-lexer named-export detection for .mjs `import { x } from` consumers.
 module.exports = { simplify };
