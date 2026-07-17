@@ -8,6 +8,7 @@ import { runCorpus, assertResilience } from '../helpers/resilience.mjs';
 const r = runCorpus(
   fileURLToPath(new URL('../corpus/github/preprocessor.txt', import.meta.url))
 );
+// eslint-disable-next-line sonarjs/assertions-in-tests
 test(`preprocessor corpus: ${r.total} expressions parse-or-throw cleanly`, () => {
   assertResilience(r, 'preprocessor', assert);
 });
