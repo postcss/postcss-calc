@@ -51,6 +51,6 @@
     "postcss-value-parser": "^4.2.0"
   },
   "peerDependencies": {
-    "postcss": "^8.5.16"
+    "postcss": "^8.5.19"
   }
 }
