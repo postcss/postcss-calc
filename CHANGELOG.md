@@ -2,6 +2,29 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [11.0.0-rc.0](https://github.com/postcss/postcss-calc/compare/v10.1.1...v11.0.0-rc.0) (2026-07-17)
+
+### Breaking changes
+
+* Requires Node.js 22.12 or greater
+
+### Features
+
+* **core:** pratt tokenizer, parser, AST, type system ([549c8ad](https://github.com/postcss/postcss-calc/commit/549c8ad2677869ce8185e281b82f9b3b4e6ab8f4))
+* **core:** simplifier (per-function fold modules) + serializer ([9e82450](https://github.com/postcss/postcss-calc/commit/9e8245061fb5aa3e82dc0de003684eea6f60ff81))
+* **plugin:** PostCSS adapter + public entry + v10 regression patches ([b588797](https://github.com/postcss/postcss-calc/commit/b5887974590be7fce8c2cf6f07e8cae993d37618))
+
+
+### Bug Fixes
+
+* **core:** spec-compliant -{ident-start} tokenization + selectors fix ([dcb34c1](https://github.com/postcss/postcss-calc/commit/dcb34c12cc6491495904283504184a7baea3626c))
+* **mod-rem:** match IEEE-754 signed-zero semantics on exact-multiple results ([ef9b1f6](https://github.com/postcss/postcss-calc/commit/ef9b1f634e065dcceb855969b224f2168d9d5a09))
+* **product:** flatten negated single-term Sum so cancellation can see through it ([61fe7b3](https://github.com/postcss/postcss-calc/commit/61fe7b370dc7d4ce9f4c5c2b5297e717014cf33b))
+* **product:** fold dim value in original position to match left-to-right evaluation order ([af0835b](https://github.com/postcss/postcss-calc/commit/af0835b1f17407add03649ae7e91acea865695d1))
+* **round:** strategy-dependent result for infinite step ([ffdb50e](https://github.com/postcss/postcss-calc/commit/ffdb50e11f2e0fcb8eba9ceb01709f196e4e9cde))
+* **serialize:** preserve signed zero and drop redundant coefficient when folding leading negation ([09b2453](https://github.com/postcss/postcss-calc/commit/09b2453b1c1c40f02c42dabb6ac05506473eee9f))
+* update TypeScript ([0b7ff00](https://github.com/postcss/postcss-calc/commit/0b7ff00e4bbfa824e98a755861ea818863730b21))
+
 ## [10.1.1](https://github.com/postcss/postcss-calc/compare/v10.1.0...v10.1.1) (2025-01-31)
 
 
