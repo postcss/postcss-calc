@@ -10,14 +10,15 @@
 
 /** @type {import('@stryker-mutator/api/core').PartialStrykerOptions} */
 export default {
-  testRunner: 'command',
-  commandRunner: {
-    command: 'node --test',
-  },
+  testRunner: 'tap',
   mutate: [
     'src/lib/simplify.js',
     'src/lib/serialize.js',
     'src/lib/node.js',
+  ],
+  plugins: [
+    "@stryker-mutator/tap-runner",
+    "@stryker-mutator/typescript-checker"
   ],
   ignorePatterns: ['node_modules', 'types'],
   // Mutation score targets — anything below 70 fails CI.
