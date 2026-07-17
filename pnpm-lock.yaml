@@ -27,6 +27,9 @@ importers:
       '@stryker-mutator/core':
         specifier: ^9.6.1
         version: 9.6.1(@types/node@26.1.1)
+      '@stryker-mutator/tap-runner':
+        specifier: ^9.6.1
+        version: 9.6.1(@stryker-mutator/core@9.6.1(@types/node@26.1.1))
       '@stryker-mutator/typescript-checker':
         specifier: ^9.6.1
         version: 9.6.1(@stryker-mutator/core@9.6.1(@types/node@26.1.1))(typescript@6.0.3)
@@ -459,6 +462,12 @@ packages:
     resolution: {integrity: sha512-5K8wH4Pthly25c2uKKik4Dfcoeou7sbJdFS6u3QIYHlulgFVDJwtEMWTZGkZfs7IiUEXIDNa0keRACq5jn5AvA==}
     engines: {node: '>=20.0.0'}
 
+  '@stryker-mutator/tap-runner@9.6.1':
+    resolution: {integrity: sha512-b5ryfiRQHH5VoWP++VEA9KYiU6lhVbE9znooFaWRr7umaAtqKmlWrFinKA6fghwiFpdxerRpctLDT8uVKzeQEw==}
+    engines: {node: '>=14.18.0'}
+    peerDependencies:
+      '@stryker-mutator/core': 9.6.1
+
   '@stryker-mutator/typescript-checker@9.6.1':
     resolution: {integrity: sha512-dCFJDoFixFe7cbilsukb7a5jpn9JRSPef7/vgx+xfaf4gPf/neDVbci8E/YSvxmcFveuPHdeUxioocA1CKZqrg==}
     engines: {node: '>=20.0.0'}
@@ -661,6 +670,10 @@ packages:
     resolution: {integrity: sha512-kVscqXk4OCp68SZ0dkgEKVi6/8ij300KBWTJq32P/dYeWTSwK41WyTxalN1eRmA5Z9UU/LX9D7FWSmV9SAYx6g==}
     engines: {node: '>=0.10.0'}
 
+  events-to-array@2.0.3:
+    resolution: {integrity: sha512-f/qE2gImHRa4Cp2y1stEOSgw8wTFyUdVJX7G//bMwbaV9JqISFxg99NbmVQeP7YLnDUZ2un851jlaDrlpmGehQ==}
+    engines: {node: '>=12'}
+
   execa@9.6.1:
     resolution: {integrity: sha512-9Be3ZoN4LmYR90tUoVu2te2BsbzHfhJyfEiAVfz7N5/zv+jduIfLrV2xdQXOHbaD6KgpGdO9PRPM1Y4Q9QkPkA==}
     engines: {node: ^18.19.0 || >=20.5.0}
@@ -734,6 +747,10 @@ packages:
   glob-parent@6.0.2:
     resolution: {integrity: sha512-XxwI8EOhVQgWp6iDL+3b0r86f4d6AX6zSU55HfB4ydCEuXLXc5FcYeOu+nnGftS4TEju/11rt4KJPTMgbfmv4A==}
     engines: {node: '>=10.13.0'}
+
+  glob@13.0.6:
+    resolution: {integrity: sha512-Wjlyrolmm8uDpm/ogGyXZXb1Z+Ca2B8NbJwqBVg0axK9GbBeoS7yGV6vjXnYdGm6X53iehEuxxbyiKp8QmN4Vw==}
+    engines: {node: 18 || 20 || >=22}
 
   globals@17.7.0:
     resolution: {integrity: sha512-Czmyns5dUsq4seFBR/Kdydhmo8y9kC79hiSkPn0YcGtNnYWnrgt0vjrSjx9tspoDGWm2CMarffRuLjM4xUz8xg==}
@@ -845,6 +862,10 @@ packages:
   lodash.merge@4.6.2:
     resolution: {integrity: sha512-0KpjqXRVvrYyCsX1swR/XTK0va6VQkQM6MNo7PqW77ByjAhoARA8EfrP1N4+KlKj8YS0ZUCtRT/YUuhyYDujIQ==}
 
+  lru-cache@11.5.2:
+    resolution: {integrity: sha512-4pfM1Ff0x50o0tQwb5ucw/RzNyD0/YJME6IVcStalZuMWxdt3sR3huStTtxz4PUmvZfRguvDejasvQ2kifR11g==}
+    engines: {node: 20 || >=22}
+
   lru-cache@5.1.1:
     resolution: {integrity: sha512-KpNARQA3Iwv+jTA0utUVVbrh+Jlrr1Fv0e56GGzAFOXN7dk/FviaDW8LHmK52DlcH4WP2n6gI8vN1aesBFgo9w==}
 
@@ -858,6 +879,10 @@ packages:
   minimatch@10.2.5:
     resolution: {integrity: sha512-MULkVLfKGYDFYejP07QOurDLLQpcjk7Fw+7jXS2R2czRQzR56yHRveU5NDJEOviH+hETZKSkIk5c+T23GjFUMg==}
     engines: {node: 18 || 20 || >=22}
+
+  minipass@7.1.3:
+    resolution: {integrity: sha512-tEBHqDnIoM/1rXME1zgka9g6Q2lcoCkxHLuc7ODJ5BxbP5d4c2Z5cGgtXAku59200Cx7diuHTOYfSBD8n6mm8A==}
+    engines: {node: '>=16 || 14 >=14.17'}
 
   ms@2.1.3:
     resolution: {integrity: sha512-6FlzubTLZG3J2a/NVCAleEhjzq5oxgHyaCU9yYXvcLsvoVaHJq/s5xXI6/XXP6tz7R9xAOtHnSO/tXtF3WRTlA==}
@@ -926,6 +951,10 @@ packages:
   path-key@4.0.0:
     resolution: {integrity: sha512-haREypq7xkM7ErfgIyA0z+Bj4AGKlMSdlQE2jvJo6huWD1EdkKYV+G/T4nq0YEF2vgTT8kqMFKo1uHn950r4SQ==}
     engines: {node: '>=12'}
+
+  path-scurry@2.0.2:
+    resolution: {integrity: sha512-3O/iVVsJAPsOnpwWIeD+d6z/7PmqApyQePUtCndjatj/9I5LylHvt5qluFaBT3I5h3r1ejfR056c+FCv+NnNXg==}
+    engines: {node: 18 || 20 || >=22}
 
   picocolors@1.1.1:
     resolution: {integrity: sha512-xceH2snhtb5M9liqDsmEw56le376mTZkEX/jEb/RxNFyegNul7eNslCXP9FDj/Lcu0X8KEyMceP2ntpaHrDEVA==}
@@ -1041,6 +1070,15 @@ packages:
     resolution: {integrity: sha512-aulFJcD6YK8V1G7iRB5tigAP4TsHBZZrOV8pjV++zdUwmeV8uzbY7yn6h9MswN62adStNZFuCIx4haBnRuMDaw==}
     engines: {node: '>=18'}
 
+  tap-parser@17.0.0:
+    resolution: {integrity: sha512-Na7kB4ML7T77abJtYIlXh/aJcz54Azv0iAtOaDnLqsL4uWjU40uNFIFnZ5IvnGTuCIk5M6vjx7ZsceNGc1mcag==}
+    engines: {node: '>= 18.6.0'}
+    hasBin: true
+
+  tap-yaml@3.0.0:
+    resolution: {integrity: sha512-qtbgXJqE9xdWqlE520y+vG4c1lgqWrDHN7Y2YcrV1XudLuc2Y5aMXhAyPBGl57h8MNoprvL/mAJiISUIadvS9w==}
+    engines: {node: '>= 18.6.0'}
+
   tree-kill@1.2.2:
     resolution: {integrity: sha512-L0Orpi8qGpRG//Nd+H90vFB+3iHnue1zSSGmNOOCh1GLJ7rUKVwV2HvijphGQS2UmhUZewS9VgvxYIdgr+fG1A==}
     hasBin: true
@@ -1108,6 +1146,12 @@ packages:
 
   yallist@3.1.1:
     resolution: {integrity: sha512-a4UGQaWPH59mOXUYnAG2ewncQS4i4F43Tv3JoAM+s2VDAmS9NsK8GpDMLrCHPksFT7h3K6TOoUNn2pb7RoXx4g==}
+
+  yaml-types@0.3.0:
+    resolution: {integrity: sha512-i9RxAO/LZBiE0NJUy9pbN5jFz5EasYDImzRkj8Y81kkInTi1laia3P3K/wlMKzOxFQutZip8TejvQP/DwgbU7A==}
+    engines: {node: '>= 16', npm: '>= 7'}
+    peerDependencies:
+      yaml: ^2.3.0
 
   yaml@2.9.0:
     resolution: {integrity: sha512-2AvhNX3mb8zd6Zy7INTtSpl1F15HW6Wnqj0srWlkKLcpYl/gMIMJiyuGq2KeI2YFxUPjdlB+3Lc10seMLtL4cA==}
@@ -1604,6 +1648,15 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
+  '@stryker-mutator/tap-runner@9.6.1(@stryker-mutator/core@9.6.1(@types/node@26.1.1))':
+    dependencies:
+      '@stryker-mutator/api': 9.6.1
+      '@stryker-mutator/core': 9.6.1(@types/node@26.1.1)
+      '@stryker-mutator/util': 9.6.1
+      glob: 13.0.6
+      tap-parser: 17.0.0
+      tslib: 2.8.1
+
   '@stryker-mutator/typescript-checker@9.6.1(@stryker-mutator/core@9.6.1(@types/node@26.1.1))(typescript@6.0.3)':
     dependencies:
       '@stryker-mutator/api': 9.6.1
@@ -1814,6 +1867,8 @@ snapshots:
 
   esutils@2.0.3: {}
 
+  events-to-array@2.0.3: {}
+
   execa@9.6.1:
     dependencies:
       '@sindresorhus/merge-streams': 4.0.0
@@ -1904,6 +1959,12 @@ snapshots:
     dependencies:
       is-glob: 4.0.3
 
+  glob@13.0.6:
+    dependencies:
+      minimatch: 10.2.5
+      minipass: 7.1.3
+      path-scurry: 2.0.2
+
   globals@17.7.0: {}
 
   gopd@1.2.0: {}
@@ -1977,6 +2038,8 @@ snapshots:
 
   lodash.merge@4.6.2: {}
 
+  lru-cache@11.5.2: {}
+
   lru-cache@5.1.1:
     dependencies:
       yallist: 3.1.1
@@ -1988,6 +2051,8 @@ snapshots:
   minimatch@10.2.5:
     dependencies:
       brace-expansion: 5.0.7
+
+  minipass@7.1.3: {}
 
   ms@2.1.3: {}
 
@@ -2042,6 +2107,11 @@ snapshots:
   path-key@3.1.1: {}
 
   path-key@4.0.0: {}
+
+  path-scurry@2.0.2:
+    dependencies:
+      lru-cache: 11.5.2
+      minipass: 7.1.3
 
   picocolors@1.1.1: {}
 
@@ -2142,6 +2212,16 @@ snapshots:
 
   strip-final-newline@4.0.0: {}
 
+  tap-parser@17.0.0:
+    dependencies:
+      events-to-array: 2.0.3
+      tap-yaml: 3.0.0
+
+  tap-yaml@3.0.0:
+    dependencies:
+      yaml: 2.9.0
+      yaml-types: 0.3.0(yaml@2.9.0)
+
   tree-kill@1.2.2: {}
 
   ts-api-utils@2.5.0(typescript@6.0.3):
@@ -2193,6 +2273,10 @@ snapshots:
   word-wrap@1.2.5: {}
 
   yallist@3.1.1: {}
+
+  yaml-types@0.3.0(yaml@2.9.0):
+    dependencies:
+      yaml: 2.9.0
 
   yaml@2.9.0: {}
 
