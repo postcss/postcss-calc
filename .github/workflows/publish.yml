@@ -27,4 +27,4 @@ jobs:
       - name: Run tests
         run: pnpm test
       - name: Publish
-        run: pnpm publish
+        run: pnpm publish --tag next
