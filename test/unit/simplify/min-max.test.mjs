@@ -25,3 +25,10 @@ test('min with NaN propagates → calc(NaN)', () => {
   // Math.min(NaN, 5) is NaN (IEEE-754).
   assert.equal(out('min(NaN, 5)'), 'calc(NaN)');
 });
+
+test('min with subtraction', () => {
+  assert.equal(
+    out('min(360px, 100% - 24px - 24px)'),
+    'min(360px, 100% - 48px)'
+  );
+})
