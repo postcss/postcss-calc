@@ -15,6 +15,8 @@
  * @property {string} [calcName] Wrapper name to use when `calc()` is needed. Default `'calc'`.
  */
 
+const NOISE_FLOOR = 1e-12;
+
 /**
  * @param {number} v
  * @param {number | false} prec
@@ -25,7 +27,11 @@ function round(v, prec) {
     return v;
   }
   const m = Math.pow(10, prec);
-  return Math.round(v * m) / m;
+  const rounded = Math.round(v * m) / m;
+  if (rounded === 0 && Math.abs(v) > NOISE_FLOOR) {
+    return v < 0 ? -1 / m : 1 / m;
+  }
+  return rounded;
 }
 
 // §10.13 / §10.7.2: Infinity/NaN serialize as canonical keywords.
