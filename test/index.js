@@ -383,6 +383,26 @@ test(
 );
 
 test(
+  'should not round a non-zero value down to zero',
+  testValue('calc(1/1000000)', '0.00001')
+);
+
+test(
+  'should not round a non-zero dimension down to zero',
+  testValue('calc(1px/1000000)', '0.00001px')
+);
+
+test(
+  'should not round a non-zero negative value down to zero',
+  testValue('calc(-1/1000000)', '-0.00001')
+);
+
+test(
+  'should keep rounding float noise to zero',
+  testValue('calc(0.1px + 0.2px - 0.3px)', '0px')
+);
+
+test(
   'should reduce browser-prefixed calc (1)',
   testValue('-webkit-calc(1px + 1px)', '2px')
 );
