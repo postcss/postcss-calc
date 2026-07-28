@@ -1,6 +1,10 @@
 export type UnitBucket = {
     unit: string;
     total: number;
+    /**
+     * largest |term| accumulated into `total`, for noise detection
+     */
+    scale: number;
     base: import("../convertUnits.js").BaseType | null;
     order: number;
 };
@@ -8,6 +12,7 @@ export type UnitBucket = {
  * @typedef {object} UnitBucket
  * @property {string} unit
  * @property {number} total
+ * @property {number} scale largest |term| accumulated into `total`, for noise detection
  * @property {import('../convertUnits.js').BaseType | null} base
  * @property {number} order
  */
