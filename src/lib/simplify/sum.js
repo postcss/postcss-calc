@@ -12,6 +12,19 @@ const { mergeConvertibleBuckets } = require('./bucket.js');
  * @typedef {import('./bucket.js').UnitBucket} UnitBucket
  */
 
+// Subtracting near-equal terms leaves float dust: `0.07 * 1e7 - 700000` is
+// 1.16e-10, not 0. Snap a total that's tiny next to its terms back to 0.
+const NOISE_REL = Number.EPSILON * 8;
+
+/**
+ * @param {number} total
+ * @param {number} scale largest |term| accumulated into `total`
+ * @return {number}
+ */
+function denoise(total, scale) {
+  return Math.abs(total) < scale * NOISE_REL ? 0 : total;
+}
+
 /**
  * @param {Sum} sum
  * @param {SimplifyFn} simplify
@@ -23,6 +36,7 @@ function simplifySum(sum, simplify) {
   // encountered unit. `100vh - 5rem - 10rem - 100px` → `-15rem` in phase 1,
   // then vh/rem/px stay separate in phase 2 (none convert to each other).
   let numTotal = 0;
+  let numScale = 0;
   /** @type {Map<string, UnitBucket>} */
   const byUnit = new Map();
   /** @type {SumTerm[]} */
@@ -43,6 +57,7 @@ function simplifySum(sum, simplify) {
     }
     if (n.type === 'Num') {
       numTotal += sign * n.value;
+      numScale = Math.max(numScale, Math.abs(n.value));
       return;
     }
     if (n.type === 'Dim') {
@@ -50,10 +65,12 @@ function simplifySum(sum, simplify) {
       const existing = byUnit.get(key);
       if (existing) {
         existing.total += sign * n.value;
+        existing.scale = Math.max(existing.scale, Math.abs(n.value));
       } else {
         byUnit.set(key, {
           unit: n.unit,
           total: sign * n.value,
+          scale: Math.abs(n.value),
           base: baseOf(n.unit),
           order: bucketOrder++,
         });
@@ -71,9 +88,9 @@ function simplifySum(sum, simplify) {
   // unconditionally is harmless. Zero-valued unit buckets are kept for
   // type info (WPT calc-serialization-002).
   /** @type {SumTerm[]} */
-  const terms = [{ sign: 1, node: num(numTotal) }];
+  const terms = [{ sign: 1, node: num(denoise(numTotal, numScale)) }];
   for (const bucket of mergeConvertibleBuckets([...byUnit.values()])) {
-    terms.push({ sign: 1, node: dim(bucket.total, bucket.unit) });
+    terms.push({ sign: 1, node: dim(denoise(bucket.total, bucket.scale), bucket.unit) });
   }
   terms.push(...opaque);
 

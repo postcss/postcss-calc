@@ -383,23 +383,38 @@ test(
 );
 
 test(
-  'should not round a non-zero value down to zero',
-  testValue('calc(1/1000000)', '0.00001')
+  'should keep a value smaller than the precision instead of rounding it to zero',
+  testValue('calc(1/1000000)', '0.000001')
 );
 
 test(
-  'should not round a non-zero dimension down to zero',
-  testValue('calc(1px/1000000)', '0.00001px')
+  'should keep a dimension smaller than the precision',
+  testValue('calc(1px/1000000)', '0.000001px')
 );
 
 test(
-  'should not round a non-zero negative value down to zero',
-  testValue('calc(-1/1000000)', '-0.00001')
+  'should keep a negative value smaller than the precision',
+  testValue('calc(-1/1000000)', '-0.000001')
 );
 
 test(
-  'should keep rounding float noise to zero',
+  'should keep the ratio between two values smaller than the precision',
+  testValue('calc(2/1000000)', '0.000002')
+);
+
+test(
+  'should limit a value smaller than the precision to that many significant digits',
+  testValue('calc(1/3000000)', '3.3333e-7')
+);
+
+test(
+  'should still round float noise down to zero',
   testValue('calc(0.1px + 0.2px - 0.3px)', '0px')
+);
+
+test(
+  'should fold exact cancellation with large operands to zero, not a phantom',
+  testValue('calc(0.07px * 1e7 - 700000px)', '0px')
 );
 
 test(

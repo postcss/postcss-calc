@@ -15,9 +15,15 @@
  * @property {string} [calcName] Wrapper name to use when `calc()` is needed. Default `'calc'`.
  */
 
+// Below this is float noise, not a value: `0.1 + 0.2 - 0.3` is 5.5e-17.
 const NOISE_FLOOR = 1e-12;
 
 /**
+ * Rounding to `prec` decimal places turns `calc(1/1000000)` into `0`, and a
+ * `0` in CSS is often a switch, not a small number (`flex-grow: 0` never
+ * grows). So when a value is too small for `prec`, keep its significant digits
+ * instead: `1/1000000` -> `0.000001`, `1/3000000` -> `3.3333e-7`.
+ *
  * @param {number} v
  * @param {number | false} prec
  * @return {number}
@@ -29,7 +35,8 @@ function round(v, prec) {
   const m = Math.pow(10, prec);
   const rounded = Math.round(v * m) / m;
   if (rounded === 0 && Math.abs(v) > NOISE_FLOOR) {
-    return v < 0 ? -1 / m : 1 / m;
+    // toPrecision needs at least one significant digit; `prec` may be 0.
+    return Number(v.toPrecision(Math.max(prec, 1)));
   }
   return rounded;
 }
