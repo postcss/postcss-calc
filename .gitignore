@@ -7,3 +7,4 @@ reports/
 .stryker-tmp/
 test/corpus/github/files/
 test/corpus/github/.harvest-state.json
+.idea/
