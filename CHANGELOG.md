@@ -1,6 +1,13 @@
+
 # Changelog
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
+
+## [11.0.0-rc.1](https://github.com/postcss/postcss-calc/compare/v11.0.0-rc.0...v11.0.0-rc.1) (2026-07-29)
+
+### Bug Fixes
+
+* Improve rounding
 
 ## [11.0.0-rc.0](https://github.com/postcss/postcss-calc/compare/v10.1.1...v11.0.0-rc.0) (2026-07-17)
 
