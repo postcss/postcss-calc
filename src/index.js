@@ -104,7 +104,6 @@ function transformValue(value, options, result, item) {
 }
 
 /**
- * @type {import('postcss').PluginCreator<PluginOptions>}
  * @param {PluginOptions} [opts]
  * @return {import('postcss').Plugin}
  */
@@ -121,6 +120,10 @@ function pluginCreator(opts) {
 
   return {
     postcssPlugin: 'postcss-calc',
+    /**
+     * @param {import('postcss').Root} css
+     * @param {import('postcss').Helpers} helpers
+     */
     OnceExit(css, { result }) {
       css.walk((node) => {
         if (node.type === 'decl') {
@@ -162,4 +165,6 @@ function pluginCreator(opts) {
 
 pluginCreator.postcss = true;
 
-module.exports = pluginCreator;
+module.exports = /** @type import('postcss').PluginCreator<PluginOptions>*/ (
+  pluginCreator
+);

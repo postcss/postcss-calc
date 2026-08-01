@@ -1,23 +1,14 @@
-export = pluginCreator;
-/**
- * @type {import('postcss').PluginCreator<PluginOptions>}
- * @param {PluginOptions} [opts]
- * @return {import('postcss').Plugin}
- */
-declare function pluginCreator(opts?: PluginOptions): import("postcss").Plugin;
-declare namespace pluginCreator {
-    export { postcss, PluginOptions, ResolvedOptions };
-}
-declare var postcss: true;
-type PluginOptions = {
-    precision?: number | false | undefined;
-    preserve?: boolean | undefined;
-    warnWhenCannotResolve?: boolean | undefined;
-    mediaQueries?: boolean | undefined;
-    selectors?: boolean | undefined;
+declare const _exports: import("postcss").PluginCreator<PluginOptions>;
+export = _exports;
+export type PluginOptions = {
+    precision?: number | false;
+    preserve?: boolean;
+    warnWhenCannotResolve?: boolean;
+    mediaQueries?: boolean;
+    selectors?: boolean;
     /**
      * Invoked when parse/simplify throws. Replaces the default `result.warn`.
      */
-    onParseError?: ((error: Error, input: string) => void) | undefined;
+    onParseError?: (error: Error, input: string) => void;
 };
-type ResolvedOptions = Required<Omit<PluginOptions, "onParseError">> & Pick<PluginOptions, "onParseError">;
+export type ResolvedOptions = Required<Omit<PluginOptions, 'onParseError'>> & Pick<PluginOptions, 'onParseError'>;

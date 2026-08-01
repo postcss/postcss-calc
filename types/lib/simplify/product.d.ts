@@ -1,7 +1,11 @@
-export type Node = import("../node.js").Node;
-export type Product = import("../node.js").Product;
-export type ProductFactor = import("../node.js").ProductFactor;
-export type SimplifyFn = import("../simplify.js").SimplifyFn;
+declare const _exports: {
+    simplifyProduct: typeof simplifyProduct;
+};
+export = _exports;
+export type Node = import('../node.js').Node;
+export type Product = import('../node.js').Product;
+export type ProductFactor = import('../node.js').ProductFactor;
+export type SimplifyFn = import('../simplify.js').SimplifyFn;
 /**
  * @typedef {import('../node.js').Node} Node
  * @typedef {import('../node.js').Product} Product
@@ -13,4 +17,4 @@ export type SimplifyFn = import("../simplify.js").SimplifyFn;
  * @param {SimplifyFn} simplify
  * @return {Node}
  */
-export function simplifyProduct(product: Product, simplify: SimplifyFn): Node;
+declare function simplifyProduct(product: Product, simplify: SimplifyFn): Node;

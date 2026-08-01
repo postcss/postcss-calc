@@ -1,25 +1,24 @@
-export type Token = import("./tokenizer.js").Token;
-export type TokenType = import("./tokenizer.js").TokenType;
-export type Node = import("./node.js").Node;
+declare const _exports: {
+    parse: typeof parse;
+};
+export = _exports;
+export type Token = import('./tokenizer.js').Token;
+export type TokenType = import('./tokenizer.js').TokenType;
+export type Node = import('./node.js').Node;
 export type PrefixParselet = (p: Parser, token: Token) => Node;
 export type InfixParselet = {
     lbp: number;
     parse: (p: Parser, left: Node, token: Token) => Node;
 };
-/**
- * @param {Token[]} tokens
- * @return {Node}
- */
-export function parse(tokens: Token[]): Node;
 declare class Parser {
+    /** @private */
+    i;
+    /** @private @readonly */
+    tokens;
     /**
      * @param {Token[]} tokens
      */
     constructor(tokens: Token[]);
-    /** @private */
-    private i;
-    /** @private @readonly */
-    private readonly tokens;
     /** @return {Token} */
     peek(): Token;
     /** @return {Token} */
@@ -36,4 +35,8 @@ declare class Parser {
      */
     parseExpr(minBp?: number): Node;
 }
-export {};
+/**
+ * @param {Token[]} tokens
+ * @return {Node}
+ */
+declare function parse(tokens: Token[]): Node;

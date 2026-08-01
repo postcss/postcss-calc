@@ -1,20 +1,24 @@
-export type Node = import("./node.js").Node;
-export type Sum = import("./node.js").Sum;
-export type Product = import("./node.js").Product;
-export type ProductFactor = import("./node.js").ProductFactor;
+declare const _exports: {
+    serialize: typeof serialize;
+};
+export = _exports;
+export type Node = import('./node.js').Node;
+export type Sum = import('./node.js').Sum;
+export type Product = import('./node.js').Product;
+export type ProductFactor = import('./node.js').ProductFactor;
 export type SerializeOptions = {
     /**
      * Decimal places for numbers. `false` disables rounding. Default 5.
      */
-    precision?: number | false | undefined;
+    precision?: number | false;
     /**
      * Wrapper name to use when `calc()` is needed. Default `'calc'`.
      */
-    calcName?: string | undefined;
+    calcName?: string;
 };
 /**
  * @param {Node} node
  * @param {SerializeOptions} [opts]
  * @return {string}
  */
-export function serialize(node: Node, opts?: SerializeOptions): string;
+declare function serialize(node: Node, opts?: SerializeOptions): string;

@@ -1,7 +1,11 @@
-export type Node = import("../node.js").Node;
+declare const _exports: {
+    simplifyTrig: typeof simplifyTrig;
+};
+export = _exports;
+export type Node = import('../node.js').Node;
 /**
  * @param {'sin' | 'cos' | 'tan'} name
  * @param {Node[]} args
  * @return {Node}
  */
-export function simplifyTrig(name: "sin" | "cos" | "tan", args: Node[]): Node;
+declare function simplifyTrig(name: 'sin' | 'cos' | 'tan', args: Node[]): Node;
