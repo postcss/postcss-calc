@@ -5,6 +5,7 @@
     "correctness": "error"
   },
   "rules": {
+    "array-callback-return": "error",
     "complexity": ["error", { "max": 25 }],
     "no-bitwise": "error",
     "no-case-declarations": "error",
@@ -16,6 +17,7 @@
     "no-regex-spaces": "error",
     "no-void": "error",
     "preserve-caught-error": "error",
+    "unicorn/no-array-for-each": "error",
     "unicorn/no-array-reduce": "error"
   },
   "env": {
