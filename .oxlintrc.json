@@ -7,6 +7,7 @@
   "rules": {
     "array-callback-return": "error",
     "complexity": ["error", { "max": 25 }],
+    "guard-for-in": "error",
     "no-bitwise": "error",
     "no-case-declarations": "error",
     "no-empty": "error",
