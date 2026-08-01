@@ -37,9 +37,6 @@
   "devDependencies": {
     "@csstools/css-calc": "^3.2.1",
     "@rmenke/css-tokenizer-tests": "^1.2.0",
-    "@stryker-mutator/core": "^9.6.1",
-    "@stryker-mutator/tap-runner": "^9.6.1",
-    "@stryker-mutator/typescript-checker": "^9.6.1",
     "@types/node": "^26.1.1",
     "fast-check": "^4.9.0",
     "oxfmt": "^0.61.0",
