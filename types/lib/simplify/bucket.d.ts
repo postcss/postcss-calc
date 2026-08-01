@@ -1,3 +1,7 @@
+declare const _exports: {
+    mergeConvertibleBuckets: typeof mergeConvertibleBuckets;
+};
+export = _exports;
 export type UnitBucket = {
     unit: string;
     total: number;
@@ -5,7 +9,7 @@ export type UnitBucket = {
      * largest |term| accumulated into `total`, for noise detection
      */
     scale: number;
-    base: import("../convertUnits.js").BaseType | null;
+    base: import('../convertUnits.js').BaseType | null;
     order: number;
 };
 /**
@@ -21,4 +25,4 @@ export type UnitBucket = {
  * @param {UnitBucket[]} buckets
  * @return {UnitBucket[]}
  */
-export function mergeConvertibleBuckets(buckets: UnitBucket[]): UnitBucket[];
+declare function mergeConvertibleBuckets(buckets: UnitBucket[]): UnitBucket[];

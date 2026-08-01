@@ -1,7 +1,11 @@
-export type Node = import("../node.js").Node;
+declare const _exports: {
+    simplifyAbs: typeof simplifyAbs;
+};
+export = _exports;
+export type Node = import('../node.js').Node;
 /** @typedef {import('../node.js').Node} Node */
 /**
  * @param {Node[]} args
  * @return {Node}
  */
-export function simplifyAbs(args: Node[]): Node;
+declare function simplifyAbs(args: Node[]): Node;

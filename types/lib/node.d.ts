@@ -1,41 +1,45 @@
+declare const _exports: {
+    num: typeof num;
+    dim: typeof dim;
+    ident: typeof ident;
+    call: typeof call;
+    mkSum: typeof mkSum;
+    mkProduct: typeof mkProduct;
+    negate: typeof negate;
+};
+export = _exports;
 export type Num = {
-    type: "Num";
+    type: 'Num';
     value: number;
 };
 export type Dim = {
-    type: "Dim";
+    type: 'Dim';
     value: number;
     unit: string;
 };
 export type Ident = {
-    type: "Ident";
+    type: 'Ident';
     name: string;
 };
 export type Call = {
-    type: "Call";
+    type: 'Call';
     name: string;
     args: Node[];
 };
-/**
- * Sign is always +1 when node is Num or Dim.
- */
 export type SumTerm = {
     sign: 1 | -1;
     node: Node;
 };
 export type Sum = {
-    type: "Sum";
+    type: 'Sum';
     terms: SumTerm[];
 };
-/**
- * exponent +1 = numerator, -1 = denominator.
- */
 export type ProductFactor = {
     exponent: 1 | -1;
     node: Node;
 };
 export type Product = {
-    type: "Product";
+    type: 'Product';
     factors: ProductFactor[];
 };
 export type Node = Num | Dim | Ident | Call | Sum | Product;
@@ -54,37 +58,37 @@ export type Node = Num | Dim | Ident | Call | Sum | Product;
  * @param {number} value
  * @return {Num}
  */
-export function num(value: number): Num;
+declare function num(value: number): Num;
 /**
  * @param {number} value
  * @param {string} unit
  * @return {Dim}
  */
-export function dim(value: number, unit: string): Dim;
+declare function dim(value: number, unit: string): Dim;
 /**
  * @param {string} name
  * @return {Ident}
  */
-export function ident(name: string): Ident;
+declare function ident(name: string): Ident;
 /**
  * @param {string} name
  * @param {Node[]} args
  * @return {Call}
  */
-export function call(name: string, args: Node[]): Call;
+declare function call(name: string, args: Node[]): Call;
 /**
  * @param {SumTerm[]} rawTerms
  * @return {Node}
  */
-export function mkSum(rawTerms: SumTerm[]): Node;
+declare function mkSum(rawTerms: SumTerm[]): Node;
 /**
  * @param {ProductFactor[]} rawFactors
  * @return {Node}
  */
-export function mkProduct(rawFactors: ProductFactor[]): Node;
+declare function mkProduct(rawFactors: ProductFactor[]): Node;
 /**
  * Negate any node, preserving canonical form.
  * @param {Node} node
  * @return {Node}
  */
-export function negate(node: Node): Node;
+declare function negate(node: Node): Node;

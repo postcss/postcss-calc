@@ -1,11 +1,15 @@
-export type TokenType = "number" | "dimension" | "ident" | "punct" | "eof";
+declare const _exports: {
+    tokenize: typeof tokenize;
+};
+export = _exports;
+export type TokenType = 'number' | 'dimension' | 'ident' | 'punct' | 'eof';
 export type Token = {
     type: TokenType;
     value: string;
     /**
      * Present on `dimension` tokens; `%` for percentages.
      */
-    unit?: string | undefined;
+    unit?: string;
     pos: number;
     /**
      * Whitespace immediately before — drives the §10.1 `+`/`-` rule.
@@ -16,4 +20,4 @@ export type Token = {
  * @param {string} input
  * @return {Token[]}
  */
-export function tokenize(input: string): Token[];
+declare function tokenize(input: string): Token[];

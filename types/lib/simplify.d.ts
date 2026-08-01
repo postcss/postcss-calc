@@ -1,8 +1,8 @@
-/**
- * Recursive simplifier reference, threaded into Sum/Product/Call. Lets
- * leaf fold modules avoid circular imports of the entry function.
- */
-export type Node = import("./node.js").Node;
+declare const _exports: {
+    simplify: typeof simplify;
+};
+export = _exports;
+export type Node = import('./node.js').Node;
 export type SimplifyFn = (node: Node) => Node;
 /**
  * @typedef {import('./node.js').Node} Node
@@ -15,4 +15,4 @@ export type SimplifyFn = (node: Node) => Node;
  * @param {Node} node
  * @return {Node}
  */
-export function simplify(node: Node): Node;
+declare function simplify(node: Node): Node;
