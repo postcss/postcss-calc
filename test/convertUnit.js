@@ -380,12 +380,12 @@ test('invalid conversions', () => {
     ],
   };
 
-  for (const unit in invalid_units) {
-    for (const targetUnit of invalid_units[unit]) {
+  for (const [unit, invalidTargets] of Object.entries(invalid_units)) {
+    for (const invalidTarget of invalidTargets) {
       assert.strictEqual(
-        convert(10, unit, targetUnit),
+        convert(10, unit, invalidTarget),
         null,
-        unit + ' -> ' + targetUnit
+        unit + ' -> ' + invalidTarget
       );
     }
   }
