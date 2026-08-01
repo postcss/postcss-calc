@@ -52,8 +52,8 @@ function applyModRem(name, a, b) {
   if (name === 'rem') {
     return a % b; // sign follows dividend
   }
-  const result = a - b * Math.floor(a / b); // sign follows divisor
-  return result === 0 ? b * 0 : result;
+  // sign follows divisor
+  return a - b * Math.floor(a / b);
 }
 
 module.exports = { simplifyModRem };
