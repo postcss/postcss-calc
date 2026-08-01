@@ -38,20 +38,48 @@ function simplifyCall(node, simplify) {
 
   const args = node.args.map((a) => simplify(a));
 
-  if (name === 'min' || name === 'max') {return simplifyMinMax(node.name, args);}
-  if (name === 'clamp') {return simplifyClamp(args);}
-  if (name === 'abs') {return simplifyAbs(args);}
-  if (name === 'sign') {return simplifySign(args);}
-  if (name === 'mod' || name === 'rem') {return simplifyModRem(name, args);}
-  if (name === 'round') {return simplifyRound(args);}
-  if (name === 'sin' || name === 'cos' || name === 'tan') {return simplifyTrig(name, args);}
-  if (name === 'asin' || name === 'acos' || name === 'atan') {return simplifyInverseTrig(name, args);}
-  if (name === 'atan2') {return simplifyAtan2(args);}
-  if (name === 'pow') {return simplifyPow(args);}
-  if (name === 'sqrt') {return simplifySqrt(args);}
-  if (name === 'hypot') {return simplifyHypot(args);}
-  if (name === 'log') {return simplifyLog(args);}
-  if (name === 'exp') {return simplifyExp(args);}
+  if (name === 'min' || name === 'max') {
+    return simplifyMinMax(node.name, args);
+  }
+  if (name === 'clamp') {
+    return simplifyClamp(args);
+  }
+  if (name === 'abs') {
+    return simplifyAbs(args);
+  }
+  if (name === 'sign') {
+    return simplifySign(args);
+  }
+  if (name === 'mod' || name === 'rem') {
+    return simplifyModRem(name, args);
+  }
+  if (name === 'round') {
+    return simplifyRound(args);
+  }
+  if (name === 'sin' || name === 'cos' || name === 'tan') {
+    return simplifyTrig(name, args);
+  }
+  if (name === 'asin' || name === 'acos' || name === 'atan') {
+    return simplifyInverseTrig(name, args);
+  }
+  if (name === 'atan2') {
+    return simplifyAtan2(args);
+  }
+  if (name === 'pow') {
+    return simplifyPow(args);
+  }
+  if (name === 'sqrt') {
+    return simplifySqrt(args);
+  }
+  if (name === 'hypot') {
+    return simplifyHypot(args);
+  }
+  if (name === 'log') {
+    return simplifyLog(args);
+  }
+  if (name === 'exp') {
+    return simplifyExp(args);
+  }
 
   return { type: 'Call', name: node.name, args };
 }

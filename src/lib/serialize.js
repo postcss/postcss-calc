@@ -55,7 +55,9 @@ function isDegenerate(v) {
  * @return {string}
  */
 function degenerateKeyword(v) {
-  if (isNaN(v)) {return 'NaN';}
+  if (isNaN(v)) {
+    return 'NaN';
+  }
   return v > 0 ? 'infinity' : '-infinity';
 }
 
@@ -105,7 +107,9 @@ function serialize(node, opts = {}) {
 function serializeExpr(node, prec) {
   switch (node.type) {
     case 'Num':
-      if (isDegenerate(node.value)) {return degenerateKeyword(node.value);}
+      if (isDegenerate(node.value)) {
+        return degenerateKeyword(node.value);
+      }
       return String(round(node.value, prec));
     case 'Dim':
       if (isDegenerate(node.value)) {
@@ -164,9 +168,10 @@ function serializeSum(sum, prec) {
   sum.terms.forEach((t, i) => {
     const { sign, magnitude } = displaySign(t);
     if (i === 0) {
-      out = sign === 1
-        ? serializeExpr(magnitude, prec)
-        : serializeLeadingNeg(magnitude, prec);
+      out =
+        sign === 1
+          ? serializeExpr(magnitude, prec)
+          : serializeLeadingNeg(magnitude, prec);
     } else {
       // `-` binds looser than `*`/`/` so the right side never needs parens.
       const body = serializeExpr(magnitude, prec);
@@ -207,7 +212,9 @@ function serializeLeadingNeg(node, prec) {
     return serializeProduct({ type: 'Product', factors: negatedFactors }, prec);
   }
   const body = serializeExpr(node, prec);
-  return node.type === 'Sum' || node.type === 'Product' ? `-(${body})` : `-${body}`;
+  return node.type === 'Sum' || node.type === 'Product'
+    ? `-(${body})`
+    : `-${body}`;
 }
 
 /**

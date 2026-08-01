@@ -39,7 +39,9 @@ function simplifyRound(args) {
   // B omitted: defaults to 1 when A is <number>; else opaque.
   const argsForFold = argsForRoundFold(rest);
   const fold = argsForFold && foldConstArgs(argsForFold);
-  if (!fold) {return passthrough();}
+  if (!fold) {
+    return passthrough();
+  }
 
   const [a, b] = /** @type {[number, number]} */ (fold.values);
   // Spec §10.7.1 non-finite step: NaN propagates; both infinite cancels to
@@ -49,9 +51,13 @@ function simplifyRound(args) {
   // case folds to ±0 carrying A's sign. Infinite-A / finite-B falls through
   // to applyRound, where floor*b===ceil*b===±∞ collapses back to A
   // (§10.3.1 "result is the same infinity").
-  if (isNaN(b)) {return num(NaN);}
+  if (isNaN(b)) {
+    return num(NaN);
+  }
   if (!isFinite(b)) {
-    if (!isFinite(a)) {return num(NaN);}
+    if (!isFinite(a)) {
+      return num(NaN);
+    }
     let result;
     if (strategy === 'up' && a > 0) {
       result = Infinity;
@@ -64,7 +70,9 @@ function simplifyRound(args) {
   }
 
   const result = applyRound(strategy, a, b);
-  if (isNaN(result)) {return num(NaN);}
+  if (isNaN(result)) {
+    return num(NaN);
+  }
   return fold.unit === '' ? num(result) : dim(result, fold.unit);
 }
 
@@ -73,7 +81,9 @@ function simplifyRound(args) {
  * @return {Node[] | null}
  */
 function argsForRoundFold(args) {
-  if (args.length === 2) {return args;}
+  if (args.length === 2) {
+    return args;
+  }
   if (args.length === 1 && args[0].type === 'Num') {
     return [args[0], num(1)];
   }
@@ -87,14 +97,18 @@ function argsForRoundFold(args) {
  * @return {number}
  */
 function applyRound(strategy, a, b) {
-  if (b === 0) {return NaN;}
+  if (b === 0) {
+    return NaN;
+  }
   const q = a / b;
   const c1 = Math.floor(q) * b;
   const c2 = Math.ceil(q) * b;
   // With negative B, floor*B > ceil*B; spec defines lower as closer to -∞.
   const lower = Math.min(c1, c2);
   const upper = Math.max(c1, c2);
-  if (lower === upper) {return a;}
+  if (lower === upper) {
+    return a;
+  }
   switch (strategy) {
     case 'up':
       return upper;

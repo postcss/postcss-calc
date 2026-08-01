@@ -90,7 +90,10 @@ function simplifySum(sum, simplify) {
   /** @type {SumTerm[]} */
   const terms = [{ sign: 1, node: num(denoise(numTotal, numScale)) }];
   for (const bucket of mergeConvertibleBuckets([...byUnit.values()])) {
-    terms.push({ sign: 1, node: dim(denoise(bucket.total, bucket.scale), bucket.unit) });
+    terms.push({
+      sign: 1,
+      node: dim(denoise(bucket.total, bucket.scale), bucket.unit),
+    });
   }
   terms.push(...opaque);
 

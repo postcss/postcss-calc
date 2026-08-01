@@ -27,13 +27,19 @@ function mergeConvertibleBuckets(buckets) {
   /** @type {UnitBucket[]} */ const out = [];
   for (const b of ordered) {
     const keyB = b.unit.toLowerCase();
-    if (merged.has(keyB)) {continue;}
+    if (merged.has(keyB)) {
+      continue;
+    }
     merged.add(keyB);
     if (b.base !== null) {
       for (const other of ordered) {
         const keyO = other.unit.toLowerCase();
-        if (merged.has(keyO)) {continue;}
-        if (other.base !== b.base) {continue;}
+        if (merged.has(keyO)) {
+          continue;
+        }
+        if (other.base !== b.base) {
+          continue;
+        }
         const converted = convert(other.total, other.unit, b.unit);
         if (converted !== null) {
           b.total += converted;

@@ -3,7 +3,7 @@ name: Publish Package
 on: workflow_dispatch
 
 permissions:
-  id-token: write  # Required for OIDC
+  id-token: write # Required for OIDC
   contents: read
 
 jobs:
@@ -20,7 +20,7 @@ jobs:
         with:
           node-version: 24
           registry-url: 'https://registry.npmjs.org'
-          package-manager-cache: false  # never use caching in release builds
+          package-manager-cache: false # never use caching in release builds
       - run: pnpm install --frozen-lockfile
       - name: Lint
         run: pnpm lint
