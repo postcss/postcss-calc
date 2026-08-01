@@ -165,7 +165,7 @@ function displaySign(term) {
  */
 function serializeSum(sum, prec) {
   let out = '';
-  sum.terms.forEach((t, i) => {
+  for (const [i, t] of sum.terms.entries()) {
     const { sign, magnitude } = displaySign(t);
     if (i === 0) {
       out =
@@ -177,7 +177,7 @@ function serializeSum(sum, prec) {
       const body = serializeExpr(magnitude, prec);
       out += sign === 1 ? ` + ${body}` : ` - ${body}`;
     }
-  });
+  }
   return out;
 }
 
@@ -224,7 +224,7 @@ function serializeLeadingNeg(node, prec) {
  */
 function serializeProduct(product, prec) {
   let out = '';
-  product.factors.forEach((f, i) => {
+  for (const [i, f] of product.factors.entries()) {
     let body = serializeExpr(f.node, prec);
     // A Sum factor needs parens: `a * (b + c)`. Flat canonical form means
     // this is the only place parens are required.
@@ -237,7 +237,7 @@ function serializeProduct(product, prec) {
     } else {
       out += f.exponent === 1 ? ` * ${body}` : ` / ${body}`;
     }
-  });
+  }
   return out;
 }
 

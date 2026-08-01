@@ -97,7 +97,7 @@ test('valid conversions', () => {
     [10, 'dppx', 10, 'dppx'],
   ];
 
-  conversions.forEach(function (e) {
+  for (const e of conversions) {
     const value = e[0];
     const unit = e[1];
     const expected = e[2];
@@ -106,7 +106,7 @@ test('valid conversions', () => {
     const actual = convert(value, unit, targetUnit);
     assert.ok(actual !== null, unit + ' -> ' + targetUnit);
     assert.strictEqual(round(actual, 5), expected, unit + ' -> ' + targetUnit);
-  });
+  }
 });
 
 test('invalid conversions', () => {
@@ -381,13 +381,13 @@ test('invalid conversions', () => {
   };
 
   for (const unit in invalid_units) {
-    invalid_units[unit].forEach((targetUnit) => {
+    for (const targetUnit of invalid_units[unit]) {
       assert.strictEqual(
         convert(10, unit, targetUnit),
         null,
         unit + ' -> ' + targetUnit
       );
-    });
+    }
   }
 });
 
