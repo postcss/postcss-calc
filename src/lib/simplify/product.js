@@ -106,10 +106,14 @@ function simplifyProduct(product, simplify) {
     opaque.length === 0
   ) {
     const d = remainingDims[0];
-    const value = scalarChain.reduce(
-      (acc, f) => (f.exponent === 1 ? acc * f.value : acc / f.value),
-      1
-    );
+    let value = 1;
+    for (const f of scalarChain) {
+      if (f.exponent === 1) {
+        value = value * f.value;
+      } else {
+        value = value / f.value;
+      }
+    }
     return dim(value, d.unit);
   }
 
