@@ -22,7 +22,7 @@
     "LICENSE"
   ],
   "scripts": {
-    "lint": "eslint . && tsc && oxfmt --check",
+    "lint": "oxlint . && tsc && oxfmt --check",
     "fmt": "oxfmt",
     "test": "node --test",
     "test:mutation": "stryker run"
@@ -34,17 +34,14 @@
   },
   "devDependencies": {
     "@csstools/css-calc": "^3.2.1",
-    "@eslint/js": "^10.0.1",
     "@rmenke/css-tokenizer-tests": "^1.2.0",
     "@stryker-mutator/core": "^9.6.1",
     "@stryker-mutator/tap-runner": "^9.6.1",
     "@stryker-mutator/typescript-checker": "^9.6.1",
     "@types/node": "^26.1.1",
-    "eslint": "^10.7.0",
-    "eslint-config-prettier": "^10.1.8",
-    "eslint-plugin-sonarjs": "^4.2.0",
     "fast-check": "^4.9.0",
     "oxfmt": "^0.61.0",
+    "oxlint": "^1.76.0",
     "postcss": "^8.5.19",
     "typescript": "~6.0.3"
   },
