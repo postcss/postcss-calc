@@ -15,7 +15,8 @@
     "no-redeclare": "error",
     "no-regex-spaces": "error",
     "no-void": "error",
-    "preserve-caught-error": "error"
+    "preserve-caught-error": "error",
+    "unicorn/no-array-reduce": "error"
   },
   "env": {
     "builtin": true
