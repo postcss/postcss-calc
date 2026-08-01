@@ -1,4 +1,3 @@
-
 # Changelog
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
@@ -13,112 +12,107 @@ All notable changes to this project will be documented in this file. See [commit
 
 ### Bug Fixes
 
-* Improve rounding
+- Improve rounding
 
 ## [11.0.0-rc.0](https://github.com/postcss/postcss-calc/compare/v10.1.1...v11.0.0-rc.0) (2026-07-17)
 
 ### Breaking changes
 
-* Requires Node.js 22.12 or greater
+- Requires Node.js 22.12 or greater
 
 ### Features
 
-* **core:** pratt tokenizer, parser, AST, type system ([549c8ad](https://github.com/postcss/postcss-calc/commit/549c8ad2677869ce8185e281b82f9b3b4e6ab8f4))
-* **core:** simplifier (per-function fold modules) + serializer ([9e82450](https://github.com/postcss/postcss-calc/commit/9e8245061fb5aa3e82dc0de003684eea6f60ff81))
-* **plugin:** PostCSS adapter + public entry + v10 regression patches ([b588797](https://github.com/postcss/postcss-calc/commit/b5887974590be7fce8c2cf6f07e8cae993d37618))
-
+- **core:** pratt tokenizer, parser, AST, type system ([549c8ad](https://github.com/postcss/postcss-calc/commit/549c8ad2677869ce8185e281b82f9b3b4e6ab8f4))
+- **core:** simplifier (per-function fold modules) + serializer ([9e82450](https://github.com/postcss/postcss-calc/commit/9e8245061fb5aa3e82dc0de003684eea6f60ff81))
+- **plugin:** PostCSS adapter + public entry + v10 regression patches ([b588797](https://github.com/postcss/postcss-calc/commit/b5887974590be7fce8c2cf6f07e8cae993d37618))
 
 ### Bug Fixes
 
-* **core:** spec-compliant -{ident-start} tokenization + selectors fix ([dcb34c1](https://github.com/postcss/postcss-calc/commit/dcb34c12cc6491495904283504184a7baea3626c))
-* **mod-rem:** match IEEE-754 signed-zero semantics on exact-multiple results ([ef9b1f6](https://github.com/postcss/postcss-calc/commit/ef9b1f634e065dcceb855969b224f2168d9d5a09))
-* **product:** flatten negated single-term Sum so cancellation can see through it ([61fe7b3](https://github.com/postcss/postcss-calc/commit/61fe7b370dc7d4ce9f4c5c2b5297e717014cf33b))
-* **product:** fold dim value in original position to match left-to-right evaluation order ([af0835b](https://github.com/postcss/postcss-calc/commit/af0835b1f17407add03649ae7e91acea865695d1))
-* **round:** strategy-dependent result for infinite step ([ffdb50e](https://github.com/postcss/postcss-calc/commit/ffdb50e11f2e0fcb8eba9ceb01709f196e4e9cde))
-* **serialize:** preserve signed zero and drop redundant coefficient when folding leading negation ([09b2453](https://github.com/postcss/postcss-calc/commit/09b2453b1c1c40f02c42dabb6ac05506473eee9f))
-* update TypeScript ([0b7ff00](https://github.com/postcss/postcss-calc/commit/0b7ff00e4bbfa824e98a755861ea818863730b21))
+- **core:** spec-compliant -{ident-start} tokenization + selectors fix ([dcb34c1](https://github.com/postcss/postcss-calc/commit/dcb34c12cc6491495904283504184a7baea3626c))
+- **mod-rem:** match IEEE-754 signed-zero semantics on exact-multiple results ([ef9b1f6](https://github.com/postcss/postcss-calc/commit/ef9b1f634e065dcceb855969b224f2168d9d5a09))
+- **product:** flatten negated single-term Sum so cancellation can see through it ([61fe7b3](https://github.com/postcss/postcss-calc/commit/61fe7b370dc7d4ce9f4c5c2b5297e717014cf33b))
+- **product:** fold dim value in original position to match left-to-right evaluation order ([af0835b](https://github.com/postcss/postcss-calc/commit/af0835b1f17407add03649ae7e91acea865695d1))
+- **round:** strategy-dependent result for infinite step ([ffdb50e](https://github.com/postcss/postcss-calc/commit/ffdb50e11f2e0fcb8eba9ceb01709f196e4e9cde))
+- **serialize:** preserve signed zero and drop redundant coefficient when folding leading negation ([09b2453](https://github.com/postcss/postcss-calc/commit/09b2453b1c1c40f02c42dabb6ac05506473eee9f))
+- update TypeScript ([0b7ff00](https://github.com/postcss/postcss-calc/commit/0b7ff00e4bbfa824e98a755861ea818863730b21))
 
 ## [10.1.1](https://github.com/postcss/postcss-calc/compare/v10.1.0...v10.1.1) (2025-01-31)
 
-
 ### Bug Fixes
 
-* handle calc keywords correctly ([#234](https://github.com/postcss/postcss-calc/issues/234)) ([87d57ef](https://github.com/postcss/postcss-calc/commit/87d57ef74d897fb2b9f1ecc759bedaecee3989e6)), closes [#210](https://github.com/postcss/postcss-calc/issues/210)
+- handle calc keywords correctly ([#234](https://github.com/postcss/postcss-calc/issues/234)) ([87d57ef](https://github.com/postcss/postcss-calc/commit/87d57ef74d897fb2b9f1ecc759bedaecee3989e6)), closes [#210](https://github.com/postcss/postcss-calc/issues/210)
 
 ## [10.1.0](https://github.com/postcss/postcss-calc/compare/v10.0.2...v10.1.0) (2025-01-07)
 
-
 ### Features
 
-* add support for lh & rlh units ([9b6d7a1](https://github.com/postcss/postcss-calc/commit/9b6d7a16553f9d61ef8097f4e5425ae0c8a7574f))
-
+- add support for lh & rlh units ([9b6d7a1](https://github.com/postcss/postcss-calc/commit/9b6d7a16553f9d61ef8097f4e5425ae0c8a7574f))
 
 ### Bug Fixes
 
-* Ignore calc-size from detection ([#230](https://github.com/postcss/postcss-calc/issues/230)) ([cac6f39](https://github.com/postcss/postcss-calc/commit/cac6f39951617b45bc5bed84be3ed099df619bbf))
+- Ignore calc-size from detection ([#230](https://github.com/postcss/postcss-calc/issues/230)) ([cac6f39](https://github.com/postcss/postcss-calc/commit/cac6f39951617b45bc5bed84be3ed099df619bbf))
 
 ## [10.0.2](https://github.com/postcss/postcss-calc/compare/v10.0.1...v10.0.2) (2024-08-16)
 
-
 ### Bug Fixes
 
-* add support for svh, lvh, dvh, svw, lvw, dvw, svmin, lvmin, dvmin, svmax, lvmax, dvmax units ([f5eaea1](https://github.com/postcss/postcss-calc/commit/f5eaea129f0546451638c6508009a5cfff1a6ddc))
+- add support for svh, lvh, dvh, svw, lvw, dvw, svmin, lvmin, dvmin, svmax, lvmax, dvmax units ([f5eaea1](https://github.com/postcss/postcss-calc/commit/f5eaea129f0546451638c6508009a5cfff1a6ddc))
 
 # [11.0.1](https://github.com/postcss/postcss-calc/compare/v10.0.0...v10.0.1) (2024-08-05)
 
 ## Bug Fixes
 
-* add support for container query units ([#214](https://github.com/postcss/postcss-calc/issues/214)) ([3f2b43a](https://github.com/postcss/postcss-calc/commit/3f2b43a9d65589c907fa8cbb79a6141603c56c3d)), closes [#199](https://github.com/postcss/postcss-calc/issues/199)
-* update postcss-selector-parser ([3606777](https://github.com/postcss/postcss-calc/commit/3606777a1611bdfa67672e4dadd6c1b1871e163f))
-* update postcss-selector-parser ([a03fb73](https://github.com/postcss/postcss-calc/commit/a03fb73c0d60845c2f98918d8108e231b8f7f80d))
+- add support for container query units ([#214](https://github.com/postcss/postcss-calc/issues/214)) ([3f2b43a](https://github.com/postcss/postcss-calc/commit/3f2b43a9d65589c907fa8cbb79a6141603c56c3d)), closes [#199](https://github.com/postcss/postcss-calc/issues/199)
+- update postcss-selector-parser ([3606777](https://github.com/postcss/postcss-calc/commit/3606777a1611bdfa67672e4dadd6c1b1871e163f))
+- update postcss-selector-parser ([a03fb73](https://github.com/postcss/postcss-calc/commit/a03fb73c0d60845c2f98918d8108e231b8f7f80d))
 
 # 10.0.0 (2024-04-26)
 
 ## Breaking Changes
 
-* drop support for Node.js 14, 16, 19 and 21
+- drop support for Node.js 14, 16, 19 and 21
 
 # 9.0.1 (2023-05-05)
 
 ## Bug Fixes
 
-* fix disappearing calc expression when source contains extra brackets ([18bb47bd0](https://github.com/postcss/postcss-calc/commit/18bb47bd095d2a5b224b0a60521e52f620474b3d))
+- fix disappearing calc expression when source contains extra brackets ([18bb47bd0](https://github.com/postcss/postcss-calc/commit/18bb47bd095d2a5b224b0a60521e52f620474b3d))
 
 # 9.0.0 (2023-04-29)
 
 ## Breaking Changes
 
-* drop support for Node.js versions before 14
+- drop support for Node.js versions before 14
 
 # [8.2.4](https://github.com/postcss/postcss-calc/compare/v8.2.3...v8.2.4) (2022-02-05)
 
 ## Patch Changes
 
-* convert source to CommonJS and publish untranspiled code ([b55adcb](https://github.com/postcss/postcss-calc/commit/b55adcb285ea8d385bf802a0f7edeb2d12be1549))
+- convert source to CommonJS and publish untranspiled code ([b55adcb](https://github.com/postcss/postcss-calc/commit/b55adcb285ea8d385bf802a0f7edeb2d12be1549))
 
 # [8.2.3](https://github.com/postcss/postcss-calc/compare/v8.2.2...v8.2.3) (2022-01-28)
 
 ## Bug Fixes
 
-* improve types ([f2cce1b](https://github.com/postcss/postcss-calc/commit/f2cce1bc1d47af7ab02891c61b4c1485d6e6dfd3))
+- improve types ([f2cce1b](https://github.com/postcss/postcss-calc/commit/f2cce1bc1d47af7ab02891c61b4c1485d6e6dfd3))
 
 ## [8.2.2](https://github.com/postcss/postcss-calc/compare/v8.2.1...v8.2.2) (2022-01-12)
 
 ## Bug Fixes
 
-* respect CSS var when reducing ([99d9fa5](https://github.com/postcss/postcss-calc/commit/99d9fa53a7fba3586590d0c45a0982b09e8bf5c6))
+- respect CSS var when reducing ([99d9fa5](https://github.com/postcss/postcss-calc/commit/99d9fa53a7fba3586590d0c45a0982b09e8bf5c6))
 
 # [8.2.1](https://github.com/postcss/postcss-calc/compare/v8.2.0...v8.2.1) (2022-01-11)
 
 ## Bug Fixes
 
-* preserve brackets around functions ([0b70a1d](https://github.com/postcss/postcss-calc/commit/0b70a1d5773f17373991b1294e3ae618600aae7d)), closes [#113](https://github.com/postcss/postcss-calc/issues/113) [#115](https://github.com/postcss/postcss-calc/issues/115)
+- preserve brackets around functions ([0b70a1d](https://github.com/postcss/postcss-calc/commit/0b70a1d5773f17373991b1294e3ae618600aae7d)), closes [#113](https://github.com/postcss/postcss-calc/issues/113) [#115](https://github.com/postcss/postcss-calc/issues/115)
 
 # [8.2.0](https://github.com/postcss/postcss-calc/compare/v8.1.0...v8.2.0) (2022-01-07)
 
 ## Features
 
-* add types ([#155](https://github.com/postcss/postcss-calc/issues/155)) ([4c96c79](https://github.com/postcss/postcss-calc/commit/4c96c793fbc7807bb138d05b92a93bd29a2e94ac))
+- add types ([#155](https://github.com/postcss/postcss-calc/issues/155)) ([4c96c79](https://github.com/postcss/postcss-calc/commit/4c96c793fbc7807bb138d05b92a93bd29a2e94ac))
 
 # [8.1.0](https://github.com/postcss/postcss-calc/compare/v8.0.0...v8.1.0) (2022-01-03)
 
@@ -191,7 +185,7 @@ All notable changes to this project will be documented in this file. See [commit
 
 # 5.3.1 - 2016-08-22
 
-- Fixed: avoid security issue related to ``reduce-css-calc@< 1.2.4``.
+- Fixed: avoid security issue related to `reduce-css-calc@< 1.2.4`.
 
 # 5.3.0 - 2016-07-11
 
@@ -206,12 +200,12 @@ All notable changes to this project will be documented in this file. See [commit
 # 5.2.0 - 2016-01-08
 
 - Added: "mediaQueries" option for `@media` support
-([#22](https://github.com/postcss/postcss-calc/pull/22))
+  ([#22](https://github.com/postcss/postcss-calc/pull/22))
 
 # 5.1.0 - 2016-01-07
 
 - Added: "warnWhenCannotResolve" option to warn when calc() are not reduced to a single value
-([#20](https://github.com/postcss/postcss-calc/pull/20))
+  ([#20](https://github.com/postcss/postcss-calc/pull/20))
 
 # 5.0.0 - 2015-08-25
 

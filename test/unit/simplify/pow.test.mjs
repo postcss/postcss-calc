@@ -53,6 +53,6 @@ test('pow: case-insensitive', () => {
   assert.equal(out('POW(2, 3)'), out('pow(2, 3)'));
 });
 
-test('reduces pow with multiplication', () =>{
+test('reduces pow with multiplication', () => {
   assert.equal(out('1rem * pow(1.618, 3)'), '4.2358rem');
-})
+});

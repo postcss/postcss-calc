@@ -19,7 +19,9 @@ const TRIG_OPS = /** @type {const} */ ({
  * @return {Node}
  */
 function simplifyTrig(name, args) {
-  if (args.length !== 1) {return { type: 'Call', name, args };}
+  if (args.length !== 1) {
+    return { type: 'Call', name, args };
+  }
   const a = args[0];
   /** @type {number | null} */ let radians = null;
   if (a.type === 'Num') {
@@ -31,9 +33,13 @@ function simplifyTrig(name, args) {
     // equivalent-mutant survivors — keep them; they're load-bearing
     // defense against future unit additions.
     const inDeg = convert(a.value, a.unit, 'deg');
-    if (inDeg !== null) {radians = (inDeg * Math.PI) / 180;}
+    if (inDeg !== null) {
+      radians = (inDeg * Math.PI) / 180;
+    }
   }
-  if (radians === null) {return { type: 'Call', name, args };}
+  if (radians === null) {
+    return { type: 'Call', name, args };
+  }
   return num(TRIG_OPS[name](radians));
 }
 

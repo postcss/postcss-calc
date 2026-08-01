@@ -79,7 +79,12 @@ function tokenize(input) {
         break;
       case CssType.Function:
         tokens.push({ type: 'ident', value: t[4].value, pos: t[2], ws });
-        tokens.push({ type: 'punct', value: '(', pos: t[2] + t[1].length - 1, ws: false });
+        tokens.push({
+          type: 'punct',
+          value: '(',
+          pos: t[2] + t[1].length - 1,
+          ws: false,
+        });
         break;
       case CssType.OpenParen:
         tokens.push({ type: 'punct', value: '(', pos: t[2], ws });

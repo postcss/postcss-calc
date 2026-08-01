@@ -31,4 +31,4 @@ test('min with subtraction', () => {
     out('min(360px, 100% - 24px - 24px)'),
     'min(360px, 100% - 48px)'
   );
-})
+});

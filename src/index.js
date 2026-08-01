@@ -16,11 +16,26 @@ const MATCH_CALC = /^(?:-(?:moz|webkit)-)?calc$/i;
 // Bare math-function calls (no calc() wrapper) — fed to the same pipeline.
 // Mirrors the dispatch in lib/simplify/call.js.
 const MATH_FUNCTIONS = new Set([
-  'min', 'max', 'clamp',
-  'abs', 'sign',
-  'mod', 'rem', 'round',
-  'sin', 'cos', 'tan', 'asin', 'acos', 'atan', 'atan2',
-  'pow', 'sqrt', 'hypot', 'log', 'exp',
+  'min',
+  'max',
+  'clamp',
+  'abs',
+  'sign',
+  'mod',
+  'rem',
+  'round',
+  'sin',
+  'cos',
+  'tan',
+  'asin',
+  'acos',
+  'atan',
+  'atan2',
+  'pow',
+  'sqrt',
+  'hypot',
+  'log',
+  'exp',
 ]);
 
 /**
@@ -45,10 +60,14 @@ const MATH_FUNCTIONS = new Set([
 function transformValue(value, options, result, item) {
   return valueParser(value)
     .walk((node) => {
-      if (node.type !== 'function') {return;}
+      if (node.type !== 'function') {
+        return;
+      }
       const isCalc = MATCH_CALC.test(node.value);
       const isMath = !isCalc && MATH_FUNCTIONS.has(node.value.toLowerCase());
-      if (!isCalc && !isMath) {return;}
+      if (!isCalc && !isMath) {
+        return;
+      }
 
       // calc(): feed the body. Bare math: feed the whole call.
       const inner = valueParser.stringify(node.nodes);

@@ -157,7 +157,9 @@ const OPAQUE_ARG_FUNCTIONS = new Set(['anchor', 'anchor-size']);
  * @return {string}
  */
 function tokenText(t) {
-  if (t.type === 'dimension') {return `${t.value}${t.unit ?? ''}`;}
+  if (t.type === 'dimension') {
+    return `${t.value}${t.unit ?? ''}`;
+  }
   return t.value;
 }
 
@@ -174,7 +176,9 @@ function parseOpaqueCall(p, name) {
   let depth = 1;
   const flush = () => {
     const trimmed = buf.trim();
-    if (trimmed) {args.push({ type: 'Ident', name: trimmed });}
+    if (trimmed) {
+      args.push({ type: 'Ident', name: trimmed });
+    }
     buf = '';
   };
   while (true) {
@@ -183,8 +187,9 @@ function parseOpaqueCall(p, name) {
       throw new Error(`Unclosed ${name}( at position ${tk.pos}`);
     }
     if (tk.type === 'punct') {
-      if (tk.value === '(') {depth++;}
-      else if (tk.value === ')') {
+      if (tk.value === '(') {
+        depth++;
+      } else if (tk.value === ')') {
         depth--;
         if (depth === 0) {
           p.next();
@@ -197,7 +202,9 @@ function parseOpaqueCall(p, name) {
         continue;
       }
     }
-    if (tk.ws && buf) {buf += ' ';}
+    if (tk.ws && buf) {
+      buf += ' ';
+    }
     buf += tokenText(tk);
     p.next();
   }

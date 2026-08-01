@@ -13,7 +13,9 @@ const { foldConstArgs } = require('./fold.js');
  */
 function simplifyHypot(args) {
   const fold = foldConstArgs(args);
-  if (fold === null) {return { type: 'Call', name: 'hypot', args };}
+  if (fold === null) {
+    return { type: 'Call', name: 'hypot', args };
+  }
   const sumSq = fold.values.reduce((acc, v) => acc + v * v, 0);
   const result = Math.sqrt(sumSq);
   return fold.unit === '' ? num(result) : dim(result, fold.unit);

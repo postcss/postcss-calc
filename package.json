@@ -22,7 +22,8 @@
     "LICENSE"
   ],
   "scripts": {
-    "lint": "eslint . && tsc",
+    "lint": "eslint . && tsc && oxfmt --check",
+    "fmt": "oxfmt",
     "test": "node --test",
     "test:mutation": "stryker run"
   },
@@ -43,8 +44,8 @@
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-sonarjs": "^4.2.0",
     "fast-check": "^4.9.0",
+    "oxfmt": "^0.61.0",
     "postcss": "^8.5.19",
-    "prettier": "^3.9.5",
     "typescript": "~6.0.3"
   },
   "dependencies": {

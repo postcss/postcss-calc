@@ -18,11 +18,17 @@ const INVERSE_TRIG_OPS = /** @type {const} */ ({
  * @return {Node}
  */
 function simplifyInverseTrig(name, args) {
-  if (args.length !== 1) {return { type: 'Call', name, args };}
+  if (args.length !== 1) {
+    return { type: 'Call', name, args };
+  }
   const a = args[0];
-  if (a.type !== 'Num') {return { type: 'Call', name, args };}
+  if (a.type !== 'Num') {
+    return { type: 'Call', name, args };
+  }
   const radians = INVERSE_TRIG_OPS[name](a.value);
-  if (isNaN(radians)) {return num(NaN);}
+  if (isNaN(radians)) {
+    return num(NaN);
+  }
   return dim((radians * 180) / Math.PI, 'deg');
 }
 

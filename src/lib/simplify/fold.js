@@ -14,7 +14,9 @@ const { baseOf, convert } = require('../convertUnits.js');
  * @return {{ values: number[], unit: string } | null}
  */
 function foldConstArgs(args) {
-  if (args.length === 0) {return null;}
+  if (args.length === 0) {
+    return null;
+  }
 
   const first = args[0];
   if (first.type === 'Num') {
@@ -22,7 +24,9 @@ function foldConstArgs(args) {
   }
   if (first.type === 'Dim') {
     const b = first.unit === '%' ? null : baseOf(first.unit);
-    if (!b) {return null;}
+    if (!b) {
+      return null;
+    }
     return foldDimArgs(args, first.unit, b);
   }
   return null;
@@ -35,7 +39,9 @@ function foldConstArgs(args) {
 function foldNumberArgs(args) {
   /** @type {number[]} */ const values = [];
   for (const a of args) {
-    if (a.type !== 'Num') {return null;}
+    if (a.type !== 'Num') {
+      return null;
+    }
     values.push(a.value);
   }
   return { values, unit: '' };
@@ -54,7 +60,9 @@ function foldDimArgs(args, unit, base) {
       return null;
     }
     const converted = convert(a.value, a.unit, unit);
-    if (converted === null) {return null;}
+    if (converted === null) {
+      return null;
+    }
     values.push(converted);
   }
   return { values, unit };

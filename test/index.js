@@ -47,7 +47,10 @@ test('should reduce simple calc (1)', testValue('calc(1px + 1px)', '2px'));
 test(
   'should reduce simple calc (2)',
   // `2px+3px` violates §10.1 whitespace → preserved with a warning.
-  testValue('calc(1px + 1px);baz:calc(2px+3px)', /* '2px;baz:5px' */ '2px;baz:calc(2px+3px)')
+  testValue(
+    'calc(1px + 1px);baz:calc(2px+3px)',
+    /* '2px;baz:5px' */ '2px;baz:calc(2px+3px)'
+  )
 );
 
 test('should reduce simple calc (3)', testValue('calc(1rem * 1.5)', '1.5rem'));
@@ -204,7 +207,10 @@ test(
 test(
   'should ignore calc with css variables (1)',
   // spec-style spaces; canonical order puts the dim first.
-  testValue('calc(var(--mouseX) * 1px)', /* 'calc(var(--mouseX)*1px)' */ 'calc(1px * var(--mouseX))')
+  testValue(
+    'calc(var(--mouseX) * 1px)',
+    /* 'calc(var(--mouseX)*1px)' */ 'calc(1px * var(--mouseX))'
+  )
 );
 
 test(
@@ -244,7 +250,10 @@ test(
 test(
   'should ignore calc with css variables (6)',
   // `/2` → `* 0.5` (reciprocal); coefficient first.
-  testValue('calc(var(--popupHeight) / 2)', /* 'calc(var(--popupHeight)/2)' */ 'calc(0.5 * var(--popupHeight))')
+  testValue(
+    'calc(var(--popupHeight) / 2)',
+    /* 'calc(var(--popupHeight)/2)' */ 'calc(0.5 * var(--popupHeight))'
+  )
 );
 
 test(
@@ -256,36 +265,37 @@ test(
   )
 );
 
-
 test(
- 'should ignore multiplication with infinity',
-// spec-style spaces around `*`.
-testValue('calc(infinity * 1px)', /* 'calc(infinity*1px)' */ 'calc(infinity * 1px)')
+  'should ignore multiplication with infinity',
+  // spec-style spaces around `*`.
+  testValue(
+    'calc(infinity * 1px)',
+    /* 'calc(infinity*1px)' */ 'calc(infinity * 1px)'
+  )
 );
 
 test(
- 'should ignore addition with infinity',
-testValue('calc(infinity + 1px)', 'calc(infinity + 1px)')
+  'should ignore addition with infinity',
+  testValue('calc(infinity + 1px)', 'calc(infinity + 1px)')
 );
 
 test(
- 'should ignore multiplication with pi',
-// fold `pi` (§10.7.1).
-testValue('calc(1px * pi)', /* 'calc(1px*pi)' */ '3.14159px')
+  'should ignore multiplication with pi',
+  // fold `pi` (§10.7.1).
+  testValue('calc(1px * pi)', /* 'calc(1px*pi)' */ '3.14159px')
 );
 
 test(
- 'should ignore addition with pi',
-// fold `pi` (§10.7.1).
-testValue('calc(43 + pi)', /* 'calc(43 + pi)' */ '46.14159')
+  'should ignore addition with pi',
+  // fold `pi` (§10.7.1).
+  testValue('calc(43 + pi)', /* 'calc(43 + pi)' */ '46.14159')
 );
 
 test(
- 'should preserve e',
-// fold `e` (§10.7.1).
-testValue('calc(e)', /* 'calc(e)' */ '2.71828')
+  'should preserve e',
+  // fold `e` (§10.7.1).
+  testValue('calc(e)', /* 'calc(e)' */ '2.71828')
 );
-
 
 test(
   'should reduce calc with newline characters',
@@ -345,10 +355,7 @@ test(
   testValue('calc(100svmax - 44.5svh)', 'calc(100svmax - 44.5svh)')
 );
 
-test(
-  'should add numbers with lh units',
-  testValue('calc(1lh + 4lh)', '5lh')
-);
+test('should add numbers with lh units', testValue('calc(1lh + 4lh)', '5lh'));
 
 test(
   'should add numbers with rlh units',
@@ -511,7 +518,10 @@ test(
 test(
   'should reduce nested expression',
   // zero bucket kept for type info.
-  testValue('calc( (1em - calc( 10px + 1em)) / 2)', /* '-5px' */ 'calc(0em - 5px)')
+  testValue(
+    'calc( (1em - calc( 10px + 1em)) / 2)',
+    /* '-5px' */ 'calc(0em - 5px)'
+  )
 );
 
 test(
@@ -585,7 +595,10 @@ test(
 test(
   'should apply algebraic reduction (cssnano#319)',
   // zero bucket kept for type info.
-  testValue('calc((100px - 1em) + (-50px + 1em))', /* '50px' */ 'calc(50px + 0em)')
+  testValue(
+    'calc((100px - 1em) + (-50px + 1em))',
+    /* '50px' */ 'calc(50px + 0em)'
+  )
 );
 
 test(
@@ -629,9 +642,13 @@ test(
 test(
   'should reduce calc in media queries when `mediaQueries` option is set to true',
   // `10px+10px` violates §10.1 whitespace → preserved with a warning.
-  testCss('@media (min-width:calc(10px+10px)){}', /* '@media (min-width:20px){}' */ '@media (min-width:calc(10px+10px)){}', {
-    mediaQueries: true,
-  })
+  testCss(
+    '@media (min-width:calc(10px+10px)){}',
+    /* '@media (min-width:20px){}' */ '@media (min-width:calc(10px+10px)){}',
+    {
+      mediaQueries: true,
+    }
+  )
 );
 
 test(
@@ -709,7 +726,10 @@ test(
 test(
   'should handle nested calc statements (reduce-css-calc#49)',
   // zero bucket kept for type info.
-  testValue('calc(calc(2.25rem + 2px) - 1px * 2)', /* '2.25rem' */ 'calc(2.25rem + 0px)')
+  testValue(
+    'calc(calc(2.25rem + 2px) - 1px * 2)',
+    /* '2.25rem' */ 'calc(2.25rem + 0px)'
+  )
 );
 
 test(
@@ -765,11 +785,17 @@ test(
 test(
   'should not strip calc with single CSS custom variables and value',
   // canonical order: dim before opaque var().
-  testValue('calc(var(--foo) + 10px)', /* 'calc(var(--foo) + 10px)' */ 'calc(10px + var(--foo))')
+  testValue(
+    'calc(var(--foo) + 10px)',
+    /* 'calc(var(--foo) + 10px)' */ 'calc(10px + var(--foo))'
+  )
 );
 
 // unit case lowercased.
-test('should reduce calc (uppercase)', testValue('CALC(1PX + 1PX)', /* '2PX' */ '2px'));
+test(
+  'should reduce calc (uppercase)',
+  testValue('CALC(1PX + 1PX)', /* '2PX' */ '2px')
+);
 
 test(
   'should reduce calc (uppercase) (#1)',
@@ -779,7 +805,10 @@ test(
 test(
   'should reduce calc (uppercase) (#2)',
   // zero bucket kept → calc() wrapper survives (name case preserved).
-  testValue('CALC( (1EM - CALC( 10PX + 1EM)) / 2)', /* '-5PX' */ 'CALC(0em - 5px)')
+  testValue(
+    'CALC( (1EM - CALC( 10PX + 1EM)) / 2)',
+    /* '-5PX' */ 'CALC(0em - 5px)'
+  )
 );
 
 test(
@@ -924,7 +953,10 @@ test(
 test(
   'should preserve division precedence (3)',
   // `1/(10/x)` folds to `0.1 * x` via reciprocal.
-  testValue('calc(1/(10/var(--dot-size)))', /* 'calc(1/(10/var(--dot-size)))' */ 'calc(0.1 * var(--dot-size))')
+  testValue(
+    'calc(1/(10/var(--dot-size)))',
+    /* 'calc(1/(10/var(--dot-size)))' */ 'calc(0.1 * var(--dot-size))'
+  )
 );
 
 test(
@@ -1057,7 +1089,10 @@ test('convert units (#18)', testValue('calc(1q + 10pc)', '170.33333q'));
 test(
   'unknown units',
   // same-unit arithmetic is purely numeric (§10.9; matches csstools).
-  testValue('calc(1unknown + 2unknown)', /* 'calc(1unknown + 2unknown)' */ '3unknown')
+  testValue(
+    'calc(1unknown + 2unknown)',
+    /* 'calc(1unknown + 2unknown)' */ '3unknown'
+  )
 );
 
 test(
@@ -1072,7 +1107,10 @@ test(
 
 test(
   'calc-size should be ignored',
-  testCssDoesNotThrow('.foo{block-size: calc-size(auto, size)}', '.foo{block-size: calc-size(auto, size)}')
+  testCssDoesNotThrow(
+    '.foo{block-size: calc-size(auto, size)}',
+    '.foo{block-size: calc-size(auto, size)}'
+  )
 );
 
 test(

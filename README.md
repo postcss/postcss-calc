@@ -17,18 +17,15 @@ npm install postcss-calc
 
 ```js
 // dependencies
-var fs = require("fs")
-var postcss = require("postcss")
-var calc = require("postcss-calc")
+var fs = require('fs');
+var postcss = require('postcss');
+var calc = require('postcss-calc');
 
 // css to be processed
-var css = fs.readFileSync("input.css", "utf8")
+var css = fs.readFileSync('input.css', 'utf8');
 
 // process css
-var output = postcss()
-  .use(calc())
-  .process(css)
-  .css
+var output = postcss().use(calc()).process(css).css;
 ```
 
 Using this `input.css`:
@@ -37,7 +34,7 @@ Using this `input.css`:
 h1 {
   font-size: calc(16px * 2);
   height: calc(100px - 2em);
-  width: calc(2*var(--base-width));
+  width: calc(2 * var(--base-width));
   margin-bottom: calc(16px * 1.5);
 }
 ```
@@ -48,10 +45,11 @@ you will get:
 h1 {
   font-size: 32px;
   height: calc(100px - 2em);
-  width: calc(2*var(--base-width));
-  margin-bottom: 24px
+  width: calc(2 * var(--base-width));
+  margin-bottom: 24px;
 }
 ```
+
 Checkout [tests] for more examples.
 
 ### Options
@@ -62,9 +60,8 @@ Allow you to define the precision for decimal numbers.
 
 ```js
 var out = postcss()
-  .use(calc({precision: 10}))
-  .process(css)
-  .css
+  .use(calc({ precision: 10 }))
+  .process(css).css;
 ```
 
 #### `preserve` (default: `false`)
@@ -74,9 +71,8 @@ precision themselves.
 
 ```js
 var out = postcss()
-  .use(calc({preserve: true}))
-  .process(css)
-  .css
+  .use(calc({ preserve: true }))
+  .process(css).css;
 ```
 
 #### `warnWhenCannotResolve` (default: `false`)
@@ -85,9 +81,8 @@ Adds warnings when calc() are not reduced to a single value.
 
 ```js
 var out = postcss()
-  .use(calc({warnWhenCannotResolve: true}))
-  .process(css)
-  .css
+  .use(calc({ warnWhenCannotResolve: true }))
+  .process(css).css;
 ```
 
 #### `mediaQueries` (default: `false`)
@@ -96,9 +91,8 @@ Allows calc() usage as part of media query declarations.
 
 ```js
 var out = postcss()
-  .use(calc({mediaQueries: true}))
-  .process(css)
-  .css
+  .use(calc({ mediaQueries: true }))
+  .process(css).css;
 ```
 
 #### `selectors` (default: `false`)
@@ -107,15 +101,14 @@ Allows calc() usage as part of selectors.
 
 ```js
 var out = postcss()
-  .use(calc({selectors: true}))
-  .process(css)
-  .css
+  .use(calc({ selectors: true }))
+  .process(css).css;
 ```
 
 Example:
 
 ```css
-div[data-size="calc(3*3)"] {
+div[data-size='calc(3*3)'] {
   width: 100px;
 }
 ```
@@ -129,8 +122,8 @@ Callback invoked when a `calc()` body fails to parse or simplify. Matches
 calc({
   onParseError: (err, input) => {
     throw err; // or log, route to a different channel, etc.
-  }
-})
+  },
+});
 ```
 
 When omitted, errors are reported via PostCSS `result.warn()` so the
@@ -178,6 +171,7 @@ canonical-form decisions:
 ---
 
 ## Related PostCSS plugins
+
 To replace the value of CSS custom properties at build time, try [PostCSS Custom Properties].
 
 ## Contributing
@@ -200,7 +194,6 @@ npm test
 [git-url]: https://gitter.im/postcss/postcss
 [npm-img]: https://img.shields.io/npm/v/postcss-calc.svg
 [npm-url]: https://www.npmjs.com/package/postcss-calc
-
 [PostCSS]: https://github.com/postcss
 [PostCSS Calc]: https://github.com/postcss/postcss-calc
 [PostCSS Custom Properties]: https://github.com/postcss/postcss-custom-properties
