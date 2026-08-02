@@ -26,8 +26,7 @@
   "scripts": {
     "lint": "oxlint . && tsc && oxfmt --check",
     "fmt": "oxfmt",
-    "test": "node --test",
-    "test:mutation": "stryker run"
+    "test": "node --test"
   },
   "author": "Andy Jansson",
   "license": "MIT",
