@@ -11,6 +11,7 @@
     "no-bitwise": "error",
     "no-case-declarations": "error",
     "no-empty": "error",
+    "no-nested-ternary": "error",
     "no-fallthrough": "error",
     "no-labels": "error",
     "no-prototype-builtins": "error",
@@ -19,7 +20,8 @@
     "no-void": "error",
     "preserve-caught-error": "error",
     "unicorn/no-array-for-each": "error",
-    "unicorn/no-array-reduce": "error"
+    "unicorn/no-array-reduce": "error",
+    "unicorn/prefer-array-flat": "error"
   },
   "env": {
     "builtin": true
