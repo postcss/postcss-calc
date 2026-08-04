@@ -1,15 +1,11 @@
-'use strict';
-
 // PostCSS adapter. Walks declaration values (and optionally @rule params
 // and selectors), feeds calc() bodies through tokenize → parse → simplify
 // → serialize, and writes the result back.
-
-const valueParser = require('postcss-value-parser');
-
-const { tokenize } = require('./lib/tokenizer.js');
-const { parse } = require('./lib/parser.js');
-const { simplify } = require('./lib/simplify.js');
-const { serialize } = require('./lib/serialize.js');
+import valueParser from 'postcss-value-parser';
+import { tokenize } from './lib/tokenizer.js';
+import { parse } from './lib/parser.js';
+import { simplify } from './lib/simplify.js';
+import { serialize } from './lib/serialize.js';
 
 const MATCH_CALC = /^(?:-(?:moz|webkit)-)?calc$/i;
 
@@ -165,6 +161,7 @@ function pluginCreator(opts) {
 
 pluginCreator.postcss = true;
 
-module.exports = /** @type import('postcss').PluginCreator<PluginOptions>*/ (
+export default /** @type import('postcss').PluginCreator<PluginOptions>*/ (
   pluginCreator
 );
+export { pluginCreator as 'module.exports' };

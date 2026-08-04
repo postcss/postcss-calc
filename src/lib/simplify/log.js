@@ -1,6 +1,4 @@
-'use strict';
-
-const { num } = require('../node.js');
+import { num } from '../node.js';
 
 /** @typedef {import('../node.js').Node} Node */
 
@@ -18,4 +16,4 @@ function simplifyLog(args) {
   return { type: 'Call', name: 'log', args };
 }
 
-module.exports = { simplifyLog };
+export { simplifyLog };

@@ -1,7 +1,3 @@
-declare const _exports: {
-    simplifySum: typeof simplifySum;
-};
-export = _exports;
 export type Node = import('../node.js').Node;
 export type Sum = import('../node.js').Sum;
 export type SumTerm = import('../node.js').SumTerm;
@@ -13,3 +9,4 @@ export type UnitBucket = import('./bucket.js').UnitBucket;
  * @return {Node}
  */
 declare function simplifySum(sum: Sum, simplify: SimplifyFn): Node;
+export { simplifySum };

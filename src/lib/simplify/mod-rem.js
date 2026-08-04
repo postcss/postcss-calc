@@ -1,7 +1,5 @@
-'use strict';
-
-const { num, dim } = require('../node.js');
-const { foldConstArgs } = require('./fold.js');
+import { num, dim } from '../node.js';
+import { foldConstArgs } from './fold.js';
 
 /** @typedef {import('../node.js').Node} Node */
 
@@ -56,4 +54,4 @@ function applyModRem(name, a, b) {
   return a - b * Math.floor(a / b);
 }
 
-module.exports = { simplifyModRem };
+export { simplifyModRem };

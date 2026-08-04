@@ -1,11 +1,10 @@
-'use strict';
+/* §10.10 phase 2: merge convertible same-base unit buckets into the
+   first-encountered unit (px absorbs cm/in/pt/pc, deg absorbs
+   rad/grad/turn, …). Buckets with `base === null` (relative or unknown
+   units) keep their own slot.
+ */
 
-// §10.10 phase 2: merge convertible same-base unit buckets into the
-// first-encountered unit (px absorbs cm/in/pt/pc, deg absorbs
-// rad/grad/turn, …). Buckets with `base === null` (relative or unknown
-// units) keep their own slot.
-
-const { convert } = require('../convertUnits.js');
+import { convert } from '../convertUnits.js';
 
 /**
  * @typedef {object} UnitBucket
@@ -52,4 +51,4 @@ function mergeConvertibleBuckets(buckets) {
   return out;
 }
 
-module.exports = { mergeConvertibleBuckets };
+export { mergeConvertibleBuckets };

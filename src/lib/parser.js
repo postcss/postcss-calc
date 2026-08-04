@@ -1,10 +1,7 @@
-'use strict';
-
 // Pratt parser. +/- emit Sum nodes; */÷ emit Product nodes. node.js
 // constructors flatten and normalize on construction, so the parser
 // never produces a Binary node.
-
-const { mkSum, mkProduct, negate } = require('./node.js');
+import { mkSum, mkProduct, negate } from './node.js';
 
 /**
  * @typedef {import('./tokenizer.js').Token} Token
@@ -318,4 +315,4 @@ function parse(tokens) {
   return ast;
 }
 
-module.exports = { parse };
+export { parse };

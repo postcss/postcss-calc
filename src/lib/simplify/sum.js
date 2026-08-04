@@ -1,8 +1,6 @@
-'use strict';
-
-const { mkSum, num, dim } = require('../node.js');
-const { baseOf } = require('../convertUnits.js');
-const { mergeConvertibleBuckets } = require('./bucket.js');
+import { mkSum, num, dim } from '../node.js';
+import { baseOf } from '../convertUnits.js';
+import { mergeConvertibleBuckets } from './bucket.js';
 
 /**
  * @typedef {import('../node.js').Node} Node
@@ -100,4 +98,4 @@ function simplifySum(sum, simplify) {
   return mkSum(terms);
 }
 
-module.exports = { simplifySum };
+export { simplifySum };

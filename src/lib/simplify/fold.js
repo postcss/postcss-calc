@@ -1,10 +1,4 @@
-'use strict';
-
-// Fold args to a common numeric representation if they share a type.
-// Percentages never fold — ordering depends on property-context
-// resolution we don't have. Matches csstools.
-
-const { baseOf, convert } = require('../convertUnits.js');
+import { baseOf, convert } from '../convertUnits.js';
 
 /** @typedef {import('../node.js').Node} Node */
 /** @typedef {import('../convertUnits.js').BaseType} BaseType */
@@ -68,4 +62,4 @@ function foldDimArgs(args, unit, base) {
   return { values, unit };
 }
 
-module.exports = { foldConstArgs };
+export { foldConstArgs };

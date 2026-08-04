@@ -1,9 +1,7 @@
-'use strict';
-
 // §10.5 — hypot. Empty args return null from foldConstArgs naturally.
 
-const { num, dim } = require('../node.js');
-const { foldConstArgs } = require('./fold.js');
+import { num, dim } from '../node.js';
+import { foldConstArgs } from './fold.js';
 
 /** @typedef {import('../node.js').Node} Node */
 
@@ -21,4 +19,4 @@ function simplifyHypot(args) {
   return fold.unit === '' ? num(result) : dim(result, fold.unit);
 }
 
-module.exports = { simplifyHypot };
+export { simplifyHypot };

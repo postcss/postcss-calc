@@ -1,6 +1,4 @@
-'use strict';
-
-const { num } = require('../node.js');
+import { num } from '../node.js';
 
 /** @typedef {import('../node.js').Node} Node */
 
@@ -15,4 +13,4 @@ function simplifyExp(args) {
   return num(Math.exp(args[0].value));
 }
 
-module.exports = { simplifyExp };
+export { simplifyExp };

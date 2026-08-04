@@ -1,7 +1,3 @@
-declare const _exports: {
-    simplify: typeof simplify;
-};
-export = _exports;
 export type Node = import('./node.js').Node;
 export type SimplifyFn = (node: Node) => Node;
 /**
@@ -16,3 +12,4 @@ export type SimplifyFn = (node: Node) => Node;
  * @return {Node}
  */
 declare function simplify(node: Node): Node;
+export { simplify };

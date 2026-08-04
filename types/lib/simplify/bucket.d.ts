@@ -1,7 +1,3 @@
-declare const _exports: {
-    mergeConvertibleBuckets: typeof mergeConvertibleBuckets;
-};
-export = _exports;
 export type UnitBucket = {
     unit: string;
     total: number;
@@ -26,3 +22,4 @@ export type UnitBucket = {
  * @return {UnitBucket[]}
  */
 declare function mergeConvertibleBuckets(buckets: UnitBucket[]): UnitBucket[];
+export { mergeConvertibleBuckets };

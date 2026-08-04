@@ -1,7 +1,3 @@
-declare const _exports: {
-    foldConstArgs: typeof foldConstArgs;
-};
-export = _exports;
 export type Node = import('../node.js').Node;
 export type BaseType = import('../convertUnits.js').BaseType;
 /** @typedef {import('../node.js').Node} Node */
@@ -14,3 +10,4 @@ declare function foldConstArgs(args: Node[]): {
     values: number[];
     unit: string;
 } | null;
+export { foldConstArgs };

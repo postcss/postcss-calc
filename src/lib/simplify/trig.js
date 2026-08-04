@@ -1,9 +1,7 @@
-'use strict';
-
 // §10.4 — sin/cos/tan. <number> is radians; <angle> dim is converted.
 
-const { num } = require('../node.js');
-const { baseOf, convert } = require('../convertUnits.js');
+import { num } from '../node.js';
+import { baseOf, convert } from '../convertUnits.js';
 
 /** @typedef {import('../node.js').Node} Node */
 
@@ -43,4 +41,4 @@ function simplifyTrig(name, args) {
   return num(TRIG_OPS[name](radians));
 }
 
-module.exports = { simplifyTrig };
+export { simplifyTrig };

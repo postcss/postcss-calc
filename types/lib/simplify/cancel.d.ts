@@ -1,7 +1,3 @@
-declare const _exports: {
-    tryCancelPair: typeof tryCancelPair;
-};
-export = _exports;
 /**
  * If `dims` contain exactly one numerator / one denominator pair with the
  * same base type and convertible units, return the numeric factor produced
@@ -21,3 +17,4 @@ declare function tryCancelPair<D extends {
     factor: number;
     remaining: D[];
 } | null;
+export { tryCancelPair };

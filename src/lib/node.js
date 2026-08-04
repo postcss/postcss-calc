@@ -1,5 +1,3 @@
-'use strict';
-
 // Canonical AST. N-ary Sum and Product with signed numeric leaves.
 // Invariants enforced by the constructors below:
 //
@@ -184,6 +182,4 @@ function negate(node) {
   return { type: 'Sum', terms: [{ sign: -1, node }] };
 }
 
-// Stryker disable next-line all: instrumenting this line breaks Node's
-// cjs-module-lexer named-export detection for .mjs `import { x } from` consumers.
-module.exports = { num, dim, ident, call, mkSum, mkProduct, negate };
+export { num, dim, ident, call, mkSum, mkProduct, negate };
