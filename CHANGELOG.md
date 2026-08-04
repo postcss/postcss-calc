@@ -6,7 +6,7 @@ All notable changes to this project will be documented in this file. See [commit
 
 ### Breaking change
 
-* Define package entry point using `exports instead of `main`
+- Define package entry point using `exports instead of `main`
 
 ## [11.0.0-rc.1](https://github.com/postcss/postcss-calc/compare/v11.0.0-rc.0...v11.0.0-rc.1) (2026-07-29)
 
