@@ -1,7 +1,5 @@
-'use strict';
-
-const { mkSum, mkProduct, num, dim } = require('../node.js');
-const { tryCancelPair } = require('./cancel.js');
+import { mkSum, mkProduct, num, dim } from '../node.js';
+import { tryCancelPair } from './cancel.js';
 
 /**
  * @typedef {import('../node.js').Node} Node
@@ -134,4 +132,4 @@ function simplifyProduct(product, simplify) {
   return mkProduct(factors);
 }
 
-module.exports = { simplifyProduct };
+export { simplifyProduct };

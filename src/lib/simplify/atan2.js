@@ -1,10 +1,8 @@
-'use strict';
+/* §10.4 — atan2. foldConstArgs already rejects percentages (property-
+ context-resolved) and enforces shared base + static convertibility. */
 
-// §10.4 — atan2. foldConstArgs already rejects percentages (property-
-// context-resolved) and enforces shared base + static convertibility.
-
-const { num, dim } = require('../node.js');
-const { foldConstArgs } = require('./fold.js');
+import { num, dim } from '../node.js';
+import { foldConstArgs } from './fold.js';
 
 /** @typedef {import('../node.js').Node} Node */
 
@@ -28,4 +26,4 @@ function simplifyAtan2(args) {
   return dim((radians * 180) / Math.PI, 'deg');
 }
 
-module.exports = { simplifyAtan2 };
+export { simplifyAtan2 };

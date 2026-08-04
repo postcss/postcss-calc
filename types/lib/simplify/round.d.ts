@@ -1,7 +1,3 @@
-declare const _exports: {
-    simplifyRound: typeof simplifyRound;
-};
-export = _exports;
 export type Node = import('../node.js').Node;
 export type RoundStrategy = 'nearest' | 'up' | 'down' | 'to-zero';
 /** @typedef {'nearest' | 'up' | 'down' | 'to-zero'} RoundStrategy */
@@ -10,3 +6,4 @@ export type RoundStrategy = 'nearest' | 'up' | 'down' | 'to-zero';
  * @return {Node}
  */
 declare function simplifyRound(args: Node[]): Node;
+export { simplifyRound };

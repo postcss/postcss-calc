@@ -1,7 +1,5 @@
-'use strict';
-
-const { num, dim } = require('../node.js');
-const { foldConstArgs } = require('./fold.js');
+import { num, dim } from '../node.js';
+import { foldConstArgs } from './fold.js';
 
 /** @typedef {import('../node.js').Node} Node */
 
@@ -23,4 +21,4 @@ function simplifyClamp(args) {
   return { type: 'Call', name: 'clamp', args };
 }
 
-module.exports = { simplifyClamp };
+export { simplifyClamp };

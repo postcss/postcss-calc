@@ -1,6 +1,4 @@
-'use strict';
-
-const { baseOf, convert } = require('../convertUnits.js');
+import { baseOf, convert } from '../convertUnits.js';
 
 /**
  * If `dims` contain exactly one numerator / one denominator pair with the
@@ -36,4 +34,4 @@ function tryCancelPair(dims) {
   return { factor: converted / denominator.value, remaining: [] };
 }
 
-module.exports = { tryCancelPair };
+export { tryCancelPair };

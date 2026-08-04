@@ -1,9 +1,6 @@
-'use strict';
-
-const { num } = require('../node.js');
+import { num } from '../node.js';
 
 /** @typedef {import('../node.js').Node} Node */
-
 /**
  * @param {Node[]} args
  * @return {Node}
@@ -15,4 +12,4 @@ function simplifySqrt(args) {
   return num(Math.sqrt(args[0].value));
 }
 
-module.exports = { simplifySqrt };
+export { simplifySqrt };

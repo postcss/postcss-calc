@@ -1,8 +1,6 @@
-'use strict';
-
 // §10.4 — asin/acos/atan. Bare <number> in, <angle> in degrees out.
 
-const { num, dim } = require('../node.js');
+import { num, dim } from '../node.js';
 
 /** @typedef {import('../node.js').Node} Node */
 
@@ -32,4 +30,4 @@ function simplifyInverseTrig(name, args) {
   return dim((radians * 180) / Math.PI, 'deg');
 }
 
-module.exports = { simplifyInverseTrig };
+export { simplifyInverseTrig };

@@ -1,5 +1,3 @@
-'use strict';
-
 // Spec: https://www.w3.org/TR/css-values-4/#calc-type-checking
 
 /**
@@ -141,4 +139,4 @@ function convert(value, from, to) {
   return (value * f) / t;
 }
 
-module.exports = { baseOf, convert };
+export { baseOf, convert };

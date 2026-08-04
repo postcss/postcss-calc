@@ -1,7 +1,3 @@
-declare const _exports: {
-    parse: typeof parse;
-};
-export = _exports;
 export type Token = import('./tokenizer.js').Token;
 export type TokenType = import('./tokenizer.js').TokenType;
 export type Node = import('./node.js').Node;
@@ -40,3 +36,4 @@ declare class Parser {
  * @return {Node}
  */
 declare function parse(tokens: Token[]): Node;
+export { parse };

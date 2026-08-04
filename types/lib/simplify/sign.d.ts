@@ -1,7 +1,3 @@
-declare const _exports: {
-    simplifySign: typeof simplifySign;
-};
-export = _exports;
 export type Node = import('../node.js').Node;
 /** @typedef {import('../node.js').Node} Node */
 /**
@@ -9,3 +5,4 @@ export type Node = import('../node.js').Node;
  * @return {Node}
  */
 declare function simplifySign(args: Node[]): Node;
+export { simplifySign };

@@ -1,22 +1,20 @@
-'use strict';
-
 // Pre-simplify args once, route by name. Leaf folds receive simplified
 // args so they don't need to recurse into `simplify` themselves.
 
-const { simplifyMinMax } = require('./min-max.js');
-const { simplifyClamp } = require('./clamp.js');
-const { simplifyAbs } = require('./abs.js');
-const { simplifySign } = require('./sign.js');
-const { simplifyModRem } = require('./mod-rem.js');
-const { simplifyRound } = require('./round.js');
-const { simplifyTrig } = require('./trig.js');
-const { simplifyInverseTrig } = require('./inverse-trig.js');
-const { simplifyAtan2 } = require('./atan2.js');
-const { simplifyPow } = require('./pow.js');
-const { simplifySqrt } = require('./sqrt.js');
-const { simplifyExp } = require('./exp.js');
-const { simplifyLog } = require('./log.js');
-const { simplifyHypot } = require('./hypot.js');
+import { simplifyMinMax } from './min-max.js';
+import { simplifyClamp } from './clamp.js';
+import { simplifyAbs } from './abs.js';
+import { simplifySign } from './sign.js';
+import { simplifyModRem } from './mod-rem.js';
+import { simplifyRound } from './round.js';
+import { simplifyTrig } from './trig.js';
+import { simplifyInverseTrig } from './inverse-trig.js';
+import { simplifyAtan2 } from './atan2.js';
+import { simplifyPow } from './pow.js';
+import { simplifySqrt } from './sqrt.js';
+import { simplifyExp } from './exp.js';
+import { simplifyLog } from './log.js';
+import { simplifyHypot } from './hypot.js';
 
 /** @typedef {import('../node.js').Node} Node */
 /** @typedef {import('../simplify.js').SimplifyFn} SimplifyFn */
@@ -84,4 +82,4 @@ function simplifyCall(node, simplify) {
   return { type: 'Call', name: node.name, args };
 }
 
-module.exports = { simplifyCall };
+export { simplifyCall };

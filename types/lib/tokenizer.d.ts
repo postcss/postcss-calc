@@ -1,7 +1,3 @@
-declare const _exports: {
-    tokenize: typeof tokenize;
-};
-export = _exports;
 export type TokenType = 'number' | 'dimension' | 'ident' | 'punct' | 'eof';
 export type Token = {
     type: TokenType;
@@ -21,3 +17,4 @@ export type Token = {
  * @return {Token[]}
  */
 declare function tokenize(input: string): Token[];
+export { tokenize };

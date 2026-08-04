@@ -1,7 +1,3 @@
-declare const _exports: {
-    serialize: typeof serialize;
-};
-export = _exports;
 export type Node = import('./node.js').Node;
 export type Sum = import('./node.js').Sum;
 export type Product = import('./node.js').Product;
@@ -22,3 +18,4 @@ export type SerializeOptions = {
  * @return {string}
  */
 declare function serialize(node: Node, opts?: SerializeOptions): string;
+export { serialize };

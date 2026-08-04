@@ -1,8 +1,6 @@
-'use strict';
-
 // §10.5 — pow is <number>-only.
 
-const { num } = require('../node.js');
+import { num } from '../node.js';
 
 /** @typedef {import('../node.js').Node} Node */
 
@@ -17,4 +15,4 @@ function simplifyPow(args) {
   return num(Math.pow(args[0].value, args[1].value));
 }
 
-module.exports = { simplifyPow };
+export { simplifyPow };

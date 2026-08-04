@@ -1,7 +1,3 @@
-declare const _exports: {
-    simplifyInverseTrig: typeof simplifyInverseTrig;
-};
-export = _exports;
 export type Node = import('../node.js').Node;
 /**
  * @param {'asin' | 'acos' | 'atan'} name
@@ -9,3 +5,4 @@ export type Node = import('../node.js').Node;
  * @return {Node}
  */
 declare function simplifyInverseTrig(name: 'asin' | 'acos' | 'atan', args: Node[]): Node;
+export { simplifyInverseTrig };

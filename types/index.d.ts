@@ -1,5 +1,3 @@
-declare const _exports: import("postcss").PluginCreator<PluginOptions>;
-export = _exports;
 export type PluginOptions = {
     precision?: number | false;
     preserve?: boolean;
@@ -12,3 +10,14 @@ export type PluginOptions = {
     onParseError?: (error: Error, input: string) => void;
 };
 export type ResolvedOptions = Required<Omit<PluginOptions, 'onParseError'>> & Pick<PluginOptions, 'onParseError'>;
+/**
+ * @param {PluginOptions} [opts]
+ * @return {import('postcss').Plugin}
+ */
+declare function pluginCreator(opts?: PluginOptions): import('postcss').Plugin;
+declare namespace pluginCreator {
+    var postcss: boolean;
+}
+declare const _default: import('postcss').PluginCreator<PluginOptions>;
+export default _default;
+export { pluginCreator as 'module.exports' };

@@ -1,13 +1,3 @@
-declare const _exports: {
-    num: typeof num;
-    dim: typeof dim;
-    ident: typeof ident;
-    call: typeof call;
-    mkSum: typeof mkSum;
-    mkProduct: typeof mkProduct;
-    negate: typeof negate;
-};
-export = _exports;
 export type Num = {
     type: 'Num';
     value: number;
@@ -92,3 +82,4 @@ declare function mkProduct(rawFactors: ProductFactor[]): Node;
  * @return {Node}
  */
 declare function negate(node: Node): Node;
+export { num, dim, ident, call, mkSum, mkProduct, negate };

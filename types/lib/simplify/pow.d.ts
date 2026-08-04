@@ -1,7 +1,3 @@
-declare const _exports: {
-    simplifyPow: typeof simplifyPow;
-};
-export = _exports;
 export type Node = import('../node.js').Node;
 /** @typedef {import('../node.js').Node} Node */
 /**
@@ -9,3 +5,4 @@ export type Node = import('../node.js').Node;
  * @return {Node}
  */
 declare function simplifyPow(args: Node[]): Node;
+export { simplifyPow };

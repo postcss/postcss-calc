@@ -1,7 +1,3 @@
-declare const _exports: {
-    simplifyModRem: typeof simplifyModRem;
-};
-export = _exports;
 export type Node = import('../node.js').Node;
 /** @typedef {import('../node.js').Node} Node */
 /**
@@ -10,3 +6,4 @@ export type Node = import('../node.js').Node;
  * @return {Node}
  */
 declare function simplifyModRem(name: 'mod' | 'rem', args: Node[]): Node;
+export { simplifyModRem };

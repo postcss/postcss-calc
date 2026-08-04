@@ -1,12 +1,10 @@
-'use strict';
-
 // Spec: https://www.w3.org/TR/css-values-4/#calc-simplification
 // One top-down pass over a canonical AST. Per-concern fold modules in
 // ./simplify/; this file is the entry + dispatch only.
 
-const { simplifySum } = require('./simplify/sum.js');
-const { simplifyProduct } = require('./simplify/product.js');
-const { simplifyCall } = require('./simplify/call.js');
+import { simplifySum } from './simplify/sum.js';
+import { simplifyProduct } from './simplify/product.js';
+import { simplifyCall } from './simplify/call.js';
 
 /**
  * @typedef {import('./node.js').Node} Node
@@ -35,6 +33,4 @@ function simplify(node) {
   }
 }
 
-// Stryker disable next-line all: instrumenting this line breaks Node's
-// cjs-module-lexer named-export detection for .mjs `import { x } from` consumers.
-module.exports = { simplify };
+export { simplify };

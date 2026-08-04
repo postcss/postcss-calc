@@ -1,5 +1,3 @@
-'use strict';
-
 // Spec: https://www.w3.org/TR/css-values-4/#serialize-a-calculation-tree
 // Outer calc() is added only when the top-level result contains an
 // arithmetic operator. A Sum inside a Product is the only place parens
@@ -241,6 +239,4 @@ function serializeProduct(product, prec) {
   return out;
 }
 
-// Stryker disable next-line all: instrumenting this line breaks Node's
-// cjs-module-lexer named-export detection for .mjs `import { x } from` consumers.
-module.exports = { serialize };
+export { serialize };
