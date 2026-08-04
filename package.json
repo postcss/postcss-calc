@@ -16,8 +16,10 @@
     "url": "https://github.com/postcss/postcss-calc.git"
   },
   "exports": {
-    "types": "./types/index.d.ts",
-    "default": "./src/index.js"
+    ".": {
+      "types": "./types/index.d.ts",
+      "default": "./src/index.js"
+    }
   },
   "files": [
     "src",
