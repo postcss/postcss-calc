@@ -36,6 +36,12 @@
   "engines": {
     "node": "^22.18 || ^24.11 || >=26.0"
   },
+  "devEngines": {
+    "packageManager": {
+      "name": "pnpm",
+      "version": "11.20.0"
+    }
+  },
   "devDependencies": {
     "@csstools/css-calc": "^3.3.0",
     "@rmenke/css-tokenizer-tests": "^1.2.0",
