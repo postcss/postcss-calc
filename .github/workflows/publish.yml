@@ -11,6 +11,9 @@ concurrency:
 jobs:
   publish:
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write # Required for OIDC
+      contents: read
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -26,7 +29,4 @@ jobs:
       - name: Run tests
         run: pnpm test
       - name: Publish
-        permissions:
-          id-token: write # Required for OIDC
-          contents: read
         run: pnpm stage publish --tag next
