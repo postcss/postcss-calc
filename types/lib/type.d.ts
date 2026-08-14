@@ -1,4 +1,11 @@
-export type BaseType = "length" | "angle" | "time" | "frequency" | "resolution" | "flex" | "percentage";
+export type BaseType =
+  | 'length'
+  | 'angle'
+  | 'time'
+  | 'frequency'
+  | 'resolution'
+  | 'flex'
+  | 'percentage';
 /**
  * @param {string} unit
  * @return {BaseType | null}
