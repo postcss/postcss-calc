@@ -2,9 +2,11 @@ name: Publish Package
 
 on: workflow_dispatch
 
-permissions:
-  id-token: write # Required for OIDC
-  contents: read
+permissions: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   publish:
@@ -13,14 +15,18 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: pnpm/setup@84cb39b217b10273981911c288cd62326dc7c6d2 # v2.0.2
+      - name: Install node and pnpm
+        uses: pnpm/setup@84cb39b217b10273981911c288cd62326dc7c6d2 # v2.0.2
         with:
-          version: 11.20.0
           runtime: node@24
-      - run: pnpm install --frozen-lockfile
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
       - name: Lint
         run: pnpm lint
       - name: Run tests
         run: pnpm test
       - name: Publish
+        permissions:
+          id-token: write # Required for OIDC
+          contents: read
         run: pnpm stage publish --tag next
