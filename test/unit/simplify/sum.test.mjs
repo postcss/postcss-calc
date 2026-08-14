@@ -24,6 +24,39 @@ test('simplify: cancellation yields 0', () => {
 test('simplify: like terms across parentheses', () => {
   assert.equal(out('calc(50px - (20px - 30px))'), '60px');
 });
+test('simplify: preserves grouping through unary negation', () => {
+  assert.equal(
+    out('calc(-(var(--a) + var(--b)))'),
+    'calc(-(var(--a) + var(--b)))'
+  );
+  assert.equal(out('calc(-(10px + var(--a)))'), 'calc(-(10px + var(--a)))');
+});
+test('simplify: preserves opaque sums subtracted as a group', () => {
+  assert.equal(
+    out('calc(5px - (var(--var-1) + var(--var-2)))'),
+    'calc(5px - (var(--var-1) + var(--var-2)))'
+  );
+  assert.equal(
+    out('calc(var(--a) - (var(--b) + var(--c)))'),
+    'calc(var(--a) - (var(--b) + var(--c)))'
+  );
+  assert.equal(
+    out('calc(var(--a) - (var(--b) - var(--c)))'),
+    'calc(var(--a) - (var(--b) - var(--c)))'
+  );
+});
+test('simplify: keeps mixed opaque groups intact when subtracted', () => {
+  assert.equal(
+    out('calc(5px - (10px + var(--a)))'),
+    'calc(5px - (10px + var(--a)))'
+  );
+});
+test('simplify: still flattens an opaque group with a positive sign', () => {
+  assert.equal(
+    out('calc(var(--a) + (var(--b) + var(--c)))'),
+    'calc(var(--a) + var(--b) + var(--c))'
+  );
+});
 // Phase 1: bucket by EXACT unit so same-unit terms always merge.
 // Phase 2: merge buckets whose units are in the same conversion family
 // (first-encountered unit wins).

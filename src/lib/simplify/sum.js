@@ -48,6 +48,17 @@ function simplifySum(sum, simplify) {
    */
   function processTerm(sign, n) {
     if (n.type === 'Sum') {
+      // Parentheses around a sum are normally algebraically disposable. Keep
+      // them only for an opaque sum used negatively: distributing that sign
+      // changes the CSS value when a var() contains a sum of its own.
+      if (
+        n.grouped &&
+        sign === -1 &&
+        n.terms.some((t) => t.node.type !== 'Num' && t.node.type !== 'Dim')
+      ) {
+        opaque.push({ sign, node: n });
+        return;
+      }
       for (const inner of n.terms) {
         processTerm(/** @type {1 | -1} */ (sign * inner.sign), inner.node);
       }
@@ -95,7 +106,13 @@ function simplifySum(sum, simplify) {
   }
   terms.push(...opaque);
 
-  return mkSum(terms);
+  const result = mkSum(terms);
+  // Keep the source grouping available to an enclosing subtraction. Numeric
+  // groups have already folded and therefore do not need the marker.
+  if (sum.grouped && result.type === 'Sum' && opaque.length > 0) {
+    return { ...result, grouped: true };
+  }
+  return result;
 }
 
 export { simplifySum };

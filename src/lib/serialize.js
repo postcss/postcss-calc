@@ -77,6 +77,25 @@ function serialize(node, opts = {}) {
     return `${calcName}(${degenerateKeyword(node.value)} * 1${node.unit})`;
   }
 
+  // A grouped sum with a leading negative term is the canonical result of
+  // negating a parenthesized expression. Re-invert its terms for the body so
+  // the grouping survives as `-(...)` instead of becoming `-a - b`.
+  if (
+    node.type === 'Sum' &&
+    node.grouped &&
+    node.terms.length > 1 &&
+    displaySign(node.terms[0]).sign === -1
+  ) {
+    const body = /** @type {Sum} */ ({
+      type: 'Sum',
+      terms: node.terms.map((t) => ({
+        sign: /** @type {1 | -1} */ (-t.sign),
+        node: t.node,
+      })),
+    });
+    return `${calcName}(-(${serializeExpr(body, prec)}))`;
+  }
+
   if (
     node.type === 'Num' ||
     node.type === 'Dim' ||
@@ -166,13 +185,21 @@ function serializeSum(sum, prec) {
   for (const [i, t] of sum.terms.entries()) {
     const { sign, magnitude } = displaySign(t);
     if (i === 0) {
+      if (magnitude.type === 'Sum' && magnitude.grouped) {
+        const body = `(${serializeExpr(magnitude, prec)})`;
+        out = sign === 1 ? body : `-${body}`;
+        continue;
+      }
       out =
         sign === 1
           ? serializeExpr(magnitude, prec)
           : serializeLeadingNeg(magnitude, prec);
     } else {
       // `-` binds looser than `*`/`/` so the right side never needs parens.
-      const body = serializeExpr(magnitude, prec);
+      let body = serializeExpr(magnitude, prec);
+      if (magnitude.type === 'Sum' && magnitude.grouped) {
+        body = `(${body})`;
+      }
       out += sign === 1 ? ` + ${body}` : ` - ${body}`;
     }
   }

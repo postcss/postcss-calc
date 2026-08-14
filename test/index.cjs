@@ -110,7 +110,7 @@ test(
   // reciprocal + canonical coefficient-first order.
   testValue(
     'calc(0px - (24px - (var(--a) - var(--b)) / 2 + var(--c)))',
-    'calc(-24px + 0.5 * (var(--a) - var(--b)) - var(--c))'
+    'calc(0px - (24px - 0.5 * (var(--a) - var(--b)) + var(--c)))'
   )
 );
 
@@ -226,7 +226,7 @@ test(
   'should ignore calc with css variables (3)',
   testValue(
     'calc(10px - (100px + var(--mouseX)))',
-    'calc(-90px - var(--mouseX))'
+    'calc(10px - (100px + var(--mouseX)))'
   )
 );
 
@@ -243,7 +243,7 @@ test(
   'should ignore calc with css variables (5)',
   testValue(
     'calc(10px - (100px - var(--mouseX)))',
-    'calc(-90px + var(--mouseX))'
+    'calc(10px - (100px - var(--mouseX)))'
   )
 );
 

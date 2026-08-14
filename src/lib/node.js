@@ -5,7 +5,9 @@
 //     is `Num(-5)`, never `Sum([{sign:-1, Num(5)}])`. One form per value.
 //   - In a SumTerm with Num/Dim node, sign is always +1; the sign slot is
 //     reserved for opaque nodes (Ident, Call, Product, multi-term Sum).
-//   - No Sum directly contains another Sum (flattened on construction).
+//   - No ungrouped Sum directly contains another Sum (flattened on
+//     construction). A grouped Sum is retained so a later negative sign
+//     cannot be distributed across opaque terms.
 //   - No Product directly contains another Product (flattened).
 //   - A Sum/Product with one positive element collapses to that element.
 //   - A Sum/Product with no elements collapses to Num(0) / Num(1).
@@ -18,7 +20,7 @@
  * @typedef {{type: 'Ident', name: string}} Ident
  * @typedef {{type: 'Call', name: string, args: Node[]}} Call
  * @typedef {{sign: 1 | -1, node: Node}} SumTerm Sign is always +1 when node is Num or Dim.
- * @typedef {{type: 'Sum', terms: SumTerm[]}} Sum
+ * @typedef {{type: 'Sum', terms: SumTerm[], grouped?: boolean}} Sum
  * @typedef {{exponent: 1 | -1, node: Node}} ProductFactor exponent +1 = numerator, -1 = denominator.
  * @typedef {{type: 'Product', factors: ProductFactor[]}} Product
  * @typedef {Num | Dim | Ident | Call | Sum | Product} Node
@@ -85,7 +87,7 @@ function mkSum(rawTerms) {
 function pushSumTerm(out, term) {
   let { sign, node } = term;
 
-  if (node.type === 'Sum') {
+  if (node.type === 'Sum' && !node.grouped) {
     for (const inner of node.terms) {
       pushSumTerm(out, {
         sign: /** @type {1 | -1} */ (sign * inner.sign),
@@ -170,12 +172,15 @@ function negate(node) {
     return dim(-node.value, node.unit);
   }
   if (node.type === 'Sum') {
-    return mkSum(
+    const result = mkSum(
       node.terms.map((t) => ({
         sign: /** @type {1 | -1} */ (-t.sign),
         node: t.node,
       }))
     );
+    return node.grouped && result.type === 'Sum'
+      ? { ...result, grouped: true }
+      : result;
   }
   // Opaque (Ident, Call, Product): wrap as a single negative-sign term —
   // the only case where sign=-1 remains on a SumTerm.

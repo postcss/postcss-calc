@@ -201,6 +201,23 @@ test('negate: multi-term Sum flips every term`s sign (and re-normalizes leaves)'
     ],
   });
 });
+test('negate: grouped multi-term Sum preserves grouping while flipping signs', () => {
+  const s = /** @type {import('../../src/lib/node.js').Sum} */ ({
+    ...mkSum([
+      { sign: 1, node: ident('a') },
+      { sign: -1, node: ident('b') },
+    ]),
+    grouped: true,
+  });
+  assert.deepEqual(negate(s), {
+    type: 'Sum',
+    grouped: true,
+    terms: [
+      { sign: -1, node: { type: 'Ident', name: 'a' } },
+      { sign: 1, node: { type: 'Ident', name: 'b' } },
+    ],
+  });
+});
 test('negate: Product wraps in single-term negative Sum', () => {
   const p = mkProduct([
     { exponent: 1, node: ident('a') },

@@ -1,6 +1,6 @@
 // Pratt parser. +/- emit Sum nodes; */÷ emit Product nodes. node.js
-// constructors flatten and normalize on construction, so the parser
-// never produces a Binary node.
+// constructors flatten and normalize on construction, while parenthesized
+// sums retain a grouping marker for the opaque-subtraction invariant.
 import { mkSum, mkProduct, negate } from './node.js';
 
 /**
@@ -266,7 +266,7 @@ const PREFIX = {
   '(': (p) => {
     const e = p.parseExpr(0);
     p.expect('punct', ')');
-    return e;
+    return e.type === 'Sum' ? { ...e, grouped: true } : e;
   },
 
   '-': (p) => negate(p.parseExpr(UNARY_BP)),
