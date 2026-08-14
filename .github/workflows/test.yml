@@ -31,5 +31,10 @@ jobs:
       - name: Lint
         if: matrix.node-version == 24
         run: pnpm lint
+      - name: Check generated types are up to date
+        if: matrix.node-version == 24
+        run: |
+          git add -f -A -- types
+          git diff --cached --exit-code
       - name: Run tests
         run: pnpm test

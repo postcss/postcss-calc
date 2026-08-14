@@ -1,6 +1,5 @@
 node_modules
 .DS_Store
-types/
 test/fixtures/*.actual.css
 yarn-error.log
 reports/
