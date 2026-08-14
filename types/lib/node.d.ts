@@ -23,6 +23,7 @@ export type SumTerm = {
 export type Sum = {
     type: 'Sum';
     terms: SumTerm[];
+    grouped?: boolean;
 };
 export type ProductFactor = {
     exponent: 1 | -1;
@@ -39,7 +40,7 @@ export type Node = Num | Dim | Ident | Call | Sum | Product;
  * @typedef {{type: 'Ident', name: string}} Ident
  * @typedef {{type: 'Call', name: string, args: Node[]}} Call
  * @typedef {{sign: 1 | -1, node: Node}} SumTerm Sign is always +1 when node is Num or Dim.
- * @typedef {{type: 'Sum', terms: SumTerm[]}} Sum
+ * @typedef {{type: 'Sum', terms: SumTerm[], grouped?: boolean}} Sum
  * @typedef {{exponent: 1 | -1, node: Node}} ProductFactor exponent +1 = numerator, -1 = denominator.
  * @typedef {{type: 'Product', factors: ProductFactor[]}} Product
  * @typedef {Num | Dim | Ident | Call | Sum | Product} Node
