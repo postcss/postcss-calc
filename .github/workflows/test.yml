@@ -8,22 +8,12 @@ on:
 
 permissions: {}
 
-jobs:
-  lint:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - uses: pnpm/setup@84cb39b217b10273981911c288cd62326dc7c6d2 # v2.0.2
-        with:
-          runtime: node@24
-          cache: true
-      - run: pnpm install --frozen-lockfile
-      - name: Lint
-        run: pnpm lint
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
-  test:
+jobs:
+  verify:
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -38,5 +28,8 @@ jobs:
           cache: true
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+      - name: Lint
+        if: matrix.node-version == 24
+        run: pnpm lint
       - name: Run tests
         run: pnpm test
