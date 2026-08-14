@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## 11.0.0-rc.3 (2026-08-14)
+
+### Bug Fixes
+
+- correctly simplify subtractions of custom properties ([bc5147e](https://github.com/postcss/postcss-calc/commit/bc5147ec24517cbc2fc6978a94fbb5d164040c7f))
+
 ## 11.0.0-rc.2
 
 ### Breaking change
