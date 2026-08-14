@@ -22,6 +22,24 @@ test('plugin: multiple calcs in one value', async () => {
   const { css } = await process('a{b:calc(1px + 1px) calc(2px + 2px)}');
   assert.equal(css, 'a{b:2px 4px}');
 });
+test('plugin: preserves grouping through unary negation', async () => {
+  const { css } = await process(
+    'a{a:calc(-(var(--a) + var(--b)));b:calc(-(10px + var(--a)))}'
+  );
+  assert.equal(
+    css,
+    'a{a:calc(-(var(--a) + var(--b)));b:calc(-(10px + var(--a)))}'
+  );
+});
+test('plugin: preserves grouping for opaque subtraction', async () => {
+  const { css } = await process(
+    'a{a:calc(5px - (var(--var-1) + var(--var-2)));b:calc(var(--a) - (var(--b) + var(--c)));c:calc(var(--a) - (var(--b) - var(--c)));d:calc(5px - (10px + var(--a)))}'
+  );
+  assert.equal(
+    css,
+    'a{a:calc(5px - (var(--var-1) + var(--var-2)));b:calc(var(--a) - (var(--b) + var(--c)));c:calc(var(--a) - (var(--b) - var(--c)));d:calc(5px - (10px + var(--a)))}'
+  );
+});
 test('plugin: vendor-prefix calcs get the same simplification', async () => {
   const { css } = await process('a{b:-webkit-calc(1px + 2px)}');
   // Round-trip preserves the prefix via serialize's calcName option.
