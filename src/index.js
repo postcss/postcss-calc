@@ -1,12 +1,24 @@
 // PostCSS adapter. Walks declaration values (and optionally @rule params
 // and selectors), feeds calc() bodies through tokenize → parse → simplify
 // → serialize, and writes the result back.
-import valueParser from 'postcss-value-parser';
+import { tokenize as cssTokenize } from '@csstools/css-tokenizer';
+import {
+  isFunctionNode,
+  isSimpleBlockNode,
+  parseListOfComponentValues,
+} from '@csstools/css-parser-algorithms';
 import { tokenize } from './lib/tokenizer.js';
 import { parse } from './lib/parser.js';
 import { simplify } from './lib/simplify.js';
 import { isSupportedMathFunction } from './lib/simplify/call.js';
 import { serialize } from './lib/serialize.js';
+
+// The outer walk is deliberately forgiving: it only needs to locate calc()/
+// math-function boundaries in otherwise arbitrary (and possibly non-standard)
+// CSS values, so parse errors from the outer tokenizer/parser are swallowed.
+// Genuine syntax problems inside a matched call are
+// caught below via our own tokenize/parse/simplify pipeline.
+const NOOP_PARSE_ERROR = { onParseError: () => {} };
 
 const MATCH_CALC = /^(?:-(?:moz|webkit)-)?calc$/i;
 
@@ -23,6 +35,71 @@ const MATCH_CALC = /^(?:-(?:moz|webkit)-)?calc$/i;
 /** @typedef {Required<Omit<PluginOptions, 'onParseError'>> & Pick<PluginOptions, 'onParseError'>} ResolvedOptions */
 
 /**
+ * Walks a list of component values in place, replacing matched calc()/math
+ * function nodes with their simplified form. Unlike the library's generic
+ * `walk` helper, this recurses manually so a matched node's own (stale,
+ * pre-simplification) children are never independently re-visited.
+ *
+ * @param {import('@csstools/css-parser-algorithms').ComponentValue[]} list
+ * @param {ResolvedOptions} options
+ * @param {import('postcss').Result} result
+ * @param {import('postcss').ChildNode} item
+ * @param {string} value
+ * @return {void}
+ */
+function transformList(list, options, result, item, value) {
+  for (let i = 0; i < list.length; i++) {
+    const node = list[i];
+    if (!isFunctionNode(node)) {
+      if (isSimpleBlockNode(node)) {
+        transformList(node.value, options, result, item, value);
+      }
+      continue;
+    }
+
+    const name = node.getName();
+    const isCalc = MATCH_CALC.test(name);
+    const isMath = !isCalc && isSupportedMathFunction(name);
+    if (!isCalc && !isMath) {
+      transformList(node.value, options, result, item, value);
+      continue;
+    }
+
+    // calc(): feed the body. Bare math: feed the whole call.
+    const inner = node.value.map((child) => child.toString()).join('');
+    const contents = isCalc ? inner : `${name}(${inner})`;
+    try {
+      const simplified = simplify(parse(tokenize(contents)));
+      const str = serialize(simplified, {
+        precision: options.precision,
+        calcName: isCalc ? name : 'calc', // preserve vendor prefix on calc()
+      });
+
+      if (options.warnWhenCannotResolve && str.startsWith(`${name}(`)) {
+        result.warn('Could not reduce expression: ' + value, {
+          plugin: 'postcss-calc',
+          node: item,
+        });
+      }
+
+      const replacement = parseListOfComponentValues(
+        cssTokenize({ css: str }),
+        NOOP_PARSE_ERROR
+      );
+      list.splice(i, 1, ...replacement);
+      i += replacement.length - 1;
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error('Error');
+      if (options.onParseError) {
+        options.onParseError(err, contents);
+      } else {
+        result.warn(err.message, { node: item });
+      }
+    }
+  }
+}
+
+/**
  * @param {string} value
  * @param {ResolvedOptions} options
  * @param {import('postcss').Result} result
@@ -30,49 +107,14 @@ const MATCH_CALC = /^(?:-(?:moz|webkit)-)?calc$/i;
  * @return {string}
  */
 function transformValue(value, options, result, item) {
-  return valueParser(value)
-    .walk((node) => {
-      if (node.type !== 'function') {
-        return;
-      }
-      const isCalc = MATCH_CALC.test(node.value);
-      const isMath = !isCalc && isSupportedMathFunction(node.value);
-      if (!isCalc && !isMath) {
-        return;
-      }
+  const componentValues = parseListOfComponentValues(
+    cssTokenize({ css: value }),
+    NOOP_PARSE_ERROR
+  );
 
-      // calc(): feed the body. Bare math: feed the whole call.
-      const inner = valueParser.stringify(node.nodes);
-      const contents = isCalc ? inner : `${node.value}(${inner})`;
-      try {
-        const simplified = simplify(parse(tokenize(contents)));
-        const str = serialize(simplified, {
-          precision: options.precision,
-          calcName: isCalc ? node.value : 'calc', // preserve vendor prefix on calc()
-        });
+  transformList(componentValues, options, result, item, value);
 
-        if (options.warnWhenCannotResolve && str.startsWith(`${node.value}(`)) {
-          result.warn('Could not reduce expression: ' + value, {
-            plugin: 'postcss-calc',
-            node: item,
-          });
-        }
-
-        // Re-tag as `word` so value-parser emits `str` verbatim instead of
-        // re-wrapping it as `name(...)`. Cast widens the `'function'` literal.
-        /** @type {{type: string}} */ (node).type = 'word';
-        node.value = str;
-      } catch (error) {
-        const err = error instanceof Error ? error : new Error('Error');
-        if (options.onParseError) {
-          options.onParseError(err, contents);
-        } else {
-          result.warn(err.message, { node: item });
-        }
-      }
-      return false;
-    })
-    .toString();
+  return componentValues.map((node) => node.toString()).join('');
 }
 
 /**

@@ -207,12 +207,12 @@ importers:
 
   .:
     dependencies:
+      '@csstools/css-parser-algorithms':
+        specifier: ^4.0.0
+        version: 4.0.0(@csstools/css-tokenizer@4.0.0)
       '@csstools/css-tokenizer':
         specifier: ^4.0.0
         version: 4.0.0
-      postcss-value-parser:
-        specifier: ^4.2.0
-        version: 4.2.0
     devDependencies:
       '@csstools/css-calc':
         specifier: ^3.3.0
@@ -666,9 +666,6 @@ packages:
   picocolors@1.1.1:
     resolution: {integrity: sha512-xceH2snhtb5M9liqDsmEw56le376mTZkEX/jEb/RxNFyegNul7eNslCXP9FDj/Lcu0X8KEyMceP2ntpaHrDEVA==}
 
-  postcss-value-parser@4.2.0:
-    resolution: {integrity: sha512-1NNCs6uurfkVbeXG4S8JFT9t19m45ICnif8zWLd5oPSZ50QnwMfK+H3jv408d4jw/7Bttv5axS5IiHoLaVNHeQ==}
-
   postcss@8.5.26:
     resolution: {integrity: sha512-u82N74LFzG8ca+dD8puPnplTXoGH4fTPpVGuIbt36G3qvNlkvfD0lEAZSxaly3KX8TS/L1A1gsCEmvKmBcVbkQ==}
     engines: {node: ^10 || ^12 || >=14}
@@ -938,8 +935,6 @@ snapshots:
       '@oxlint/binding-win32-x64-msvc': 1.78.0
 
   picocolors@1.1.1: {}
-
-  postcss-value-parser@4.2.0: {}
 
   postcss@8.5.26:
     dependencies:
