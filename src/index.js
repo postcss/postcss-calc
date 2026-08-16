@@ -5,34 +5,10 @@ import valueParser from 'postcss-value-parser';
 import { tokenize } from './lib/tokenizer.js';
 import { parse } from './lib/parser.js';
 import { simplify } from './lib/simplify.js';
+import { isSupportedMathFunction } from './lib/simplify/call.js';
 import { serialize } from './lib/serialize.js';
 
 const MATCH_CALC = /^(?:-(?:moz|webkit)-)?calc$/i;
-
-// Bare math-function calls (no calc() wrapper) — fed to the same pipeline.
-// Mirrors the dispatch in lib/simplify/call.js.
-const MATH_FUNCTIONS = new Set([
-  'min',
-  'max',
-  'clamp',
-  'abs',
-  'sign',
-  'mod',
-  'rem',
-  'round',
-  'sin',
-  'cos',
-  'tan',
-  'asin',
-  'acos',
-  'atan',
-  'atan2',
-  'pow',
-  'sqrt',
-  'hypot',
-  'log',
-  'exp',
-]);
 
 /**
  * @typedef {object} PluginOptions
@@ -60,7 +36,7 @@ function transformValue(value, options, result, item) {
         return;
       }
       const isCalc = MATCH_CALC.test(node.value);
-      const isMath = !isCalc && MATH_FUNCTIONS.has(node.value.toLowerCase());
+      const isMath = !isCalc && isSupportedMathFunction(node.value);
       if (!isCalc && !isMath) {
         return;
       }

@@ -215,6 +215,14 @@ test('plugin: simplifies bare math functions case-insensitively', async () => {
   const { css } = await process('a{ width: MIN(1px, 2px) }');
   assert.equal(css, 'a{ width: 1px }');
 });
+test('plugin: simplifies a supported bare function from the dispatcher', async () => {
+  const { css } = await process('a{ width: pow(2, 3) }');
+  assert.equal(css, 'a{ width: 8 }');
+});
+test('plugin: leaves unsupported bare functions untouched', async () => {
+  const { css } = await process('a{ width: unknown(1px + 2px) }');
+  assert.equal(css, 'a{ width: unknown(1px + 2px) }');
+});
 test('plugin: leaves opaque-arg bare min() preserved', async () => {
   const { css } = await process('a{ width: min(1px, var(--x)) }');
   assert.equal(css, 'a{ width: min(1px, var(--x)) }');
