@@ -10,6 +10,12 @@ export type PluginOptions = {
     onParseError?: (error: Error, input: string) => void;
 };
 export type ResolvedOptions = Required<Omit<PluginOptions, 'onParseError'>> & Pick<PluginOptions, 'onParseError'>;
+export type TransformContext = {
+    options: ResolvedOptions;
+    result: import('postcss').Result;
+    item: import('postcss').ChildNode;
+    value: string;
+};
 /**
  * @param {PluginOptions} [opts]
  * @return {import('postcss').Plugin}
