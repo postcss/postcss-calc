@@ -1,6 +1,6 @@
 // §10.4 — sin/cos/tan. <number> is radians; <angle> dim is converted.
 
-import { num } from '../node.js';
+import { num, call } from '../node.js';
 import { baseOf, convert } from '../convertUnits.js';
 
 /** @typedef {import('../node.js').Node} Node */
@@ -18,7 +18,7 @@ const TRIG_OPS = /** @type {const} */ ({
  */
 function simplifyTrig(name, args) {
   if (args.length !== 1) {
-    return { type: 'Call', name, args };
+    return call(name, args);
   }
   const a = args[0];
   /** @type {number | null} */ let radians = null;
@@ -36,7 +36,7 @@ function simplifyTrig(name, args) {
     }
   }
   if (radians === null) {
-    return { type: 'Call', name, args };
+    return call(name, args);
   }
   return num(TRIG_OPS[name](radians));
 }

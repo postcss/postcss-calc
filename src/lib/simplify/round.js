@@ -1,4 +1,4 @@
-import { num, dim } from '../node.js';
+import { num, dim, ident, call } from '../node.js';
 import { foldConstArgs } from './fold.js';
 
 /** @typedef {import('../node.js').Node} Node */
@@ -18,21 +18,15 @@ function simplifyRound(args) {
     const n = first.name.toLowerCase();
     if (!ROUND_STRATEGIES.has(n)) {
       // Unrecognized strategy ident — opaque rather than guessing intent.
-      return { type: 'Call', name: 'round', args };
+      return call('round', args);
     }
     strategy = /** @type {RoundStrategy} */ (n);
     rest = args.slice(1);
   }
 
   /** @type {() => Node} */
-  const passthrough = () => ({
-    type: 'Call',
-    name: 'round',
-    args:
-      strategy === 'nearest'
-        ? rest
-        : [{ type: 'Ident', name: strategy }, ...rest],
-  });
+  const passthrough = () =>
+    call('round', strategy === 'nearest' ? rest : [ident(strategy), ...rest]);
 
   // B omitted: defaults to 1 when A is <number>; else opaque.
   const argsForFold = argsForRoundFold(rest);

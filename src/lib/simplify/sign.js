@@ -1,4 +1,4 @@
-import { num } from '../node.js';
+import { num, call } from '../node.js';
 
 /** @typedef {import('../node.js').Node} Node */
 
@@ -8,7 +8,7 @@ import { num } from '../node.js';
  */
 function simplifySign(args) {
   if (args.length !== 1) {
-    return { type: 'Call', name: 'sign', args };
+    return call('sign', args);
   }
   const a = args[0];
   if (a.type === 'Num') {
@@ -18,7 +18,7 @@ function simplifySign(args) {
   if (a.type === 'Dim' && a.unit !== '%') {
     return num(Math.sign(a.value));
   }
-  return { type: 'Call', name: 'sign', args: [a] };
+  return call('sign', [a]);
 }
 
 export { simplifySign };

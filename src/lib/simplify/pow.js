@@ -1,6 +1,6 @@
 // §10.5 — pow is <number>-only.
 
-import { num } from '../node.js';
+import { num, call } from '../node.js';
 
 /** @typedef {import('../node.js').Node} Node */
 
@@ -10,7 +10,7 @@ import { num } from '../node.js';
  */
 function simplifyPow(args) {
   if (args.length !== 2 || args[0].type !== 'Num' || args[1].type !== 'Num') {
-    return { type: 'Call', name: 'pow', args };
+    return call('pow', args);
   }
   return num(Math.pow(args[0].value, args[1].value));
 }

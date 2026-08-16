@@ -1,7 +1,7 @@
 /* §10.4 — atan2. foldConstArgs already rejects percentages (property-
  context-resolved) and enforces shared base + static convertibility. */
 
-import { num, dim } from '../node.js';
+import { num, dim, call } from '../node.js';
 import { foldConstArgs } from './fold.js';
 
 /** @typedef {import('../node.js').Node} Node */
@@ -12,11 +12,11 @@ import { foldConstArgs } from './fold.js';
  */
 function simplifyAtan2(args) {
   if (args.length !== 2) {
-    return { type: 'Call', name: 'atan2', args };
+    return call('atan2', args);
   }
   const fold = foldConstArgs(args);
   if (fold === null) {
-    return { type: 'Call', name: 'atan2', args };
+    return call('atan2', args);
   }
   const [y, x] = /** @type {[number, number]} */ (fold.values);
   const radians = Math.atan2(y, x);

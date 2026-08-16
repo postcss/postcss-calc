@@ -1,4 +1,4 @@
-import { num } from '../node.js';
+import { num, call } from '../node.js';
 
 /** @typedef {import('../node.js').Node} Node */
 
@@ -13,7 +13,7 @@ function simplifyLog(args) {
   if (args.length === 2 && args[0].type === 'Num' && args[1].type === 'Num') {
     return num(Math.log(args[0].value) / Math.log(args[1].value));
   }
-  return { type: 'Call', name: 'log', args };
+  return call('log', args);
 }
 
 export { simplifyLog };

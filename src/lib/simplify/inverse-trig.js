@@ -1,6 +1,6 @@
 // §10.4 — asin/acos/atan. Bare <number> in, <angle> in degrees out.
 
-import { num, dim } from '../node.js';
+import { num, dim, call } from '../node.js';
 
 /** @typedef {import('../node.js').Node} Node */
 
@@ -17,11 +17,11 @@ const INVERSE_TRIG_OPS = /** @type {const} */ ({
  */
 function simplifyInverseTrig(name, args) {
   if (args.length !== 1) {
-    return { type: 'Call', name, args };
+    return call(name, args);
   }
   const a = args[0];
   if (a.type !== 'Num') {
-    return { type: 'Call', name, args };
+    return call(name, args);
   }
   const radians = INVERSE_TRIG_OPS[name](a.value);
   if (isNaN(radians)) {

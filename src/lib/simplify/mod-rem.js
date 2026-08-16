@@ -1,4 +1,4 @@
-import { num, dim } from '../node.js';
+import { num, dim, call } from '../node.js';
 import { foldConstArgs } from './fold.js';
 
 /** @typedef {import('../node.js').Node} Node */
@@ -10,11 +10,11 @@ import { foldConstArgs } from './fold.js';
  */
 function simplifyModRem(name, args) {
   if (args.length !== 2) {
-    return { type: 'Call', name, args };
+    return call(name, args);
   }
   const fold = foldConstArgs(args);
   if (fold === null) {
-    return { type: 'Call', name, args };
+    return call(name, args);
   }
   const [a, b] = /** @type {[number, number]} */ (fold.values);
   const result = applyModRem(name, a, b);

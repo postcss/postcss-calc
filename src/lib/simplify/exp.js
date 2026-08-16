@@ -1,4 +1,4 @@
-import { num } from '../node.js';
+import { num, call } from '../node.js';
 
 /** @typedef {import('../node.js').Node} Node */
 
@@ -8,7 +8,7 @@ import { num } from '../node.js';
  */
 function simplifyExp(args) {
   if (args.length !== 1 || args[0].type !== 'Num') {
-    return { type: 'Call', name: 'exp', args };
+    return call('exp', args);
   }
   return num(Math.exp(args[0].value));
 }
