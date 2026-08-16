@@ -19,6 +19,46 @@ import { simplifyHypot } from './hypot.js';
 /** @typedef {import('../node.js').Node} Node */
 /** @typedef {import('../simplify.js').SimplifyFn} SimplifyFn */
 
+/** @typedef {(name: string, args: Node[]) => Node} MathSimplifier */
+
+// Bare CSS math functions with implemented simplification semantics, keyed
+// by lowercase name. calc() and its vendor-prefixed forms are handled
+// separately as wrappers in simplifyCall. This map is the single source of
+// truth for both dispatch and `isSupportedMathFunction`.
+/** @type {Map<string, MathSimplifier>} */
+const MATH_SIMPLIFIERS = new Map([
+  ['min', simplifyMinMax],
+  ['max', simplifyMinMax],
+  ['clamp', (_name, args) => simplifyClamp(args)],
+  ['abs', (_name, args) => simplifyAbs(args)],
+  ['sign', (_name, args) => simplifySign(args)],
+  ['mod', (_name, args) => simplifyModRem('mod', args)],
+  ['rem', (_name, args) => simplifyModRem('rem', args)],
+  ['round', (_name, args) => simplifyRound(args)],
+  ['sin', (_name, args) => simplifyTrig('sin', args)],
+  ['cos', (_name, args) => simplifyTrig('cos', args)],
+  ['tan', (_name, args) => simplifyTrig('tan', args)],
+  ['asin', (_name, args) => simplifyInverseTrig('asin', args)],
+  ['acos', (_name, args) => simplifyInverseTrig('acos', args)],
+  ['atan', (_name, args) => simplifyInverseTrig('atan', args)],
+  ['atan2', (_name, args) => simplifyAtan2(args)],
+  ['pow', (_name, args) => simplifyPow(args)],
+  ['sqrt', (_name, args) => simplifySqrt(args)],
+  ['hypot', (_name, args) => simplifyHypot(args)],
+  ['log', (_name, args) => simplifyLog(args)],
+  ['exp', (_name, args) => simplifyExp(args)],
+]);
+
+/**
+ * Whether a bare CSS math function has an implemented simplifier.
+ *
+ * @param {string} name
+ * @return {boolean}
+ */
+function isSupportedMathFunction(name) {
+  return MATH_SIMPLIFIERS.has(name.toLowerCase());
+}
+
 /**
  * @param {Extract<Node, { type: 'Call' }>} node
  * @param {SimplifyFn} simplify
@@ -36,50 +76,17 @@ function simplifyCall(node, simplify) {
 
   const args = node.args.map((a) => simplify(a));
 
-  if (name === 'min' || name === 'max') {
-    return simplifyMinMax(node.name, args);
-  }
-  if (name === 'clamp') {
-    return simplifyClamp(args);
-  }
-  if (name === 'abs') {
-    return simplifyAbs(args);
-  }
-  if (name === 'sign') {
-    return simplifySign(args);
-  }
-  if (name === 'mod' || name === 'rem') {
-    return simplifyModRem(name, args);
-  }
-  if (name === 'round') {
-    return simplifyRound(args);
-  }
-  if (name === 'sin' || name === 'cos' || name === 'tan') {
-    return simplifyTrig(name, args);
-  }
-  if (name === 'asin' || name === 'acos' || name === 'atan') {
-    return simplifyInverseTrig(name, args);
-  }
-  if (name === 'atan2') {
-    return simplifyAtan2(args);
-  }
-  if (name === 'pow') {
-    return simplifyPow(args);
-  }
-  if (name === 'sqrt') {
-    return simplifySqrt(args);
-  }
-  if (name === 'hypot') {
-    return simplifyHypot(args);
-  }
-  if (name === 'log') {
-    return simplifyLog(args);
-  }
-  if (name === 'exp') {
-    return simplifyExp(args);
+  const simplifier = MATH_SIMPLIFIERS.get(name);
+  if (simplifier) {
+    // min/max preserve the call's original casing in their opaque-args
+    // fallback; the rest normalize to lowercase internally.
+    return simplifier(
+      name === 'min' || name === 'max' ? node.name : name,
+      args
+    );
   }
 
   return { type: 'Call', name: node.name, args };
 }
 
-export { simplifyCall };
+export { isSupportedMathFunction, simplifyCall };
