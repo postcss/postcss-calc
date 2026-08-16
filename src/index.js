@@ -35,24 +35,33 @@ const MATCH_CALC = /^(?:-(?:moz|webkit)-)?calc$/i;
 /** @typedef {Required<Omit<PluginOptions, 'onParseError'>> & Pick<PluginOptions, 'onParseError'>} ResolvedOptions */
 
 /**
+ * Fields threaded unchanged through the recursive `transformList` walk.
+ * `value` is the original full property text, used only for the
+ * warnWhenCannotResolve message.
+ *
+ * @typedef {object} TransformContext
+ * @property {ResolvedOptions} options
+ * @property {import('postcss').Result} result
+ * @property {import('postcss').ChildNode} item
+ * @property {string} value
+ */
+
+/**
  * Walks a list of component values in place, replacing matched calc()/math
  * function nodes with their simplified form. Unlike the library's generic
  * `walk` helper, this recurses manually so a matched node's own (stale,
  * pre-simplification) children are never independently re-visited.
  *
  * @param {import('@csstools/css-parser-algorithms').ComponentValue[]} list
- * @param {ResolvedOptions} options
- * @param {import('postcss').Result} result
- * @param {import('postcss').ChildNode} item
- * @param {string} value
+ * @param {TransformContext} ctx
  * @return {void}
  */
-function transformList(list, options, result, item, value) {
+function transformList(list, ctx) {
   for (let i = 0; i < list.length; i++) {
     const node = list[i];
     if (!isFunctionNode(node)) {
       if (isSimpleBlockNode(node)) {
-        transformList(node.value, options, result, item, value);
+        transformList(node.value, ctx);
       }
       continue;
     }
@@ -61,7 +70,7 @@ function transformList(list, options, result, item, value) {
     const isCalc = MATCH_CALC.test(name);
     const isMath = !isCalc && isSupportedMathFunction(name);
     if (!isCalc && !isMath) {
-      transformList(node.value, options, result, item, value);
+      transformList(node.value, ctx);
       continue;
     }
 
@@ -71,14 +80,14 @@ function transformList(list, options, result, item, value) {
     try {
       const simplified = simplify(parse(tokenize(contents)));
       const str = serialize(simplified, {
-        precision: options.precision,
+        precision: ctx.options.precision,
         calcName: isCalc ? name : 'calc', // preserve vendor prefix on calc()
       });
 
-      if (options.warnWhenCannotResolve && str.startsWith(`${name}(`)) {
-        result.warn('Could not reduce expression: ' + value, {
+      if (ctx.options.warnWhenCannotResolve && str.startsWith(`${name}(`)) {
+        ctx.result.warn('Could not reduce expression: ' + ctx.value, {
           plugin: 'postcss-calc',
-          node: item,
+          node: ctx.item,
         });
       }
 
@@ -90,10 +99,10 @@ function transformList(list, options, result, item, value) {
       i += replacement.length - 1;
     } catch (error) {
       const err = error instanceof Error ? error : new Error('Error');
-      if (options.onParseError) {
-        options.onParseError(err, contents);
+      if (ctx.options.onParseError) {
+        ctx.options.onParseError(err, contents);
       } else {
-        result.warn(err.message, { node: item });
+        ctx.result.warn(err.message, { node: ctx.item });
       }
     }
   }
@@ -112,9 +121,35 @@ function transformValue(value, options, result, item) {
     NOOP_PARSE_ERROR
   );
 
-  transformList(componentValues, options, result, item, value);
+  transformList(componentValues, { options, result, item, value });
 
   return componentValues.map((node) => node.toString()).join('');
+}
+
+/**
+ * Runs `transformValue` over one text property of a decl/atrule/rule node
+ * and, per `options.preserve`, either updates it in place or inserts a
+ * clone carrying the transformed value ahead of the untouched original.
+ * `setProp` closes over the property name and the concrete node type at
+ * each call site, since `Declaration`/`AtRule`/`Rule` don't share a typed
+ * "text property" name to index generically.
+ *
+ * @param {import('postcss').ChildNode} node
+ * @param {string} current
+ * @param {(target: import('postcss').ChildNode, value: string) => void} setProp
+ * @param {ResolvedOptions} options
+ * @param {import('postcss').Result} result
+ * @return {void}
+ */
+function applyTransform(node, current, setProp, options, result) {
+  const next = transformValue(current, options, result, node);
+  if (options.preserve && current !== next && node.parent) {
+    const clone = node.clone();
+    setProp(clone, next);
+    node.parent.insertBefore(node, clone);
+  } else {
+    setProp(node, next);
+  }
 }
 
 /**
@@ -141,36 +176,39 @@ function pluginCreator(opts) {
     OnceExit(css, { result }) {
       css.walk((node) => {
         if (node.type === 'decl') {
-          const next = transformValue(node.value, options, result, node);
-          if (options.preserve && node.value !== next && node.parent) {
-            const clone = node.clone();
-            clone.value = next;
-            node.parent.insertBefore(node, clone);
-          } else {
-            node.value = next;
-          }
+          applyTransform(
+            node,
+            node.value,
+            (n, v) => {
+              /** @type {import('postcss').Declaration} */ (n).value = v;
+            },
+            options,
+            result
+          );
         }
         if (node.type === 'atrule' && options.mediaQueries) {
-          const next = transformValue(node.params, options, result, node);
-          if (options.preserve && node.params !== next && node.parent) {
-            const clone = node.clone();
-            clone.params = next;
-            node.parent.insertBefore(node, clone);
-          } else {
-            node.params = next;
-          }
+          applyTransform(
+            node,
+            node.params,
+            (n, v) => {
+              /** @type {import('postcss').AtRule} */ (n).params = v;
+            },
+            options,
+            result
+          );
         }
         if (node.type === 'rule' && options.selectors) {
           // Reduces `:nth-child(calc(...))` via the function walk. calc() in a
           // quoted attribute value is a literal match, so it's left untouched.
-          const next = transformValue(node.selector, options, result, node);
-          if (options.preserve && node.selector !== next && node.parent) {
-            const clone = node.clone();
-            clone.selector = next;
-            node.parent.insertBefore(node, clone);
-          } else {
-            node.selector = next;
-          }
+          applyTransform(
+            node,
+            node.selector,
+            (n, v) => {
+              /** @type {import('postcss').Rule} */ (n).selector = v;
+            },
+            options,
+            result
+          );
         }
       });
     },
