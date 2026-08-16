@@ -16,6 +16,8 @@ import { simplifyExp } from './exp.js';
 import { simplifyLog } from './log.js';
 import { simplifyHypot } from './hypot.js';
 
+import { call } from '../node.js';
+
 /** @typedef {import('../node.js').Node} Node */
 /** @typedef {import('../simplify.js').SimplifyFn} SimplifyFn */
 
@@ -86,7 +88,7 @@ function simplifyCall(node, simplify) {
     );
   }
 
-  return { type: 'Call', name: node.name, args };
+  return call(node.name, args);
 }
 
 export { isSupportedMathFunction, simplifyCall };

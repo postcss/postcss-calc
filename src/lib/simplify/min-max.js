@@ -1,4 +1,4 @@
-import { num, dim } from '../node.js';
+import { num, dim, call } from '../node.js';
 import { foldConstArgs } from './fold.js';
 
 /** @typedef {import('../node.js').Node} Node */
@@ -15,7 +15,7 @@ function simplifyMinMax(name, args) {
     const value = fn(...fold.values);
     return fold.unit === '' ? num(value) : dim(value, fold.unit);
   }
-  return { type: 'Call', name, args };
+  return call(name, args);
 }
 
 export { simplifyMinMax };

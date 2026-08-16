@@ -1,7 +1,7 @@
 // Pratt parser. +/- emit Sum nodes; */÷ emit Product nodes. node.js
 // constructors flatten and normalize on construction, while parenthesized
 // sums retain a grouping marker for the opaque-subtraction invariant.
-import { mkSum, mkProduct, negate } from './node.js';
+import { mkSum, mkProduct, negate, ident, call } from './node.js';
 
 /**
  * @typedef {import('./tokenizer.js').Token} Token
@@ -174,7 +174,7 @@ function parseOpaqueCall(p, name) {
   const flush = () => {
     const trimmed = buf.trim();
     if (trimmed) {
-      args.push({ type: 'Ident', name: trimmed });
+      args.push(ident(trimmed));
     }
     buf = '';
   };
@@ -191,7 +191,7 @@ function parseOpaqueCall(p, name) {
         if (depth === 0) {
           p.next();
           flush();
-          return { type: 'Call', name, args };
+          return call(name, args);
         }
       } else if (tk.value === ',' && depth === 1) {
         p.next();
@@ -254,13 +254,13 @@ const PREFIX = {
         }
       }
       p.expect('punct', ')');
-      return { type: 'Call', name: t.value, args };
+      return call(t.value, args);
     }
     const kw = foldCalcKeyword(t.value);
     if (kw) {
       return kw;
     }
-    return { type: 'Ident', name: t.value };
+    return ident(t.value);
   },
 
   '(': (p) => {

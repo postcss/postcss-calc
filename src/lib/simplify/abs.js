@@ -1,4 +1,4 @@
-import { num, dim } from '../node.js';
+import { num, dim, call } from '../node.js';
 
 /** @typedef {import('../node.js').Node} Node */
 
@@ -8,7 +8,7 @@ import { num, dim } from '../node.js';
  */
 function simplifyAbs(args) {
   if (args.length !== 1) {
-    return { type: 'Call', name: 'abs', args };
+    return call('abs', args);
   }
   const a = args[0];
   if (a.type === 'Num') {
@@ -17,7 +17,7 @@ function simplifyAbs(args) {
   if (a.type === 'Dim' && a.unit !== '%') {
     return dim(Math.abs(a.value), a.unit);
   }
-  return { type: 'Call', name: 'abs', args: [a] };
+  return call('abs', [a]);
 }
 
 export { simplifyAbs };

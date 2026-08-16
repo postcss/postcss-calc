@@ -1,4 +1,4 @@
-import { num, dim } from '../node.js';
+import { num, dim, call } from '../node.js';
 import { foldConstArgs } from './fold.js';
 
 /** @typedef {import('../node.js').Node} Node */
@@ -18,7 +18,7 @@ function simplifyClamp(args) {
       return fold.unit === '' ? num(clamped) : dim(clamped, fold.unit);
     }
   }
-  return { type: 'Call', name: 'clamp', args };
+  return call('clamp', args);
 }
 
 export { simplifyClamp };
