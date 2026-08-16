@@ -173,12 +173,23 @@ test('plugin: onParseError catches errors in @media params (mediaQueries: true)'
   assert.equal(errors.length, 1);
 });
 test('plugin: selectors:true reduces calc() in selector text', async () => {
-  // Walking the selector with value-parser surfaces calc() function nodes
-  // that aren't safely buried in attribute-value strings.
+  // Walking the selector surfaces calc() function nodes that aren't safely
+  // buried in attribute-value strings.
   const { css } = await process('a:nth-child(calc(1 + 2)) { b: c }', {
     selectors: true,
   });
   assert.match(css, /:nth-child\(3\)/);
+});
+test('plugin: selectors + preserve clones the rule', async () => {
+  // Same shape as the mediaQueries + preserve case: the simplified rule
+  // appears first, followed by the original (preserve clones into the
+  // parent before the live node).
+  const { css } = await process('a:nth-child(calc(1 + 2)) { b: c }', {
+    selectors: true,
+    preserve: true,
+  });
+  assert.match(css, /:nth-child\(3\)/);
+  assert.match(css, /:nth-child\(calc\(1 \+ 2\)\)/);
 });
 test('plugin: onParseError does not fire for fully-resolved inputs', async () => {
   const errors = [];
@@ -226,4 +237,32 @@ test('plugin: leaves unsupported bare functions untouched', async () => {
 test('plugin: leaves opaque-arg bare min() preserved', async () => {
   const { css } = await process('a{ width: min(1px, var(--x)) }');
   assert.equal(css, 'a{ width: min(1px, var(--x)) }');
+});
+// --- Outer-walk round-trip ------
+// The outer traversal runs the whole declaration/selector/param text
+// through @csstools/css-tokenizer + css-parser-algorithms (a strict,
+// spec-compliant parser). These tests pin down that content having
+// nothing to do with calc() still round-trips byte-for-byte through the
+// tokenizer.
+test('plugin: IE backslash hack survives the outer walk untouched', async () => {
+  const { css } = await process('a{width:calc(1px + 2px)\\9}');
+  assert.equal(css, 'a{width:3px\\9}');
+});
+test('plugin: escaped content value survives the outer walk untouched', async () => {
+  const { css } = await process('a{content:"\\e901"}');
+  assert.equal(css, 'a{content:"\\e901"}');
+});
+test('plugin: unicode-range descriptor survives the outer walk untouched', async () => {
+  const { css } = await process('@font-face{unicode-range:U+0025-00FF}');
+  assert.equal(css, '@font-face{unicode-range:U+0025-00FF}');
+});
+test('plugin: url() contents are opaque, even when they look like calc()', async () => {
+  const { css } = await process('a{background:url(calc(1px).png)}');
+  assert.equal(css, 'a{background:url(calc(1px).png)}');
+});
+test('plugin: grid line names survive alongside a reduced calc() term', async () => {
+  const { css } = await process(
+    'a{grid-template-columns:[full-start] calc(1px + 2px) [full-end]}'
+  );
+  assert.equal(css, 'a{grid-template-columns:[full-start] 3px [full-end]}');
 });
