@@ -186,6 +186,14 @@ npm install
 npm test
 ```
 
+The normal test run uses a deterministic structural sample of the harvested
+real-world corpus. Run the complete differential corpus before releases or
+when changing parsing/simplification behavior:
+
+```bash
+pnpm test:corpus:full
+```
+
 ## [Changelog](CHANGELOG.md)
 
 ## [License](LICENSE)

@@ -40,6 +40,15 @@ test('plugin: preserves grouping for opaque subtraction', async () => {
     'a{a:calc(5px - (var(--var-1) + var(--var-2)));b:calc(var(--a) - (var(--b) + var(--c)));c:calc(var(--a) - (var(--b) - var(--c)));d:calc(5px - (10px + var(--a)))}'
   );
 });
+test('plugin: preserves nested opaque grouping and simplifies var fallbacks', async () => {
+  const { css } = await process(
+    'a{b:calc(var(--a) - (var(--b) - (var(--c, calc(1px + 2px)) + var(--d))))}'
+  );
+  assert.equal(
+    css,
+    'a{b:calc(var(--a) - (var(--b) - (var(--c, 3px) + var(--d))))}'
+  );
+});
 test('plugin: vendor-prefix calcs get the same simplification', async () => {
   const { css } = await process('a{b:-webkit-calc(1px + 2px)}');
   // Round-trip preserves the prefix via serialize's calcName option.

@@ -29,7 +29,8 @@
   "scripts": {
     "lint": "oxlint . && tsc && oxfmt --check",
     "fmt": "oxfmt",
-    "test": "node --test"
+    "test": "node --test",
+    "test:corpus:full": "POSTCSS_CALC_FULL_CORPUS=1 node --test test/conformance/corpus.test.mjs"
   },
   "author": "Andy Jansson",
   "license": "MIT",
