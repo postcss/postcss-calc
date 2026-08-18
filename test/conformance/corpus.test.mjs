@@ -16,6 +16,11 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { calc as csstoolsCalc } from '@csstools/css-calc';
 import { out } from '../helpers/out.mjs';
+import {
+  ROUTINE_CORPUS_TARGET,
+  selectCorpusExpressions,
+  stableHash,
+} from '../helpers/corpus-selection.mjs';
 const CORPUS_DIR = fileURLToPath(new URL('../corpus/', import.meta.url));
 const COMPARE_PRECISION = 10;
 function ourOut(input) {
@@ -102,49 +107,73 @@ function runLibrary(lib, calcs) {
   }
   return result;
 }
-const libraries = readdirSync(CORPUS_DIR)
+const corpusFiles = readdirSync(CORPUS_DIR)
   .filter((f) => f.endsWith('.txt'))
-  .sort((a, b) => a.localeCompare(b));
-const results = [];
-for (const file of libraries) {
-  const lib = file.replace(/\.txt$/, '');
-  const calcs = readFileSync(join(CORPUS_DIR, file), 'utf8')
-    .split('\n')
-    .map((l) => l.trim())
-    .filter((l) => l.length > 0);
-  results.push(runLibrary(lib, calcs));
-}
-// --- Per-library tests -----------------------------------------------------
-for (const r of results) {
-  test(`corpus: ${r.lib} — ${r.total} expressions`, () => {
-    if (r.divergences.length > 0) {
-      const sample = r.divergences
-        .slice(0, 5)
-        .map(
-          (d) =>
-            `  input:  ${d.input}\n  ours:   ${d.ours}\n  theirs: ${d.theirs}`
-        )
-        .join('\n\n');
-      assert.fail(
-        `${r.divergences.length} / ${r.total} diverge from csstools in ${r.lib} ` +
-          `(showing first 5):\n\n${sample}`
-      );
-    }
-    console.log(`${r.agree}/${r.total} agree`);
-  });
-}
-// --- Summary --------------------------------------------------------------
-test('corpus: overall summary', () => {
-  const total = results.reduce((a, r) => a + r.total, 0);
-  const agree = results.reduce((a, r) => a + r.agree, 0);
-  const diverge = results.reduce((a, r) => a + r.divergences.length, 0);
-  const both = results.reduce((a, r) => a + r.bothFailed, 0);
-  console.log(
-    `\n  corpus totals: ${agree}/${total} agree, ${diverge} diverge, ${both} both-failed`
+  .sort((a, b) => a.localeCompare(b))
+  .map((file) => join(CORPUS_DIR, file));
+// github/expressions.txt is the harvested valid-expression pool. Its sibling
+// invalid.txt and preprocessor.txt intentionally stay in their dedicated
+// resilience suites rather than being discarded by the sampler.
+corpusFiles.push(join(CORPUS_DIR, 'github', 'expressions.txt'));
+const allCalcs = [];
+for (const file of corpusFiles) {
+  allCalcs.push(
+    ...readFileSync(file, 'utf8')
+      .split('\n')
+      .map((l) => l.trim())
+      .filter((l) => l.length > 0)
   );
+}
+
+const fullCorpus = process.env.POSTCSS_CALC_FULL_CORPUS === '1';
+const selection = selectCorpusExpressions(allCalcs);
+const inputs = fullCorpus ? selection.allInputs : selection.routineInputs;
+const result = runLibrary(fullCorpus ? 'full' : 'sample', inputs);
+const parserRejectedHash = stableHash(selection.parserRejected.join('\n'));
+const parserRejectedAcceptedByCsstools = selection.parserRejected.filter(
+  (input) => theirOut(input) !== null
+);
+
+// These are Sass/preprocessor and malformed inputs harvested by the GitHub
+// pool. They are checked separately because css-calc passes them through,
+// while this package intentionally rejects them as non-CSS expressions.
+const EXPECTED_PARSER_REJECTED_COUNT = 2325;
+const EXPECTED_PARSER_REJECTED_HASH = 4011635432;
+const EXPECTED_PARSER_REJECTED_ACCEPTED_BY_CSSTOOLS = 2325;
+
+test(`corpus: ${fullCorpus ? 'full' : 'structural sample'} differential`, () => {
+  if (!fullCorpus) {
+    assert.ok(
+      selection.selected.length >= 5000 && selection.selected.length <= 8000,
+      `routine corpus sample must stay in the 5,000–8,000 budget; got ${selection.selected.length}`
+    );
+    assert.equal(selection.selected.length, ROUTINE_CORPUS_TARGET);
+  }
+  if (result.divergences.length > 0) {
+    const sample = result.divergences
+      .slice(0, 5)
+      .map(
+        (d) =>
+          `  input:  ${d.input}\n  ours:   ${d.ours}\n  theirs: ${d.theirs}`
+      )
+      .join('\n\n');
+    assert.fail(
+      `${result.divergences.length} / ${result.total} diverge from csstools ` +
+        `(showing first 5):\n\n${sample}`
+    );
+  }
+  console.log(
+    `\n  corpus ${fullCorpus ? 'full' : 'sample'}: ${result.agree}/${result.total} agree, ` +
+      `${result.divergences.length} diverge, ${result.bothFailed} both-failed ` +
+      `(eligible ${selection.eligible}/${selection.total})`
+  );
+});
+
+test('corpus: parser-rejected inputs remain accounted for', () => {
+  assert.equal(selection.parserRejected.length, EXPECTED_PARSER_REJECTED_COUNT);
+  assert.equal(parserRejectedHash, EXPECTED_PARSER_REJECTED_HASH);
   assert.equal(
-    diverge,
-    0,
-    `${diverge} undocumented divergences across the corpus`
+    parserRejectedAcceptedByCsstools.length,
+    EXPECTED_PARSER_REJECTED_ACCEPTED_BY_CSSTOOLS
   );
 });

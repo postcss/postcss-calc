@@ -15,26 +15,12 @@ import { out as pipeline } from '../helpers/out.mjs';
 /** Full-precision output, matching csstools' default. */
 const out = (input) => pipeline(input, { precision: false });
 // --- basic/test.mjs -------------------------------------------------------
-test('csstools basic: number multiplication', () => {
-  assert.equal(out('calc(10 * 2)'), '20');
-});
-test('csstools basic: left-associative division', () => {
-  assert.equal(out('calc(15 / 5 / 3)'), '1');
-});
-test('csstools basic: parenthesized right-hand division', () => {
+// One representative keeps arithmetic precedence and explicit grouping here;
+// focused parser/simplifier and grammar properties cover the overlapping
+// plain add/subtract/multiply examples.
+test('csstools basic: precedence and parenthesized division', () => {
   assert.equal(out('calc(15 / (5 / 3))'), '9');
-});
-test('csstools basic: precedence in mixed + / *', () => {
   assert.equal(out('calc(2 * 3 + 7 * 5)'), '41');
-});
-test('csstools basic: nested parens honored', () => {
-  assert.equal(out('calc(((2 * 3) + 7) * 5)'), '65');
-});
-test('csstools basic: simple addition of numbers', () => {
-  assert.equal(out('calc(2 + 3)'), '5');
-});
-test('csstools basic: simple subtraction of numbers', () => {
-  assert.equal(out('calc(10 - 4)'), '6');
 });
 // --- wpt/calc-unit-analysis.mjs ------------------------------------------
 test('csstools unit-analysis: calc(0) → 0', () => {
@@ -70,39 +56,12 @@ test('csstools unit-analysis: number * length folds', () => {
 test('csstools unit-analysis: length * length preserved (unit^2 not expressible)', () => {
   assert.equal(out('calc(2px * 1px)'), 'calc(2px * 1px)');
 });
-// --- wpt/calc-time-values.mjs (same-unit + cross-unit with exact math) ---
-test('csstools time: s + s', () => {
-  assert.equal(out('calc(4s + 1s)'), '5s');
-});
-test('csstools time: ms + ms', () => {
-  assert.equal(out('calc(4ms + 1ms)'), '5ms');
-});
-test('csstools time: s - s', () => {
-  assert.equal(out('calc(4s - 1s)'), '3s');
-});
-test('csstools time: number * s', () => {
-  assert.equal(out('calc(4 * 1s)'), '4s');
-});
-test('csstools time: s * number', () => {
-  assert.equal(out('calc(1s * 4)'), '4s');
-});
-test('csstools time: s / number', () => {
-  assert.equal(out('calc(8s / 4)'), '2s');
-});
-test('csstools time: s / s → unitless', () => {
+// --- wpt/calc-time-values.mjs --------------------------------------------
+test('csstools time: compatible units divide to a number', () => {
   assert.equal(out('calc(8s / 2s)'), '4');
 });
-// --- wpt/calc-angle-values.mjs (same-unit cases — exact math) ------------
-test('csstools angle: deg + deg', () => {
-  assert.equal(out('calc(45deg + 45deg)'), '90deg');
-});
-test('csstools angle: rad + rad', () => {
-  assert.equal(out('calc(45rad + 45rad)'), '90rad');
-});
-test('csstools angle: grad + grad', () => {
-  assert.equal(out('calc(45grad + 45grad)'), '90grad');
-});
-test('csstools angle: turn + turn', () => {
+// --- wpt/calc-angle-values.mjs -------------------------------------------
+test('csstools angle: compatible angle sum', () => {
   assert.equal(out('calc(0.5turn + 0.5turn)'), '1turn');
 });
 // --- wpt/minmax-percentage-computed.mjs ----------------------------------
@@ -148,13 +107,7 @@ test('csstools max-20: max with many numeric args folds', () => {
   );
 });
 // --- wpt/calc-in-calc.mjs ------------------------------------------------
-test('csstools calc-in-calc: nested calc flattens', () => {
-  assert.equal(out('calc(calc(1))'), '1');
-});
-test('csstools calc-in-calc: double-nested calc flattens', () => {
-  assert.equal(out('calc(calc(calc(2px)))'), '2px');
-});
-test('csstools calc-in-calc: nested calc with sum', () => {
+test('csstools calc-in-calc: nested calculation flattens', () => {
   assert.equal(out('calc(calc(1px + 2px))'), '3px');
 });
 // --- wpt/clamp-length-computed.mjs (same-unit, fully-resolvable) ---------

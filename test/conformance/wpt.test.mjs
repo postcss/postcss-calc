@@ -47,17 +47,8 @@ test('WPT minmax-length: max folds when all args share a unit', () => {
   // WPT (same unit): `max(1px, 2px, 3px)` → `3px`.
   assert.equal(out('max(1px, 2px, 3px)'), '3px');
 });
-// --- calc-in-calc.html ---------------------------------------------------
-// https://github.com/web-platform-tests/wpt/blob/master/css/css-values/calc-in-calc.html
-test('WPT calc-in-calc: outer calc() flattens inner calc()', () => {
-  assert.equal(out('calc(calc(100%))'), '100%');
-});
-test('WPT calc-in-calc: nested calc() with sum', () => {
-  assert.equal(out('calc(calc(1px + 2px) + 3px)'), '6px');
-});
-test('WPT calc-in-calc: doubly-nested calc', () => {
-  assert.equal(out('calc(calc(calc(5px)))'), '5px');
-});
+// calc-in-calc flattening is represented once in csstools.test.mjs; the
+// source grammar property also generates nested calc() wrappers.
 // --- calc-catch-divide-by-0.html (now §10.9.1 IEEE-754 form) ------------
 // https://github.com/web-platform-tests/wpt/blob/master/css/css-values/calc-catch-divide-by-0.html
 test('WPT divide-by-zero: 100px / 0 → calc(infinity * 1px)', () => {
