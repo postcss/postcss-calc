@@ -23,7 +23,7 @@ const NOOP_PARSE_ERROR = { onParseError: () => {} };
 const MATCH_CALC = /^(?:-(?:moz|webkit)-)?calc$/i;
 
 /**
- * @typedef {object} PluginOptions
+ * @typedef {object} PostCssCalcOptions
  * @property {number | false} [precision]
  * @property {boolean} [preserve]
  * @property {boolean} [warnWhenCannotResolve]
@@ -32,7 +32,7 @@ const MATCH_CALC = /^(?:-(?:moz|webkit)-)?calc$/i;
  * @property {(error: Error, input: string) => void} [onParseError] Invoked when parse/simplify throws. Replaces the default `result.warn`.
  */
 
-/** @typedef {Required<Omit<PluginOptions, 'onParseError'>> & Pick<PluginOptions, 'onParseError'>} ResolvedOptions */
+/** @typedef {Required<Omit<PostCssCalcOptions, 'onParseError'>> & Pick<PostCssCalcOptions, 'onParseError'>} ResolvedOptions */
 
 /**
  * Fields threaded unchanged through the recursive `transformList` walk.
@@ -153,7 +153,7 @@ function applyTransform(node, current, setProp, options, result) {
 }
 
 /**
- * @param {PluginOptions} [opts]
+ * @param {PostCssCalcOptions} [opts]
  * @return {import('postcss').Plugin}
  */
 function pluginCreator(opts) {
@@ -215,9 +215,10 @@ function pluginCreator(opts) {
   };
 }
 
+/** @type {true} */
 pluginCreator.postcss = true;
 
-export default /** @type import('postcss').PluginCreator<PluginOptions>*/ (
+export default /** @type import('postcss').PluginCreator<PostCssCalcOptions>*/ (
   pluginCreator
 );
 export { pluginCreator as 'module.exports' };
