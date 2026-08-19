@@ -1,4 +1,4 @@
-export type PluginOptions = {
+export type PostCssCalcOptions = {
     precision?: number | false;
     preserve?: boolean;
     warnWhenCannotResolve?: boolean;
@@ -9,7 +9,7 @@ export type PluginOptions = {
      */
     onParseError?: (error: Error, input: string) => void;
 };
-export type ResolvedOptions = Required<Omit<PluginOptions, 'onParseError'>> & Pick<PluginOptions, 'onParseError'>;
+export type ResolvedOptions = Required<Omit<PostCssCalcOptions, 'onParseError'>> & Pick<PostCssCalcOptions, 'onParseError'>;
 export type TransformContext = {
     options: ResolvedOptions;
     result: import('postcss').Result;
@@ -17,13 +17,13 @@ export type TransformContext = {
     value: string;
 };
 /**
- * @param {PluginOptions} [opts]
+ * @param {PostCssCalcOptions} [opts]
  * @return {import('postcss').Plugin}
  */
-declare function pluginCreator(opts?: PluginOptions): import('postcss').Plugin;
+declare function pluginCreator(opts?: PostCssCalcOptions): import('postcss').Plugin;
 declare namespace pluginCreator {
-    var postcss: boolean;
+    var postcss: true;
 }
-declare const _default: import('postcss').PluginCreator<PluginOptions>;
+declare const _default: import('postcss').PluginCreator<PostCssCalcOptions>;
 export default _default;
 export { pluginCreator as 'module.exports' };
