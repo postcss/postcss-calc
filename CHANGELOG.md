@@ -2,10 +2,38 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
-## Unreleased
 
-### Breaking changes
- - remove preserve option
+ ## 11.0.0
+
+  ### Breaking changes
+
+  - Require Node.js ^22.22.3, ^24.15, or >=26.0.
+  - Publish an ESM package with an explicit exports entry point. CommonJS require('postcss-calc') remains
+    supported on the supported Node.js versions.
+
+  - Remove the preserve option. Transformations now always update declarations, enabled media-query
+    parameters, and enabled selectors in place.
+
+  ### Features
+
+  - Rewrite the calculation engine around a CSS-aware tokenizer, Pratt parser, canonical AST, simplifier,
+    and serializer.
+
+  - Add simplification support for modern CSS math functions, including abs(), sign(), mod(), rem(),
+    round(), trigonometric functions, pow(), sqrt(), hypot(), log(), and exp().
+
+  - Improve public TypeScript declarations, including the exported PostCssCalcOptions type.
+
+  ### Bug fixes
+
+  - Preserve correct grouping when simplifying subtractions involving custom properties and other opaque
+    expressions.
+
+  - Improve numerical precision and rounding, including signed-zero and exact-multiple mod()/rem()
+    behavior.
+
+  - Fix handling of identifier-like negative tokens and selector calculations.
+  - Maintain left-to-right evaluation order when folding product terms.
 
 ## 11.0.0-rc.3 (2026-08-14)
 
