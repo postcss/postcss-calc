@@ -1,6 +1,5 @@
 export type PostCssCalcOptions = {
     precision?: number | false;
-    preserve?: boolean;
     warnWhenCannotResolve?: boolean;
     mediaQueries?: boolean;
     selectors?: boolean;

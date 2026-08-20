@@ -56,22 +56,12 @@ Checkout [tests] for more examples.
 
 #### `precision` (default: `5`)
 
-Allow you to define the precision for decimal numbers.
+Allows you to define the precision for decimal numbers. Set it to `false` to
+disable rounding.
 
 ```js
 var out = postcss()
   .use(calc({ precision: 10 }))
-  .process(css).css;
-```
-
-#### `preserve` (default: `false`)
-
-Allow you to preserve calc() usage in output so browsers will handle decimal
-precision themselves.
-
-```js
-var out = postcss()
-  .use(calc({ preserve: true }))
   .process(css).css;
 ```
 
@@ -87,12 +77,32 @@ var out = postcss()
 
 #### `mediaQueries` (default: `false`)
 
-Allows calc() usage as part of media query declarations.
+Allows calc() usage in media query parameters.
 
 ```js
 var out = postcss()
   .use(calc({ mediaQueries: true }))
   .process(css).css;
+```
+
+Example:
+
+```css
+@media (min-width: calc(100px + 100px)) {
+  div {
+    width: 100px;
+  }
+}
+```
+
+With `mediaQueries: true`, this becomes:
+
+```css
+@media (min-width: 200px) {
+  div {
+    width: 100px;
+  }
+}
 ```
 
 #### `selectors` (default: `false`)
@@ -108,10 +118,12 @@ var out = postcss()
 Example:
 
 ```css
-div[data-size='calc(3*3)'] {
+div:nth-child(calc(1 + 2)) {
   width: 100px;
 }
 ```
+
+With `selectors: true`, this becomes `div:nth-child(3)`.
 
 #### `onParseError`
 

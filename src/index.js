@@ -25,7 +25,6 @@ const MATCH_CALC = /^(?:-(?:moz|webkit)-)?calc$/i;
 /**
  * @typedef {object} PostCssCalcOptions
  * @property {number | false} [precision]
- * @property {boolean} [preserve]
  * @property {boolean} [warnWhenCannotResolve]
  * @property {boolean} [mediaQueries]
  * @property {boolean} [selectors]
@@ -128,8 +127,7 @@ function transformValue(value, options, result, item) {
 
 /**
  * Runs `transformValue` over one text property of a decl/atrule/rule node
- * and, per `options.preserve`, either updates it in place or inserts a
- * clone carrying the transformed value ahead of the untouched original.
+ * and updates it in place.
  * `setProp` closes over the property name and the concrete node type at
  * each call site, since `Declaration`/`AtRule`/`Rule` don't share a typed
  * "text property" name to index generically.
@@ -142,14 +140,7 @@ function transformValue(value, options, result, item) {
  * @return {void}
  */
 function applyTransform(node, current, setProp, options, result) {
-  const next = transformValue(current, options, result, node);
-  if (options.preserve && current !== next && node.parent) {
-    const clone = node.clone();
-    setProp(clone, next);
-    node.parent.insertBefore(node, clone);
-  } else {
-    setProp(node, next);
-  }
+  setProp(node, transformValue(current, options, result, node));
 }
 
 /**
@@ -160,7 +151,6 @@ function pluginCreator(opts) {
   /** @type {ResolvedOptions} */
   const options = {
     precision: 5,
-    preserve: false,
     warnWhenCannotResolve: false,
     mediaQueries: false,
     selectors: false,
