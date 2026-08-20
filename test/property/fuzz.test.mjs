@@ -16,7 +16,7 @@
 // pipeline never throws a system-level error (TypeError / RangeError).
 // Planned errors (`Expected X at position Y`, `Unexpected token`) are
 // fine. Returns are fine. Crashes are not.
-import { test } from 'node:test';
+import { describe, test } from 'node:test';
 import fc from 'fast-check';
 import { readdirSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
@@ -26,17 +26,21 @@ import { parse } from '../../src/lib/parser.js';
 import { simplify } from '../../src/lib/simplify.js';
 import { serialize } from '../../src/lib/serialize.js';
 import { astArb } from '../helpers/arbitraries.mjs';
+
 const FUZZ_RUNS = 2000;
+
 // Alphabet biased toward calc()-relevant tokens. Using a narrow alphabet
 // (vs `fc.string()`'s full Unicode default) makes the search space
 // productive — most random Unicode is rejected at the tokenizer with a
 // boring "Unexpected token" before it can stress real logic.
 const ALPHABET = '0123456789abcdefghijklmnopqrstuvwxyz()+-*/., \t%';
+
 const fuzzString = fc.string({
   unit: fc.constantFrom(...ALPHABET.split('')),
   minLength: 1,
   maxLength: 50,
 });
+
 function isPlannedError(error) {
   // Anything that's an Error with a non-empty message and isn't a
   // system-level crash class. Parser/tokenizer/simplifier all throw
@@ -61,12 +65,14 @@ test('fuzz: random short strings parse cleanly or throw a planned error', () => 
     { numRuns: FUZZ_RUNS }
   );
 });
+
 // --- 2. Mutated-corpus crash-resistance --------------------------------
 const CORPUS_DIR = join(
   dirname(fileURLToPath(import.meta.url)),
   '..',
   'corpus'
 );
+
 const corpusInputs = readdirSync(CORPUS_DIR)
   .filter((f) => f.endsWith('.txt'))
   .flatMap((f) =>
@@ -75,6 +81,7 @@ const corpusInputs = readdirSync(CORPUS_DIR)
       .map((l) => l.trim())
       .filter((l) => l.length > 0)
   );
+
 function mutateString(s, op, pos, replChar) {
   if (s.length === 0) return s;
   const i = pos % s.length;
@@ -102,55 +109,62 @@ const mutatedCorpus = fc
     fc.constantFrom(...ALPHABET.split(''))
   )
   .map(([s, op, pos, ch]) => mutateString(s, op, pos, ch));
+
 test('fuzz: mutated cssnano corpus parses cleanly or throws planned error', () => {
   fc.assert(
     fc.property(mutatedCorpus, (s) => tryPipeline(s).planned),
     { numRuns: FUZZ_RUNS }
   );
 });
+
 // --- 3. Metamorphic equivalence ----------------------------------------
 //
 // `calc(x)` is the identity wrap per §10.1; `calc(calc(x))` is the
 // double-wrap. The simplifier MUST collapse both to the same form as `x`.
 const out = (n) => serialize(simplify(n), { precision: 10 });
-test('metamorphic: calc(x) simplifies to the same string as x', () => {
-  fc.assert(
-    fc.property(astArb(3), (ast) => {
-      const direct = out(ast);
-      const wrapped = out({ type: 'Call', name: 'calc', args: [ast] });
-      return direct === wrapped;
-    }),
-    { numRuns: FUZZ_RUNS }
-  );
-});
-test('metamorphic: calc(calc(x)) simplifies to the same string as x', () => {
-  fc.assert(
-    fc.property(astArb(3), (ast) => {
-      const direct = out(ast);
-      const doubled = out({
-        type: 'Call',
-        name: 'calc',
-        args: [{ type: 'Call', name: 'calc', args: [ast] }],
-      });
-      return direct === doubled;
-    }),
-    { numRuns: FUZZ_RUNS }
-  );
-});
-test('metamorphic: vendor-prefixed calc unwraps to the same string', () => {
-  // simplifyCall handles `-webkit-calc` / `-moz-calc` identically to `calc`
-  // (see simplify.ts ~line 296). Random ASTs wrapped in either prefix
-  // should simplify to the same canonical form.
-  fc.assert(
-    fc.property(
-      astArb(3),
-      fc.constantFrom('calc', '-webkit-calc', '-moz-calc'),
-      (ast, name) => {
+
+describe('metamorphic: Calc(x Simplifies', () => {
+  test('metamorphic: calc(x) simplifies to the same string as x', () => {
+    fc.assert(
+      fc.property(astArb(3), (ast) => {
         const direct = out(ast);
-        const wrapped = out({ type: 'Call', name, args: [ast] });
+        const wrapped = out({ type: 'Call', name: 'calc', args: [ast] });
         return direct === wrapped;
-      }
-    ),
-    { numRuns: FUZZ_RUNS }
-  );
+      }),
+      { numRuns: FUZZ_RUNS }
+    );
+  });
+
+  test('metamorphic: calc(calc(x)) simplifies to the same string as x', () => {
+    fc.assert(
+      fc.property(astArb(3), (ast) => {
+        const direct = out(ast);
+        const doubled = out({
+          type: 'Call',
+          name: 'calc',
+          args: [{ type: 'Call', name: 'calc', args: [ast] }],
+        });
+        return direct === doubled;
+      }),
+      { numRuns: FUZZ_RUNS }
+    );
+  });
+
+  test('metamorphic: vendor-prefixed calc unwraps to the same string', () => {
+    // simplifyCall handles `-webkit-calc` / `-moz-calc` identically to `calc`
+    // (see simplify.ts ~line 296). Random ASTs wrapped in either prefix
+    // should simplify to the same canonical form.
+    fc.assert(
+      fc.property(
+        astArb(3),
+        fc.constantFrom('calc', '-webkit-calc', '-moz-calc'),
+        (ast, name) => {
+          const direct = out(ast);
+          const wrapped = out({ type: 'Call', name, args: [ast] });
+          return direct === wrapped;
+        }
+      ),
+      { numRuns: FUZZ_RUNS }
+    );
+  });
 });
