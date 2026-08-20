@@ -560,13 +560,6 @@ test(
 );
 
 test(
-  'should preserve the original declaration when `preserve` option is set to true',
-  testCss('foo{bar:calc(1rem * 1.5)}', 'foo{bar:1.5rem;bar:calc(1rem * 1.5)}', {
-    preserve: true,
-  })
-);
-
-test(
   'should not yield warnings when nothing is wrong',
   testValue('calc(500px - 0px)', '500px', { warnWhenCannotResolve: true })
 );

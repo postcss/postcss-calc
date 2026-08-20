@@ -64,14 +64,10 @@ test('plugin: vendor-prefix wrapper preserved when expression cannot fully resol
   const moz = await process('a{b:-moz-calc(1px + var(--x))}');
   assert.equal(moz.css, 'a{b:-moz-calc(1px + var(--x))}');
 });
-// --- preserve option -----------------------------------------------------
-test('plugin: preserve clones the original decl alongside the simplified one', async () => {
+// --- obsolete JavaScript options ----------------------------------------
+test('plugin: obsolete preserve option is ignored at runtime', async () => {
   const { css } = await process('a{b:calc(1px + 2px)}', { preserve: true });
-  assert.equal(css, 'a{b:3px;b:calc(1px + 2px)}');
-});
-test('plugin: preserve is a no-op when value is unchanged', async () => {
-  const { css } = await process('a{b:red}', { preserve: true });
-  assert.equal(css, 'a{b:red}');
+  assert.equal(css, 'a{b:3px}');
 });
 // --- warnWhenCannotResolve -----------------------------------------------
 test('plugin: warnWhenCannotResolve surfaces unresolved expressions', async () => {
@@ -101,15 +97,12 @@ test('plugin: mediaQueries off leaves @media untouched', async () => {
   );
   assert.match(css, /calc\(100px \+ 100px\)/);
 });
-test('plugin: mediaQueries + preserve clones the @media rule', async () => {
-  // Both options together: the simplified atrule appears, followed by
-  // the original (preserve clones into the parent before the live node).
+test('plugin: mediaQueries transforms the @media rule in place', async () => {
   const { css } = await process(
     '@media (min-width: calc(100px + 100px)) { a{b:c} }',
-    { mediaQueries: true, preserve: true }
+    { mediaQueries: true }
   );
-  assert.match(css, /min-width: 200px/);
-  assert.match(css, /calc\(100px \+ 100px\)/);
+  assert.equal(css, '@media (min-width: 200px) { a{b:c} }');
 });
 // --- onParseError --------------------------------------------------------
 test('plugin: default behavior on parse failure is a PostCSS warn', async () => {
@@ -159,16 +152,12 @@ test('plugin: precision 0 rounds to whole numbers', async () => {
   assert.equal(css, 'a{b:1in}');
 });
 // --- Option combinations -------------------------------------------------
-test('plugin: preserve + warnWhenCannotResolve — both fire together', async () => {
-  // Unresolved expression gets preserved AND warned about.
+test('plugin: obsolete preserve option and warnWhenCannotResolve work together', async () => {
   const { css, warnings } = await process('a{b:calc(100% + var(--x))}', {
     preserve: true,
     warnWhenCannotResolve: true,
   });
-  // preserve clones the original alongside — both have the same
-  // serialized value since the simplifier can't fully reduce this
-  // expression, but the clone step still runs.
-  assert.match(css, /calc\(100% \+ var\(--x\)\)/);
+  assert.equal(css, 'a{b:calc(100% + var(--x))}');
   assert.equal(warnings.length, 1);
 });
 test('plugin: onParseError catches errors in @media params (mediaQueries: true)', async () => {
@@ -189,16 +178,11 @@ test('plugin: selectors:true reduces calc() in selector text', async () => {
   });
   assert.match(css, /:nth-child\(3\)/);
 });
-test('plugin: selectors + preserve clones the rule', async () => {
-  // Same shape as the mediaQueries + preserve case: the simplified rule
-  // appears first, followed by the original (preserve clones into the
-  // parent before the live node).
+test('plugin: selectors transforms the rule in place', async () => {
   const { css } = await process('a:nth-child(calc(1 + 2)) { b: c }', {
     selectors: true,
-    preserve: true,
   });
-  assert.match(css, /:nth-child\(3\)/);
-  assert.match(css, /:nth-child\(calc\(1 \+ 2\)\)/);
+  assert.equal(css, 'a:nth-child(3) { b: c }');
 });
 test('plugin: onParseError does not fire for fully-resolved inputs', async () => {
   const errors = [];
@@ -210,7 +194,6 @@ test('plugin: onParseError does not fire for fully-resolved inputs', async () =>
 test('plugin: options are no-ops on values with no calc()', async () => {
   // Every option branch should harmlessly ignore non-calc declarations.
   const { css, warnings } = await process('a{color:red;padding:10px 20px}', {
-    preserve: true,
     warnWhenCannotResolve: true,
     mediaQueries: true,
     selectors: true,
