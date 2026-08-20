@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## Unreleased
+
+### Breaking changes
+ - remove preserve option
+
 ## 11.0.0-rc.3 (2026-08-14)
 
 ### Bug Fixes
