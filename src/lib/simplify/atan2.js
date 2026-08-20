@@ -20,8 +20,8 @@ function simplifyAtan2(args) {
   }
   const [y, x] = /** @type {[number, number]} */ (fold.values);
   const radians = Math.atan2(y, x);
-  if (isNaN(radians)) {
-    return num(NaN);
+  if (Number.isNaN(radians)) {
+    return num(Number.NaN);
   }
   return dim((radians * 180) / Math.PI, 'deg');
 }

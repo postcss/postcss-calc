@@ -45,7 +45,7 @@ function round(v, prec) {
  * @return {boolean}
  */
 function isDegenerate(v) {
-  return !isFinite(v) || isNaN(v);
+  return !Number.isFinite(v) || Number.isNaN(v);
 }
 
 /**
@@ -53,7 +53,7 @@ function isDegenerate(v) {
  * @return {string}
  */
 function degenerateKeyword(v) {
-  if (isNaN(v)) {
+  if (Number.isNaN(v)) {
     return 'NaN';
   }
   return v > 0 ? 'infinity' : '-infinity';
@@ -160,13 +160,13 @@ function serializeExpr(node, prec) {
  */
 function displaySign(term) {
   const { sign, node } = term;
-  if (node.type === 'Num' && isFinite(node.value) && node.value < 0) {
+  if (node.type === 'Num' && Number.isFinite(node.value) && node.value < 0) {
     return {
       sign: /** @type {1 | -1} */ (-sign),
       magnitude: { type: 'Num', value: -node.value },
     };
   }
-  if (node.type === 'Dim' && isFinite(node.value) && node.value < 0) {
+  if (node.type === 'Dim' && Number.isFinite(node.value) && node.value < 0) {
     return {
       sign: /** @type {1 | -1} */ (-sign),
       magnitude: { type: 'Dim', value: -node.value, unit: node.unit },
@@ -219,7 +219,7 @@ function serializeLeadingNeg(node, prec) {
     node.factors.length > 0 &&
     node.factors[0].exponent === 1 &&
     node.factors[0].node.type === 'Num' &&
-    isFinite(node.factors[0].node.value) &&
+    Number.isFinite(node.factors[0].node.value) &&
     node.factors[0].node.value !== 0
   ) {
     const head = node.factors[0].node;

@@ -305,7 +305,7 @@ test('csstools pow: pow(2, 3) → 8', () => {
 });
 test('csstools pow: pow(8, 1 / 3) ≈ 2', () => {
   // csstools agrees on the cube-root identity within FP precision.
-  const got = parseFloat(out('pow(8, 1 / 3)'));
+  const got = Number.parseFloat(out('pow(8, 1 / 3)'));
   assert.ok(Math.abs(got - 2) < 1e-9, `got ${got}`);
 });
 test('csstools sqrt: sqrt(16) → 4', () => {

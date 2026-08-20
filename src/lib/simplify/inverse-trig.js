@@ -24,8 +24,8 @@ function simplifyInverseTrig(name, args) {
     return call(name, args);
   }
   const radians = INVERSE_TRIG_OPS[name](a.value);
-  if (isNaN(radians)) {
-    return num(NaN);
+  if (Number.isNaN(radians)) {
+    return num(Number.NaN);
   }
   return dim((radians * 180) / Math.PI, 'deg');
 }

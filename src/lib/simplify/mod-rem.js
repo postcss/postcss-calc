@@ -20,8 +20,8 @@ function simplifyModRem(name, args) {
   const result = applyModRem(name, a, b);
   // NaN results drop the unit (`mod(5px, 0px)` → `calc(NaN)`, not
   // `calc(NaN * 1px)`). §10.12 unit-preserving form is a known divergence.
-  if (isNaN(result)) {
-    return num(NaN);
+  if (Number.isNaN(result)) {
+    return num(Number.NaN);
   }
   return fold.unit === '' ? num(result) : dim(result, fold.unit);
 }
@@ -34,16 +34,16 @@ function simplifyModRem(name, args) {
  */
 function applyModRem(name, a, b) {
   if (b === 0) {
-    return NaN;
+    return Number.NaN;
   }
-  if (!isFinite(a)) {
-    return NaN;
+  if (!Number.isFinite(a)) {
+    return Number.NaN;
   }
-  if (!isFinite(b)) {
+  if (!Number.isFinite(b)) {
     // mod: result is NaN when A has opposite sign to B; otherwise A.
     // rem: result is A regardless of signs.
     if (name === 'mod' && a !== 0 && Math.sign(a) !== Math.sign(b)) {
-      return NaN;
+      return Number.NaN;
     }
     return a;
   }

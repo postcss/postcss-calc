@@ -181,7 +181,7 @@ test('serialize: Num(-Infinity) → calc(-infinity)', () => {
   assert.equal(serialize(num(-Infinity)), 'calc(-infinity)');
 });
 test('serialize: Num(NaN) → calc(NaN)', () => {
-  assert.equal(serialize(num(NaN)), 'calc(NaN)');
+  assert.equal(serialize(num(Number.NaN)), 'calc(NaN)');
 });
 test('serialize: Dim(Infinity, px) → calc(infinity * 1px)', () => {
   assert.equal(serialize(dim(Infinity, 'px')), 'calc(infinity * 1px)');
@@ -190,7 +190,7 @@ test('serialize: Dim(-Infinity, px) → calc(-infinity * 1px)', () => {
   assert.equal(serialize(dim(-Infinity, 'px')), 'calc(-infinity * 1px)');
 });
 test('serialize: Dim(NaN, deg) → calc(NaN * 1deg)', () => {
-  assert.equal(serialize(dim(NaN, 'deg')), 'calc(NaN * 1deg)');
+  assert.equal(serialize(dim(Number.NaN, 'deg')), 'calc(NaN * 1deg)');
 });
 test('serialize: degenerate uses calcName option (vendor prefix)', () => {
   assert.equal(
@@ -198,13 +198,16 @@ test('serialize: degenerate uses calcName option (vendor prefix)', () => {
     '-webkit-calc(infinity)'
   );
   assert.equal(
-    serialize(dim(NaN, 'px'), { calcName: '-moz-calc' }),
+    serialize(dim(Number.NaN, 'px'), { calcName: '-moz-calc' }),
     '-moz-calc(NaN * 1px)'
   );
 });
 test('serialize: precision does not round Infinity / NaN', () => {
   assert.equal(serialize(num(Infinity), { precision: 2 }), 'calc(infinity)');
-  assert.equal(serialize(dim(NaN, 'px'), { precision: 0 }), 'calc(NaN * 1px)');
+  assert.equal(
+    serialize(dim(Number.NaN, 'px'), { precision: 0 }),
+    'calc(NaN * 1px)'
+  );
 });
 test('serialize: degenerate Num inside Sum context emits keyword', () => {
   // var(--x) + Infinity → keyword spelling, no nested calc().
@@ -216,6 +219,6 @@ test('serialize: degenerate Num inside Sum context emits keyword', () => {
 });
 test('serialize: NaN keeps canonical casing (never nan/NAN)', () => {
   // §10.7.2 line 1182.
-  assert.equal(serialize(num(NaN)).includes('NaN'), true);
-  assert.equal(serialize(num(NaN)).includes('nan'), false);
+  assert.equal(serialize(num(Number.NaN)).includes('NaN'), true);
+  assert.equal(serialize(num(Number.NaN)).includes('nan'), false);
 });

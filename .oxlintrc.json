@@ -1,6 +1,6 @@
 {
   "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["typescript", "unicorn", "oxc"],
+  "plugins": ["typescript", "unicorn", "oxc", "promise"],
   "categories": {
     "correctness": "error"
   },
@@ -8,6 +8,7 @@
     "array-callback-return": "error",
     "complexity": ["error", { "max": 25 }],
     "guard-for-in": "error",
+    "no-duplicate-imports": "error",
     "no-bitwise": "error",
     "no-case-declarations": "error",
     "no-empty": "error",
@@ -17,11 +18,26 @@
     "no-prototype-builtins": "error",
     "no-redeclare": "error",
     "no-regex-spaces": "error",
+    "no-underscore-dangle": ["error", { "allow": ["_default"] }],
+    "no-shadow": "error",
+    "no-throw-literal": "error",
+    "no-unnecessary-await": "error",
     "no-void": "error",
+    "no-useless-assignment": "error",
+    "only-throw-error": "error",
+    "prefer-const": ["error", { "destructuring": "all" }],
     "preserve-caught-error": "error",
+    "promise/always-return": "error",
+    "promise/prefer-await-to-then": "error",
     "unicorn/no-array-for-each": "error",
     "unicorn/no-array-reduce": "error",
-    "unicorn/prefer-array-flat": "error"
+    "unicorn/prefer-array-flat": "error",
+    "unicorn/prefer-includes": "error",
+    "unicorn/prefer-node-protocol": "error",
+    "unicorn/prefer-regexp-test": "error",
+    "unicorn/prefer-set-has": "error",
+    "unicorn/prefer-type-error": "error",
+    "unicorn/prefer-number-properties": "error"
   },
   "env": {
     "builtin": true

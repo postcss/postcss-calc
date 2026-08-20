@@ -69,7 +69,7 @@ test('law: sign is idempotent on its codomain — sign(sign(x)) ≡ sign(x)', ()
       const inner = out(call('sign', [x]));
       // sign(x) returns a bare number in {-1, 0, 1}; sign of that is the
       // same number.
-      const outer = out(call('sign', [num(parseFloat(inner))]));
+      const outer = out(call('sign', [num(Number.parseFloat(inner))]));
       return inner === outer;
     }),
     { numRuns: NUM_RUNS }
@@ -79,8 +79,8 @@ test('law: sign is odd — sign(-x) ≡ -sign(x) (when x ≠ 0)', () => {
   fc.assert(
     fc.property(finiteNonzeroNum, (x) => {
       const negX = num(-x.value);
-      const lhs = parseFloat(out(call('sign', [negX])));
-      const rhs = -parseFloat(out(call('sign', [x])));
+      const lhs = Number.parseFloat(out(call('sign', [negX])));
+      const rhs = -Number.parseFloat(out(call('sign', [x])));
       return Object.is(lhs, rhs) || lhs === rhs;
     }),
     { numRuns: NUM_RUNS }
@@ -89,8 +89,8 @@ test('law: sign is odd — sign(-x) ≡ -sign(x) (when x ≠ 0)', () => {
 test('law: abs(x) * sign(x) ≡ x — for finite numeric x', () => {
   fc.assert(
     fc.property(finiteNonzeroNum, (x) => {
-      const a = parseFloat(out(call('abs', [x])));
-      const s = parseFloat(out(call('sign', [x])));
+      const a = Number.parseFloat(out(call('abs', [x])));
+      const s = Number.parseFloat(out(call('sign', [x])));
       return a * s === x.value;
     }),
     { numRuns: NUM_RUNS }
@@ -107,7 +107,7 @@ test('law: round is idempotent on the same step — round(round(x, B), B) ≡ ro
         const inner = call('round', [ident(strategy), x, b]);
         const once = out(inner);
         const twice = out(
-          call('round', [ident(strategy), num(parseFloat(once)), b])
+          call('round', [ident(strategy), num(Number.parseFloat(once)), b])
         );
         return once === twice;
       }
@@ -118,9 +118,11 @@ test('law: round is idempotent on the same step — round(round(x, B), B) ≡ ro
 test('law: round monotone in strategy — up ≥ nearest ≥ down', () => {
   fc.assert(
     fc.property(finiteNum, positiveNum, (x, b) => {
-      const up = parseFloat(out(call('round', [ident('up'), x, b])));
-      const nearest = parseFloat(out(call('round', [ident('nearest'), x, b])));
-      const down = parseFloat(out(call('round', [ident('down'), x, b])));
+      const up = Number.parseFloat(out(call('round', [ident('up'), x, b])));
+      const nearest = Number.parseFloat(
+        out(call('round', [ident('nearest'), x, b]))
+      );
+      const down = Number.parseFloat(out(call('round', [ident('down'), x, b])));
       return up >= nearest && nearest >= down;
     }),
     { numRuns: NUM_RUNS }
@@ -129,9 +131,11 @@ test('law: round monotone in strategy — up ≥ nearest ≥ down', () => {
 test('law: round to-zero ∈ {up, down} and minimizes |result|', () => {
   fc.assert(
     fc.property(finiteNum, positiveNum, (x, b) => {
-      const up = parseFloat(out(call('round', [ident('up'), x, b])));
-      const down = parseFloat(out(call('round', [ident('down'), x, b])));
-      const tz = parseFloat(out(call('round', [ident('to-zero'), x, b])));
+      const up = Number.parseFloat(out(call('round', [ident('up'), x, b])));
+      const down = Number.parseFloat(out(call('round', [ident('down'), x, b])));
+      const tz = Number.parseFloat(
+        out(call('round', [ident('to-zero'), x, b]))
+      );
       const inSet = tz === up || tz === down;
       const minimal =
         Math.abs(tz) <= Math.abs(up) && Math.abs(tz) <= Math.abs(down);
@@ -147,7 +151,9 @@ test('law: round result is on the B-grid — (result / B) is integer', () => {
       finiteNum,
       positiveNum,
       (strategy, x, b) => {
-        const r = parseFloat(out(call('round', [ident(strategy), x, b])));
+        const r = Number.parseFloat(
+          out(call('round', [ident(strategy), x, b]))
+        );
         const q = r / b.value;
         // Allow tiny FP drift: integer means q ≡ round(q) within EPSILON.
         return Math.abs(q - Math.round(q)) < 1e-9;
@@ -163,7 +169,9 @@ test('law: round result is within B of A — |round(x, B) − x| ≤ B', () => {
       finiteNum,
       positiveNum,
       (strategy, x, b) => {
-        const r = parseFloat(out(call('round', [ident(strategy), x, b])));
+        const r = Number.parseFloat(
+          out(call('round', [ident(strategy), x, b]))
+        );
         return Math.abs(r - x.value) <= b.value + 1e-9;
       }
     ),
@@ -173,9 +181,11 @@ test('law: round result is within B of A — |round(x, B) − x| ≤ B', () => {
 test('law: nearest minimizes |result − x| (with tie → upper)', () => {
   fc.assert(
     fc.property(finiteNum, positiveNum, (x, b) => {
-      const up = parseFloat(out(call('round', [ident('up'), x, b])));
-      const down = parseFloat(out(call('round', [ident('down'), x, b])));
-      const nearest = parseFloat(out(call('round', [ident('nearest'), x, b])));
+      const up = Number.parseFloat(out(call('round', [ident('up'), x, b])));
+      const down = Number.parseFloat(out(call('round', [ident('down'), x, b])));
+      const nearest = Number.parseFloat(
+        out(call('round', [ident('nearest'), x, b]))
+      );
       const dUp = Math.abs(up - x.value);
       const dDown = Math.abs(down - x.value);
       return dUp <= dDown ? nearest === up : nearest === down;
@@ -187,7 +197,7 @@ test('law: nearest minimizes |result − x| (with tie → upper)', () => {
 test('law: mod range — 0 ≤ mod(x, B) < B (for B > 0, finite x)', () => {
   fc.assert(
     fc.property(finiteNum, positiveNum, (x, b) => {
-      const r = parseFloat(out(call('mod', [x, b])));
+      const r = Number.parseFloat(out(call('mod', [x, b])));
       return r >= 0 && r < b.value;
     }),
     { numRuns: NUM_RUNS }
@@ -196,7 +206,7 @@ test('law: mod range — 0 ≤ mod(x, B) < B (for B > 0, finite x)', () => {
 test('law: rem range — |rem(x, B)| < B (for B > 0, finite x)', () => {
   fc.assert(
     fc.property(finiteNum, positiveNum, (x, b) => {
-      const r = parseFloat(out(call('rem', [x, b])));
+      const r = Number.parseFloat(out(call('rem', [x, b])));
       return Math.abs(r) < b.value;
     }),
     { numRuns: NUM_RUNS }
@@ -205,7 +215,7 @@ test('law: rem range — |rem(x, B)| < B (for B > 0, finite x)', () => {
 test('law: rem sign follows dividend — sign(rem(x, B)) ∈ {sign(x), 0}', () => {
   fc.assert(
     fc.property(finiteNum, positiveNum, (x, b) => {
-      const r = parseFloat(out(call('rem', [x, b])));
+      const r = Number.parseFloat(out(call('rem', [x, b])));
       if (r === 0) return true;
       return Math.sign(r) === Math.sign(x.value);
     }),
@@ -215,8 +225,10 @@ test('law: rem sign follows dividend — sign(rem(x, B)) ∈ {sign(x), 0}', () =
 test('law: mod periodicity — mod(x + B, B) ≡ mod(x, B)', () => {
   fc.assert(
     fc.property(finiteNum, positiveNum, (x, b) => {
-      const lhs = parseFloat(out(call('mod', [num(x.value + b.value), b])));
-      const rhs = parseFloat(out(call('mod', [x, b])));
+      const lhs = Number.parseFloat(
+        out(call('mod', [num(x.value + b.value), b]))
+      );
+      const rhs = Number.parseFloat(out(call('mod', [x, b])));
       return Math.abs(lhs - rhs) < 1e-9;
     }),
     { numRuns: NUM_RUNS }
@@ -225,8 +237,8 @@ test('law: mod periodicity — mod(x + B, B) ≡ mod(x, B)', () => {
 test('law: spec line 1017 — rem(A, B) ≡ A − round(to-zero, A, B)', () => {
   fc.assert(
     fc.property(finiteNum, positiveNum, (a, b) => {
-      const lhs = parseFloat(out(call('rem', [a, b])));
-      const r = parseFloat(out(call('round', [ident('to-zero'), a, b])));
+      const lhs = Number.parseFloat(out(call('rem', [a, b])));
+      const r = Number.parseFloat(out(call('round', [ident('to-zero'), a, b])));
       const rhs = a.value - r;
       return Math.abs(lhs - rhs) < 1e-9;
     }),
@@ -238,8 +250,8 @@ test('law: spec line 1017 — mod(A, B) ≡ A − round(down, A, B) (for B > 0)'
   // For B > 0 this reduces to mod(A, B) = A − round(down, A, B).
   fc.assert(
     fc.property(finiteNum, positiveNum, (a, b) => {
-      const lhs = parseFloat(out(call('mod', [a, b])));
-      const r = parseFloat(out(call('round', [ident('down'), a, b])));
+      const lhs = Number.parseFloat(out(call('mod', [a, b])));
+      const r = Number.parseFloat(out(call('round', [ident('down'), a, b])));
       const rhs = a.value - r;
       return Math.abs(lhs - rhs) < 1e-9;
     }),
@@ -255,10 +267,10 @@ test('metamorphic: round scales — round(k·x, k·B) ≡ k·round(x, B), k > 0'
       fc.integer({ min: 1, max: 100 }),
       fc.integer({ min: 1, max: 10 }),
       (strategy, xRaw, bRaw, k) => {
-        const lhs = parseFloat(
+        const lhs = Number.parseFloat(
           out(call('round', [ident(strategy), num(k * xRaw), num(k * bRaw)]))
         );
-        const inner = parseFloat(
+        const inner = Number.parseFloat(
           out(call('round', [ident(strategy), num(xRaw), num(bRaw)]))
         );
         const rhs = k * inner;
@@ -291,8 +303,8 @@ const CURATED_ANGLES = [
 ];
 test('law: sin is odd — sin(-x) ≡ -sin(x) for curated angles', () => {
   for (const x of CURATED_ANGLES) {
-    const lhs = parseFloat(out(call('sin', [num(-x)])));
-    const rhs = -parseFloat(out(call('sin', [num(x)])));
+    const lhs = Number.parseFloat(out(call('sin', [num(-x)])));
+    const rhs = -Number.parseFloat(out(call('sin', [num(x)])));
     if (Math.abs(lhs - rhs) > 1e-9) {
       throw new Error(`sin(-${x}) (${lhs}) ≠ -sin(${x}) (${rhs})`);
     }
@@ -300,8 +312,8 @@ test('law: sin is odd — sin(-x) ≡ -sin(x) for curated angles', () => {
 });
 test('law: cos is even — cos(-x) ≡ cos(x) for curated angles', () => {
   for (const x of CURATED_ANGLES) {
-    const lhs = parseFloat(out(call('cos', [num(-x)])));
-    const rhs = parseFloat(out(call('cos', [num(x)])));
+    const lhs = Number.parseFloat(out(call('cos', [num(-x)])));
+    const rhs = Number.parseFloat(out(call('cos', [num(x)])));
     if (Math.abs(lhs - rhs) > 1e-9) {
       throw new Error(`cos(-${x}) (${lhs}) ≠ cos(${x}) (${rhs})`);
     }
@@ -316,8 +328,8 @@ test('law: tan(0) ≡ 0; atan(0) ≡ 0deg; atan(1) ≡ 45deg', () => {
 test('law: sin² + cos² ≡ 1 over a finite range (away from asymptotes)', () => {
   fc.assert(
     fc.property(finiteFloat, (x) => {
-      const s = parseFloat(out(call('sin', [num(x)])));
-      const c = parseFloat(out(call('cos', [num(x)])));
+      const s = Number.parseFloat(out(call('sin', [num(x)])));
+      const c = Number.parseFloat(out(call('cos', [num(x)])));
       return Math.abs(s * s + c * c - 1) < 1e-9;
     }),
     { numRuns: NUM_RUNS }
@@ -335,8 +347,8 @@ test('law: asin(sin(x)) ≡ x for x ∈ [-π/2 + 0.05, π/2 − 0.05]', () => {
   });
   fc.assert(
     fc.property(principalRange, (x) => {
-      const s = parseFloat(out(call('sin', [num(x)])));
-      const aDeg = parseFloat(out(call('asin', [num(s)])));
+      const s = Number.parseFloat(out(call('sin', [num(x)])));
+      const aDeg = Number.parseFloat(out(call('asin', [num(s)])));
       const aRad = (aDeg * Math.PI) / 180;
       return Math.abs(aRad - x) < 1e-6;
     }),
@@ -347,9 +359,9 @@ test('law: atan2(sin(θ), cos(θ)) ≡ θ (in degrees) for θ ∈ (-180, 180]', 
   fc.assert(
     fc.property(fc.float({ min: -179, max: 180, noNaN: true }), (degRaw) => {
       const theta = (degRaw * Math.PI) / 180;
-      const s = parseFloat(out(call('sin', [num(theta)])));
-      const c = parseFloat(out(call('cos', [num(theta)])));
-      const recovered = parseFloat(out(call('atan2', [num(s), num(c)])));
+      const s = Number.parseFloat(out(call('sin', [num(theta)])));
+      const c = Number.parseFloat(out(call('cos', [num(theta)])));
+      const recovered = Number.parseFloat(out(call('atan2', [num(s), num(c)])));
       return Math.abs(recovered - degRaw) < 1e-6;
     }),
     { numRuns: NUM_RUNS }
@@ -363,8 +375,10 @@ test('law: atan2 only depends on the ratio — atan2(k·y, k·x) ≡ atan2(y, x)
       fc.integer({ min: 1, max: 100 }),
       (y, x, k) => {
         if (x === 0 && y === 0) return true; // atan2(0,0) is degenerate
-        const lhs = parseFloat(out(call('atan2', [num(k * y), num(k * x)])));
-        const rhs = parseFloat(out(call('atan2', [num(y), num(x)])));
+        const lhs = Number.parseFloat(
+          out(call('atan2', [num(k * y), num(k * x)]))
+        );
+        const rhs = Number.parseFloat(out(call('atan2', [num(y), num(x)])));
         return Math.abs(lhs - rhs) < 1e-9;
       }
     ),
@@ -393,7 +407,7 @@ test('law: pow(x, 0) ≡ 1 for finite x', () => {
 test('law: sqrt(pow(x, 2)) ≡ abs(x) for finite x', () => {
   fc.assert(
     fc.property(fc.integer({ min: -100, max: 100 }), (v) => {
-      const lhs = parseFloat(
+      const lhs = Number.parseFloat(
         out(call('sqrt', [call('pow', [num(v), num(2)])]))
       );
       const rhs = Math.abs(v);
@@ -405,7 +419,7 @@ test('law: sqrt(pow(x, 2)) ≡ abs(x) for finite x', () => {
 test('law: log(exp(x)) ≡ x for finite x within precision', () => {
   fc.assert(
     fc.property(fc.float({ min: -50, max: 50, noNaN: true }), (v) => {
-      const lhs = parseFloat(out(call('log', [call('exp', [num(v)])])));
+      const lhs = Number.parseFloat(out(call('log', [call('exp', [num(v)])])));
       return Math.abs(lhs - v) < 1e-6;
     }),
     { numRuns: NUM_RUNS }
@@ -416,7 +430,9 @@ test('law: exp(log(x)) ≡ x for finite x > 0 within precision', () => {
     fc.property(
       fc.float({ min: Math.fround(1e-3), max: Math.fround(1e6), noNaN: true }),
       (v) => {
-        const lhs = parseFloat(out(call('exp', [call('log', [num(v)])])));
+        const lhs = Number.parseFloat(
+          out(call('exp', [call('log', [num(v)])]))
+        );
         return Math.abs((lhs - v) / v) < 1e-6;
       }
     ),

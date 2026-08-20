@@ -43,12 +43,12 @@ function simplifyRound(args) {
   // case folds to ±0 carrying A's sign. Infinite-A / finite-B falls through
   // to applyRound, where floor*b===ceil*b===±∞ collapses back to A
   // (§10.3.1 "result is the same infinity").
-  if (isNaN(b)) {
-    return num(NaN);
+  if (Number.isNaN(b)) {
+    return num(Number.NaN);
   }
-  if (!isFinite(b)) {
-    if (!isFinite(a)) {
-      return num(NaN);
+  if (!Number.isFinite(b)) {
+    if (!Number.isFinite(a)) {
+      return num(Number.NaN);
     }
     let result;
     if (strategy === 'up' && a > 0) {
@@ -62,8 +62,8 @@ function simplifyRound(args) {
   }
 
   const result = applyRound(strategy, a, b);
-  if (isNaN(result)) {
-    return num(NaN);
+  if (Number.isNaN(result)) {
+    return num(Number.NaN);
   }
   return fold.unit === '' ? num(result) : dim(result, fold.unit);
 }
@@ -90,7 +90,7 @@ function argsForRoundFold(args) {
  */
 function applyRound(strategy, a, b) {
   if (b === 0) {
-    return NaN;
+    return Number.NaN;
   }
   const q = a / b;
   const c1 = Math.floor(q) * b;
