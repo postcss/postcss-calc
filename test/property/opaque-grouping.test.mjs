@@ -1,7 +1,7 @@
 // Source-grammar properties for unresolved CSS expressions.  Differential
 // testing cannot be the oracle here: preserving parentheses around opaque
 // sums is our explicit semantic contract.
-import { test } from 'node:test';
+import { describe, test } from 'node:test';
 import assert from 'node:assert/strict';
 import fc from 'fast-check';
 import { tokenize } from '../../src/lib/tokenizer.js';
@@ -14,23 +14,25 @@ import {
   opaqueGroupedCalcArb,
 } from '../helpers/arbitraries.mjs';
 
-test('property: bounded CSS math grammar parses and round-trips', () => {
-  fc.assert(
-    fc.property(cssMathSourceArb, (input) => {
-      const output = serialize(simplify(parse(tokenize(input))));
-      return typeof output === 'string' && parse(tokenize(output)) !== null;
-    }),
-    { numRuns: 300 }
-  );
-});
+describe('property: Bounded CSS', () => {
+  test('property: bounded CSS math grammar parses and round-trips', () => {
+    fc.assert(
+      fc.property(cssMathSourceArb, (input) => {
+        const output = serialize(simplify(parse(tokenize(input))));
+        return typeof output === 'string' && parse(tokenize(output)) !== null;
+      }),
+      { numRuns: 300 }
+    );
+  });
 
-test('property: opaque grouped sums never distribute a negative sign', () => {
-  fc.assert(
-    fc.property(opaqueGroupedCalcArb, ({ input, expected }) => {
-      assert.equal(out(input), expected);
-    }),
-    { numRuns: 100 }
-  );
+  test('property: opaque grouped sums never distribute a negative sign', () => {
+    fc.assert(
+      fc.property(opaqueGroupedCalcArb, ({ input, expected }) => {
+        assert.equal(out(input), expected);
+      }),
+      { numRuns: 100 }
+    );
+  });
 });
 
 test('opaque grouping: nested groups and var() fallbacks preserve serialization', () => {
