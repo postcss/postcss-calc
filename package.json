@@ -30,6 +30,7 @@
     "lint": "oxlint . && tsc && oxfmt --check",
     "fmt": "oxfmt",
     "test": "node --test",
+    "test:mutation:corpus": "node test/mutation/corpus-selection.mjs",
     "test:corpus:full": "POSTCSS_CALC_FULL_CORPUS=1 node --test test/conformance/corpus.test.mjs"
   },
   "author": "Andy Jansson",
