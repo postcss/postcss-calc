@@ -36,7 +36,7 @@
   "author": "Andy Jansson",
   "license": "MIT",
   "engines": {
-    "node": "^22.18 || ^24.11 || >=26.0"
+    "node": "^22.22.3 || ^24.15 || >=26.0"
   },
   "devEngines": {
     "packageManager": {
