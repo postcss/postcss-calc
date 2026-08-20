@@ -30,7 +30,7 @@ function foldCalcKeyword(name) {
   // form arrives as a single ident because CSS Syntax tokenizes leading
   // `-` + ident-start as one ident-token.
   if (name === 'NaN' || name === '-NaN') {
-    return { type: 'Num', value: NaN };
+    return { type: 'Num', value: Number.NaN };
   }
   switch (name.toLowerCase()) {
     case 'pi':
@@ -228,12 +228,12 @@ function requireSurroundingWs(p, token) {
 
 /** @type {Record<string, PrefixParselet>} */
 const PREFIX = {
-  number: (_p, t) => ({ type: 'Num', value: parseFloat(t.value) }),
+  number: (_p, t) => ({ type: 'Num', value: Number.parseFloat(t.value) }),
 
   // Unit case normalization per §10.12: `1PX` serializes as `1px`.
   dimension: (_p, t) => ({
     type: 'Dim',
-    value: parseFloat(t.value),
+    value: Number.parseFloat(t.value),
     unit: t.unit === '%' ? '%' : /** @type {string} */ (t.unit).toLowerCase(),
   }),
 

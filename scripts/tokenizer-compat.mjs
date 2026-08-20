@@ -81,7 +81,7 @@ export function fromOurs(tokens) {
     if (t.type === 'number' || t.type === 'dimension') {
       out.push({
         type: t.type,
-        num: parseFloat(t.value),
+        num: Number.parseFloat(t.value),
         unit: t.unit,
         raw: `${t.value}${t.unit ?? ''}`,
         ws: t.ws,

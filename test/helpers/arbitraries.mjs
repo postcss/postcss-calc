@@ -37,11 +37,11 @@ const floatLeafArb = fc.oneof(floatNumLeaf, floatDimLeaf);
 // lives in unit tests; mixing them in differential adds noise without
 // adding signal.
 const degenerateNumLeaf = fc
-  .constantFrom(Infinity, -Infinity, NaN, 0)
+  .constantFrom(Infinity, -Infinity, Number.NaN, 0)
   .map((v) => ({ type: 'Num', value: v }));
 const degenerateDimLeaf = fc
   .tuple(
-    fc.constantFrom(Infinity, -Infinity, NaN),
+    fc.constantFrom(Infinity, -Infinity, Number.NaN),
     fc.constantFrom(...KNOWN_UNITS)
   )
   .map(([v, u]) => ({ type: 'Dim', value: v, unit: u }));
