@@ -52,7 +52,7 @@ describe('cos: Pi Keyword', () => {
   });
 
   test('cos: 60deg → 0.5', () => {
-    assert.equal(out('cos(60deg)'), '0.5');
+    assert.equal(out('cos(60deg)'), '.5');
   });
 });
 
@@ -62,8 +62,8 @@ test('tan: 45deg → 1 (Math.tan(π/4) = 0.999... rounds to 1)', () => {
 
 describe('sin: Rad Input', () => {
   test('sin: rad input is identity (no conversion needed)', () => {
-    // Math.sin(1) = 0.8414709848078965; rounds to 0.84147 at precision 5.
-    assert.equal(out('sin(1rad)'), '0.84147');
+    // Math.sin(1) = 0.8414709848078965; rounds to .84147 at precision 5.
+    assert.equal(out('sin(1rad)'), '.84147');
   });
 
   test('sin: infinity → NaN (Math.sin of non-finite)', () => {

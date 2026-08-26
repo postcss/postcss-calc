@@ -155,31 +155,31 @@ test('WPT tokenization: 1px-2 is a single unknown-unit dimension', () => {
 // --- minmax-number-serialize.html ----------------------------------------
 // https://github.com/web-platform-tests/wpt/blob/master/css/css-values/minmax-number-serialize.html
 test('WPT minmax-number: single .1', () => {
-  assert.equal(out('min(.1)'), '0.1');
-  assert.equal(out('max(.1)'), '0.1');
+  assert.equal(out('min(.1)'), '.1');
+  assert.equal(out('max(.1)'), '.1');
 });
 
 describe('WPT minmax-number: Min Picks', () => {
   test('WPT minmax-number: min picks smallest number', () => {
-    assert.equal(out('min(.1, .2, .3)'), '0.1');
-    assert.equal(out('min(.3, .2, .1)'), '0.1');
+    assert.equal(out('min(.1, .2, .3)'), '.1');
+    assert.equal(out('min(.3, .2, .1)'), '.1');
   });
 
   test('WPT minmax-number: max picks largest number', () => {
-    assert.equal(out('max(.1, .2, .3)'), '0.3');
-    assert.equal(out('max(.3, .2, .1)'), '0.3');
+    assert.equal(out('max(.1, .2, .3)'), '.3');
+    assert.equal(out('max(.3, .2, .1)'), '.3');
   });
 
   test('WPT minmax-number: min folded inside a sum', () => {
-    assert.equal(out('calc(min(.1) + min(.2))'), '0.3');
+    assert.equal(out('calc(min(.1) + min(.2))'), '.3');
   });
 
   test('WPT minmax-number: max inside a sum', () => {
-    assert.equal(out('calc(max(.1) + max(.2))'), '0.3');
+    assert.equal(out('calc(max(.1) + max(.2))'), '.3');
   });
 
   test('WPT minmax-number: sum of number and folded min', () => {
-    assert.equal(out('calc(.1 + min(.1))'), '0.2');
+    assert.equal(out('calc(.1 + min(.1))'), '.2');
   });
 });
 

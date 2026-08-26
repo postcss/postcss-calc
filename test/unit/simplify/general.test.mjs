@@ -424,11 +424,11 @@ describe('boundary: Round Just-below-tie', () => {
   });
 
   test('boundary: round with very small B', () => {
-    // 0.5 / 0.1 = 5, exact multiple. Result should be 0.5.
-    assert.equal(out('round(0.5, 0.1)'), '0.5');
+    // 0.5 / 0.1 = 5, exact multiple. Result should be .5.
+    assert.equal(out('round(0.5, 0.1)'), '.5');
     // 0.1 + 0.2 in FP is 0.30000000000000004, but our parser tokenizes
     // literal `0.3` as 0.3 — so this is exact-multiple territory.
-    assert.equal(out('round(0.3, 0.1)'), '0.3');
+    assert.equal(out('round(0.3, 0.1)'), '.3');
   });
 
   test('boundary: round with B much larger than A', () => {
@@ -500,7 +500,7 @@ describe('boundary: Round Just-below-tie', () => {
     const result = out('mod(0.3, 0.1)');
     assert.match(
       result,
-      /^-?\d+(\.\d+)?$/,
+      /^-?(?:\d+|\.\d+)$/,
       `expected a numeric output, got ${result}`
     );
   });

@@ -43,7 +43,7 @@ describe('Can: Can Minimize', () => {
   test('can minimize custom property and unknown unit', () => {
     assert.equal(
       out('var(--my-css-var) + -0.3cap'),
-      'calc(-0.3cap + var(--my-css-var))'
+      'calc(-.3cap + var(--my-css-var))'
     );
   });
 

@@ -117,7 +117,7 @@ describe('Reduce', () => {
     // reciprocal + canonical coefficient-first order.
     testValue(
       'calc(0px - (24px - (var(--a) - var(--b)) / 2 + var(--c)))',
-      'calc(0px - (24px - 0.5 * (var(--a) - var(--b)) + var(--c)))'
+      'calc(0px - (24px - .5 * (var(--a) - var(--b)) + var(--c)))'
     )
   );
 
@@ -148,10 +148,10 @@ describe('Reduce', () => {
 
   test(
     'should reduce division',
-    // constant fold `1/2/2 → 0.25` + reciprocal; coefficient first.
+    // constant fold `1/2/2 → .25` + reciprocal; coefficient first.
     testValue(
       'calc(((var(--a) + 4px) / 2) / 2)',
-      'calc(0.25 * (4px + var(--a)))'
+      'calc(.25 * (4px + var(--a)))'
     )
   );
 
@@ -160,7 +160,7 @@ describe('Reduce', () => {
     // constant fold + reciprocal; canonical order.
     testValue(
       'calc(((var(--a) + 4px) / 2) / 2 + 4px)',
-      'calc(4px + 0.25 * (4px + var(--a)))'
+      'calc(4px + .25 * (4px + var(--a)))'
     )
   );
 });
@@ -265,19 +265,19 @@ describe('Ignore', () => {
 
   test(
     'should ignore calc with css variables (6)',
-    // `/2` → `* 0.5` (reciprocal); coefficient first.
+    // `/2` → `* .5` (reciprocal); coefficient first.
     testValue(
       'calc(var(--popupHeight) / 2)',
-      /* 'calc(var(--popupHeight)/2)' */ 'calc(0.5 * var(--popupHeight))'
+      /* 'calc(var(--popupHeight)/2)' */ 'calc(.5 * var(--popupHeight))'
     )
   );
 
   test(
     'should ignore calc with css variables (7)',
-    // `/2` → `* 0.5` on both terms; coefficient first.
+    // `/2` → `* .5` on both terms; coefficient first.
     testValue(
       'calc(var(--popupHeight) / 2 + var(--popupWidth) / 2)',
-      'calc(0.5 * var(--popupHeight) + 0.5 * var(--popupWidth))'
+      'calc(.5 * var(--popupHeight) + .5 * var(--popupWidth))'
     )
   );
 
@@ -399,45 +399,45 @@ describe('Combine', () => {
 
 test(
   'should parse fractions without leading zero',
-  testValue('calc(2rem - .14285em)', 'calc(2rem - 0.14285em)')
+  testValue('calc(2rem - .14285em)', 'calc(2rem - .14285em)')
 );
 
 describe('Handle', () => {
   test(
     'should handle precision correctly (1)',
-    testValue('calc(1/100)', '0.01')
+    testValue('calc(1/100)', '.01')
   );
 
   test(
     'should handle precision correctly (2)',
-    testValue('calc(5/1000000)', '0.00001')
+    testValue('calc(5/1000000)', '.00001')
   );
 
   test(
     'should handle precision correctly (3)',
-    testValue('calc(5/1000000)', '0.000005', { precision: 6 })
+    testValue('calc(5/1000000)', '.000005', { precision: 6 })
   );
 });
 
 describe('Keep', () => {
   test(
     'should keep a value smaller than the precision instead of rounding it to zero',
-    testValue('calc(1/1000000)', '0.000001')
+    testValue('calc(1/1000000)', '.000001')
   );
 
   test(
     'should keep a dimension smaller than the precision',
-    testValue('calc(1px/1000000)', '0.000001px')
+    testValue('calc(1px/1000000)', '.000001px')
   );
 
   test(
     'should keep a negative value smaller than the precision',
-    testValue('calc(-1/1000000)', '-0.000001')
+    testValue('calc(-1/1000000)', '-.000001')
   );
 
   test(
     'should keep the ratio between two values smaller than the precision',
-    testValue('calc(2/1000000)', '0.000002')
+    testValue('calc(2/1000000)', '.000002')
   );
 });
 
@@ -499,7 +499,7 @@ describe('Reduce', () => {
 
   test(
     'should reduce mixed units of time (postcss-calc#33)',
-    testValue('calc(1s - 50ms)', '0.95s')
+    testValue('calc(1s - 50ms)', '.95s')
   );
 });
 
@@ -550,7 +550,7 @@ describe('Reduce', () => {
     // reciprocal; zero bucket kept; coefficient first.
     testValue(
       'calc( 0px - (var(--foo, 4px) / 2))',
-      /* 'calc(0px - var(--foo, 4px)/2)' */ 'calc(0px - 0.5 * var(--foo, 4px))'
+      /* 'calc(0px - var(--foo, 4px)/2)' */ 'calc(0px - .5 * var(--foo, 4px))'
     )
   );
 
@@ -615,7 +615,7 @@ test(
 
 test(
   'should reduce mixed units of time (#33)',
-  testValue('calc(1s - 50ms)', '0.95s')
+  testValue('calc(1s - 50ms)', '.95s')
 );
 
 test(
@@ -662,10 +662,10 @@ test(
 describe('Ignore', () => {
   test(
     'should ignore reducing custom property',
-    // `/8` → `* 0.125` (reciprocal); coefficient first.
+    // `/8` → `* .125` (reciprocal); coefficient first.
     testCss(
       ':root { --foo: calc(var(--bar) / 8); }',
-      /* ':root { --foo: calc(var(--bar)/8); }' */ ':root { --foo: calc(0.125 * var(--bar)); }'
+      /* ':root { --foo: calc(var(--bar)/8); }' */ ':root { --foo: calc(.125 * var(--bar)); }'
     )
   );
 
@@ -796,10 +796,10 @@ describe('Throw', () => {
 
 test(
   'nested var (reduce-css-calc#50)',
-  // `/2` → `* 0.5` (reciprocal); coefficient first.
+  // `/2` → `* .5` (reciprocal); coefficient first.
   testValue(
     'calc(var(--xxx, var(--yyy)) / 2)',
-    /* 'calc(var(--xxx, var(--yyy))/2)' */ 'calc(0.5 * var(--xxx, var(--yyy)))'
+    /* 'calc(var(--xxx, var(--yyy))/2)' */ 'calc(.5 * var(--xxx, var(--yyy)))'
   )
 );
 
@@ -999,22 +999,22 @@ describe('Preserve', () => {
 
   test(
     'should preserve division precedence (2)',
-    // `/16` → `* 0.0625` (reciprocal); coefficient first.
+    // `/16` → `* .0625` (reciprocal); coefficient first.
     testValue(
       `calc(
         (var(--fluid-screen) - ((var(--fluid-min-width) / 16) * 1rem)) /
         ((var(--fluid-max-width) / 16) - (var(--fluid-min-width) / 16))
     )`,
-      'calc((var(--fluid-screen) - 0.0625 * 1rem * var(--fluid-min-width)) / (0.0625 * var(--fluid-max-width) - 0.0625 * var(--fluid-min-width)))'
+      'calc((var(--fluid-screen) - .0625 * 1rem * var(--fluid-min-width)) / (.0625 * var(--fluid-max-width) - .0625 * var(--fluid-min-width)))'
     )
   );
 
   test(
     'should preserve division precedence (3)',
-    // `1/(10/x)` folds to `0.1 * x` via reciprocal.
+    // `1/(10/x)` folds to `.1 * x` via reciprocal.
     testValue(
       'calc(1/(10/var(--dot-size)))',
-      /* 'calc(1/(10/var(--dot-size)))' */ 'calc(0.1 * var(--dot-size))'
+      /* 'calc(1/(10/var(--dot-size)))' */ 'calc(.1 * var(--dot-size))'
     )
   );
 });

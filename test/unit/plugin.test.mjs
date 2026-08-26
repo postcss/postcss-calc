@@ -28,6 +28,11 @@ describe('plugin: basic pipeline', () => {
     assert.equal(css, 'a{b:2px 4px}');
   });
 
+  test('plugin: removes leading zero from resolved decimals', async () => {
+    const { css } = await process('a{b:calc(1px / 4);c:calc(1 / 2000000)}');
+    assert.equal(css, 'a{b:.25px;c:5e-7}');
+  });
+
   test('plugin: preserves grouping through unary negation', async () => {
     const { css } = await process(
       'a{a:calc(-(var(--a) + var(--b)));b:calc(-(10px + var(--a)))}'
