@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
 
+## 11.0.1 (2026-08-26)
+
+### Bug fixes
+
+- Omit leading zeroes when serializing finite fractional numbers, such as `0.5` as `.5`.
+
  ## 11.0.0
 
   ### Breaking changes
