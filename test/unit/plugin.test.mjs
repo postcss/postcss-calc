@@ -11,6 +11,15 @@ async function process(fixture, opts = {}) {
   const result = await postcss(plugin(opts)).process(fixture, POSTCSS_OPTS);
   return { css: result.css, warnings: result.warnings().map((w) => w.text) };
 }
+
+async function assertIdempotent(fixture, opts = {}) {
+  const first = await process(fixture, opts);
+  const second = await process(first.css, opts);
+
+  assert.notEqual(first.css, fixture);
+  assert.equal(second.css, first.css);
+  assert.deepEqual(second.warnings, first.warnings);
+}
 // --- Basic pipeline ------------------------------------------------------
 describe('plugin: basic pipeline', () => {
   test('plugin: reduces simple calc in a decl', async () => {
@@ -26,6 +35,13 @@ describe('plugin: basic pipeline', () => {
   test('plugin: multiple calcs in one value', async () => {
     const { css } = await process('a{b:calc(1px + 1px) calc(2px + 2px)}');
     assert.equal(css, 'a{b:2px 4px}');
+  });
+
+  test('plugin: declaration transformations are idempotent', async () => {
+    await assertIdempotent(
+      'a{b:calc(1px + 2px) calc(2px + 3px);c:calc(100% + var(--x))}',
+      { warnWhenCannotResolve: true }
+    );
   });
 
   test('plugin: removes leading zero from resolved decimals', async () => {
@@ -127,6 +143,13 @@ describe('plugin: MediaQueries', () => {
     );
     assert.equal(css, '@media (min-width: 200px) { a{b:c} }');
   });
+
+  test('plugin: mediaQueries transformations are idempotent', async () => {
+    await assertIdempotent(
+      '@media (min-width: calc(100px + 100px)) { a{b:c} }',
+      { mediaQueries: true }
+    );
+  });
 });
 
 // --- onParseError --------------------------------------------------------
@@ -225,6 +248,12 @@ describe('plugin: option combinations', () => {
       selectors: true,
     });
     assert.equal(css, 'a:nth-child(3) { b: c }');
+  });
+
+  test('plugin: selector transformations are idempotent', async () => {
+    await assertIdempotent('a:nth-child(calc(1 + 2)) { b: c }', {
+      selectors: true,
+    });
   });
 
   test('plugin: onParseError does not fire for fully-resolved inputs', async () => {
