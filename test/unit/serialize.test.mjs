@@ -100,6 +100,14 @@ describe('serialize: Single Number', () => {
     );
   });
 
+  test('serialize: omits the leading zero from fractional numbers', () => {
+    assert.equal(serialize(num(0.5)), '.5');
+    assert.equal(serialize(num(-0.000001)), '-.000001');
+    assert.equal(serialize(dim(0.25, 'px')), '.25px');
+    assert.equal(serialize(num(0)), '0');
+    assert.equal(serialize(num(1e-7)), '1e-7');
+  });
+
   test('serialize: custom calcName', () => {
     const ast = mkSum([
       { sign: 1, node: dim(1, 'px') },

@@ -12,9 +12,9 @@ describe('simplify: Min Folds', () => {
   });
 
   test('simplify: min converts units within a family before comparing', () => {
-    // 1in = 96px, so min(1in, 10px) = min(1in, 0.10417in) = 0.10417in.
+    // 1in = 96px, so min(1in, 10px) = min(1in, .10417in) = .10417in.
     // First arg's unit is canonical — consistent with the sum-bucket rule.
-    assert.equal(out('min(1in, 10px)'), '0.10417in');
+    assert.equal(out('min(1in, 10px)'), '.10417in');
   });
 
   test('simplify: min preserved when types mix', () => {

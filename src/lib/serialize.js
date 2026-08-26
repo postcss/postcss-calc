@@ -60,6 +60,25 @@ function degenerateKeyword(v) {
 }
 
 /**
+ * Serialize a finite CSS number. CSS numbers may omit the zero before a
+ * fractional value between -1 and 1 (`.5`, `-.5`). Scientific notation is
+ * left untouched because it already has no leading zero to remove.
+ *
+ * @param {number} v
+ * @return {string}
+ */
+function serializeNumber(v) {
+  const text = String(v);
+  if (text.startsWith('0.')) {
+    return text.slice(1);
+  }
+  if (text.startsWith('-0.')) {
+    return `-${text.slice(2)}`;
+  }
+  return text;
+}
+
+/**
  * @param {Node} node
  * @param {SerializeOptions} [opts]
  * @return {string}
@@ -127,7 +146,7 @@ function serializeExpr(node, prec) {
       if (isDegenerate(node.value)) {
         return degenerateKeyword(node.value);
       }
-      return String(round(node.value, prec));
+      return serializeNumber(round(node.value, prec));
     case 'Dim':
       if (isDegenerate(node.value)) {
         // Nested degenerate Dim wraps in calc() so the `<kw> * 1<unit>` form
@@ -135,7 +154,7 @@ function serializeExpr(node, prec) {
         // inside a Product — `0 * Dim(Infinity, px)` would re-fold as NaN.
         return `calc(${degenerateKeyword(node.value)} * 1${node.unit})`;
       }
-      return `${round(node.value, prec)}${node.unit}`;
+      return `${serializeNumber(round(node.value, prec))}${node.unit}`;
     case 'Ident':
       return node.name;
     case 'Call': {
