@@ -5,6 +5,7 @@ import { describe, test } from 'node:test';
 import assert from 'node:assert/strict';
 import { tokenize } from '../../src/lib/tokenizer.js';
 import { parse } from '../../src/lib/parser.js';
+import { serialize } from '../../src/lib/serialize.js';
 import { sexpr } from '../helpers/sexpr.mjs';
 
 /** Parse input, return its S-expression. */
@@ -61,6 +62,29 @@ describe('parser: / precedence and associativity', () => {
 
   test('parser: mixed + / - flattens to one Sum', () => {
     assert.equal(ast('1 - 2 + 3'), '(+ 1 -2 3)');
+  });
+});
+
+describe('parser: long arithmetic chains', () => {
+  const termCount = 1_024;
+
+  test('parser: long additive chain has one canonical Sum', () => {
+    const input = Array(termCount).fill('1').join(' + ');
+    const tree = parse(tokenize(input));
+
+    assert.equal(tree.type, 'Sum');
+    assert.equal(tree.terms.length, termCount);
+    assert.equal(serialize(tree), `calc(${input})`);
+  });
+
+  test('parser: long multiplicative chain has one canonical Product', () => {
+    // Use 2 rather than 1: `mkProduct` correctly removes factors of one.
+    const input = Array(termCount).fill('2').join(' * ');
+    const tree = parse(tokenize(input));
+
+    assert.equal(tree.type, 'Product');
+    assert.equal(tree.factors.length, termCount);
+    assert.equal(serialize(tree), `calc(${input})`);
   });
 });
 

@@ -206,6 +206,8 @@ when changing parsing/simplification behavior:
 pnpm test:corpus:full
 ```
 
+Profile long arithmetic parser chains with `pnpm benchmark:arithmetic-chains`.
+
 ## [Changelog](CHANGELOG.md)
 
 ## [License](LICENSE)

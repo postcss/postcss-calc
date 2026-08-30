@@ -29,6 +29,7 @@
   "scripts": {
     "lint": "oxlint . && tsc && oxfmt --check",
     "fmt": "oxfmt",
+    "benchmark:arithmetic-chains": "node scripts/benchmark-arithmetic-chains.mjs",
     "test": "node --test --test-reporter=dot 'test/**/*.test.mjs' test/index.cjs test/convertUnit.cjs",
     "test:mutation:corpus": "node test/mutation/corpus-selection.mjs",
     "test:corpus:full": "POSTCSS_CALC_FULL_CORPUS=1 node --test test/conformance/corpus.test.mjs"
