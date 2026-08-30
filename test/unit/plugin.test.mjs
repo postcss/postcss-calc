@@ -32,6 +32,23 @@ describe('plugin: basic pipeline', () => {
     assert.equal(css, 'a{b:red}');
   });
 
+  test('plugin: ordinary values remain byte-for-byte unchanged', async () => {
+    const fixture =
+      'a{content:"calc(1px + 2px)";background:url(x);custom:  red\\9 }';
+    const { css } = await process(fixture, {
+      mediaQueries: true,
+      selectors: true,
+    });
+    assert.equal(css, fixture);
+  });
+
+  test('plugin: simple resolved results preserve canonical token text', async () => {
+    const { css } = await process(
+      'a{a:calc(1px + 2px);b:calc(10% - 2%);c:calc(1 / 4);d:calc(-2px + 1px);e:calc(1PX + 2PX)}'
+    );
+    assert.equal(css, 'a{a:3px;b:8%;c:.25;d:-1px;e:3px}');
+  });
+
   test('plugin: multiple calcs in one value', async () => {
     const { css } = await process('a{b:calc(1px + 1px) calc(2px + 2px)}');
     assert.equal(css, 'a{b:2px 4px}');
@@ -283,6 +300,13 @@ describe('plugin: bare math functions', () => {
     assert.equal(css, 'a{ width: min(360px, 100% - 48px) }');
   });
 
+  test('plugin: detects escaped math-function names', async () => {
+    const { css } = await process(
+      'a{width:c\\61 lc(1px + 2px);height:m\\69 n(1px, 2px)}'
+    );
+    assert.equal(css, 'a{width:3px;height:1px}');
+  });
+
   test('plugin: simplifies bare max() outside of calc()', async () => {
     const { css } = await process('a{ height: max(1px, 2px, 3px) }');
     assert.equal(css, 'a{ height: 3px }');
@@ -306,6 +330,11 @@ describe('plugin: bare math functions', () => {
   test('plugin: leaves unsupported bare functions untouched', async () => {
     const { css } = await process('a{ width: unknown(1px + 2px) }');
     assert.equal(css, 'a{ width: unknown(1px + 2px) }');
+  });
+
+  test('plugin: supported math is found inside unsupported functions', async () => {
+    const { css } = await process('a{width: unknown(calc(1px + 2px))}');
+    assert.equal(css, 'a{width: unknown(3px)}');
   });
 
   test('plugin: leaves opaque-arg bare min() preserved', async () => {
