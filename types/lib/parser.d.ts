@@ -2,10 +2,6 @@ export type Token = import('./tokenizer.js').Token;
 export type TokenType = import('./tokenizer.js').TokenType;
 export type Node = import('./node.js').Node;
 export type PrefixParselet = (p: Parser, token: Token) => Node;
-export type InfixParselet = {
-    lbp: number;
-    parse: (p: Parser, left: Node, token: Token) => Node;
-};
 declare class Parser {
     /** @private */
     i;
