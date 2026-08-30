@@ -207,9 +207,6 @@ importers:
 
   .:
     dependencies:
-      '@csstools/css-parser-algorithms':
-        specifier: ^4.0.0
-        version: 4.0.0(@csstools/css-tokenizer@4.0.0)
       '@csstools/css-tokenizer':
         specifier: ^4.0.0
         version: 4.0.0

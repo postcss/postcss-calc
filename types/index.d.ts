@@ -14,6 +14,15 @@ export type TransformContext = {
     result: import('postcss').Result;
     item: import('postcss').ChildNode;
     value: string;
+    tokens: import('@csstools/css-tokenizer').CSSToken[];
+    replacements: Replacement[];
+};
+export type Replacement = {
+    start: number;
+    end: number;
+    node: import('./lib/node.js').Node;
+    calcName: string;
+    matchedName: string;
 };
 /**
  * @param {PostCssCalcOptions} [opts]
