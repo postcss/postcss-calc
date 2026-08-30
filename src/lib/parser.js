@@ -1,14 +1,13 @@
 // Pratt parser. +/- emit Sum nodes; */÷ emit Product nodes. node.js
 // constructors flatten and normalize on construction, while parenthesized
 // sums retain a grouping marker for the opaque-subtraction invariant.
-import { mkSum, mkProduct, negate, ident, call } from './node.js';
+import { mkSum, mkProduct, negate, num, dim, ident, call } from './node.js';
 
 /**
  * @typedef {import('./tokenizer.js').Token} Token
  * @typedef {import('./tokenizer.js').TokenType} TokenType
  * @typedef {import('./node.js').Node} Node
  * @typedef {(p: Parser, token: Token) => Node} PrefixParselet
- * @typedef {{lbp: number, parse: (p: Parser, left: Node, token: Token) => Node}} InfixParselet
  */
 
 /**
@@ -30,17 +29,17 @@ function foldCalcKeyword(name) {
   // form arrives as a single ident because CSS Syntax tokenizes leading
   // `-` + ident-start as one ident-token.
   if (name === 'NaN' || name === '-NaN') {
-    return { type: 'Num', value: Number.NaN };
+    return num(Number.NaN);
   }
   switch (name.toLowerCase()) {
     case 'pi':
-      return { type: 'Num', value: Math.PI };
+      return num(Math.PI);
     case 'e':
-      return { type: 'Num', value: Math.E };
+      return num(Math.E);
     case 'infinity':
-      return { type: 'Num', value: Infinity };
+      return num(Infinity);
     case '-infinity':
-      return { type: 'Num', value: -Infinity };
+      return num(-Infinity);
   }
   return null;
 }
@@ -102,38 +101,56 @@ class Parser {
       if (!rule || rule.lbp < minBp) {
         break;
       }
-      this.next();
-      left = rule.parse(this, left, nxt);
+      if (infixKey === '+' || infixKey === '-') {
+        /** @type {import('./node.js').SumTerm[]} */
+        const terms = [{ sign: /** @type {1} */ (1), node: left }];
+        do {
+          const token = this.next();
+          requireSurroundingWs(this, token);
+          terms.push({
+            sign: /** @type {1 | -1} */ (token.value === '+' ? 1 : -1),
+            node: this.parseExpr(ADD_BP + 1),
+          });
+          const next = this.peek();
+          if (
+            next.type !== 'punct' ||
+            (next.value !== '+' && next.value !== '-')
+          ) {
+            break;
+          }
+        } while (ADD_BP >= minBp);
+        left = mkSum(terms);
+        continue;
+      }
+
+      if (infixKey === '*' || infixKey === '/') {
+        /** @type {import('./node.js').ProductFactor[]} */
+        const factors = [{ exponent: /** @type {1} */ (1), node: left }];
+        do {
+          const token = this.next();
+          factors.push({
+            exponent: /** @type {1 | -1} */ (token.value === '*' ? 1 : -1),
+            node: this.parseExpr(MUL_BP + 1),
+          });
+          const next = this.peek();
+          if (
+            next.type !== 'punct' ||
+            (next.value !== '*' && next.value !== '/')
+          ) {
+            break;
+          }
+        } while (MUL_BP >= minBp);
+        left = mkProduct(factors);
+        continue;
+      }
+
+      // Every infix operator is handled above. Keep this defensive exit in
+      // case a future parselet is added without a chain implementation.
+      break;
     }
 
     return left;
   }
-}
-
-/**
- * @param {Node} left
- * @param {Node} right
- * @param {1 | -1} rightSign
- * @return {Node}
- */
-function addTerm(left, right, rightSign) {
-  return mkSum([
-    { sign: 1, node: left },
-    { sign: rightSign, node: right },
-  ]);
-}
-
-/**
- * @param {Node} left
- * @param {Node} right
- * @param {1 | -1} rightExp
- * @return {Node}
- */
-function mulFactor(left, right, rightExp) {
-  return mkProduct([
-    { exponent: 1, node: left },
-    { exponent: rightExp, node: right },
-  ]);
 }
 
 const ADD_BP = 1;
@@ -228,14 +245,14 @@ function requireSurroundingWs(p, token) {
 
 /** @type {Record<string, PrefixParselet>} */
 const PREFIX = {
-  number: (_p, t) => ({ type: 'Num', value: Number.parseFloat(t.value) }),
+  number: (_p, t) => num(Number.parseFloat(t.value)),
 
   // Unit case normalization per §10.12: `1PX` serializes as `1px`.
-  dimension: (_p, t) => ({
-    type: 'Dim',
-    value: Number.parseFloat(t.value),
-    unit: t.unit === '%' ? '%' : /** @type {string} */ (t.unit).toLowerCase(),
-  }),
+  dimension: (_p, t) =>
+    dim(
+      Number.parseFloat(t.value),
+      t.unit === '%' ? '%' : /** @type {string} */ (t.unit).toLowerCase()
+    ),
 
   ident: (p, t) => {
     const nxt = p.peek();
@@ -273,30 +290,12 @@ const PREFIX = {
   '+': (p) => p.parseExpr(UNARY_BP),
 };
 
-/** @type {Record<string, InfixParselet>} */
+/** @type {Record<string, {lbp: number}>} */
 const INFIX = {
-  '+': {
-    lbp: ADD_BP,
-    parse: (p, left, token) => {
-      requireSurroundingWs(p, token);
-      return addTerm(left, p.parseExpr(ADD_BP + 1), 1);
-    },
-  },
-  '-': {
-    lbp: ADD_BP,
-    parse: (p, left, token) => {
-      requireSurroundingWs(p, token);
-      return addTerm(left, p.parseExpr(ADD_BP + 1), -1);
-    },
-  },
-  '*': {
-    lbp: MUL_BP,
-    parse: (p, left) => mulFactor(left, p.parseExpr(MUL_BP + 1), 1),
-  },
-  '/': {
-    lbp: MUL_BP,
-    parse: (p, left) => mulFactor(left, p.parseExpr(MUL_BP + 1), -1),
-  },
+  '+': { lbp: ADD_BP },
+  '-': { lbp: ADD_BP },
+  '*': { lbp: MUL_BP },
+  '/': { lbp: MUL_BP },
 };
 
 /**
