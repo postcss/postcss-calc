@@ -23,6 +23,19 @@ const NUMERIC_RAW = /^[+-]?(?:\d+(?:\.\d+)?|\.\d+)(?:[eE][+-]?\d+)?/;
  * @return {Token[]}
  */
 function tokenize(input) {
+  return tokenizeTokens(tokenizeCss({ css: input }), input.length);
+}
+
+/**
+ * Convert a slice of an existing CSS token stream into the token subset used
+ * by the calculation parser. Token positions remain relative to the original
+ * source text, which keeps parse errors useful to adapter callers.
+ *
+ * @param {import('@csstools/css-tokenizer').CSSToken[]} cssTokens
+ * @param {number} eofPosition
+ * @return {Token[]}
+ */
+function tokenizeTokens(cssTokens, eofPosition) {
   /** @type {Token[]} */
   const tokens = [];
   let ws = true;
@@ -52,7 +65,7 @@ function tokenize(input) {
     ws = false;
   }
 
-  for (const t of tokenizeCss({ css: input })) {
+  for (const t of cssTokens) {
     switch (t[0]) {
       case CssType.Whitespace:
       case CssType.Comment:
@@ -97,8 +110,7 @@ function tokenize(input) {
         tokens.push({ type: 'punct', value: t[4].value, pos: t[2], ws });
         break;
       case CssType.EOF:
-        tokens.push({ type: 'eof', value: '', pos: input.length, ws });
-        break;
+        continue;
       default:
         throw new Error(
           `Unexpected character "${t[1][0] ?? ''}" at position ${t[2]}`
@@ -107,7 +119,9 @@ function tokenize(input) {
     ws = false;
   }
 
+  tokens.push({ type: 'eof', value: '', pos: eofPosition, ws });
+
   return tokens;
 }
 
-export { tokenize };
+export { tokenize, tokenizeTokens };

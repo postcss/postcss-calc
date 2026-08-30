@@ -17,4 +17,14 @@ export type Token = {
  * @return {Token[]}
  */
 declare function tokenize(input: string): Token[];
-export { tokenize };
+/**
+ * Convert a slice of an existing CSS token stream into the token subset used
+ * by the calculation parser. Token positions remain relative to the original
+ * source text, which keeps parse errors useful to adapter callers.
+ *
+ * @param {import('@csstools/css-tokenizer').CSSToken[]} cssTokens
+ * @param {number} eofPosition
+ * @return {Token[]}
+ */
+declare function tokenizeTokens(cssTokens: import('@csstools/css-tokenizer').CSSToken[], eofPosition: number): Token[];
+export { tokenize, tokenizeTokens };

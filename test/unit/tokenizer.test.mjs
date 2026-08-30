@@ -2,7 +2,11 @@
 // the `ws` flag that drives strict-whitespace enforcement in the parser.
 import { describe, test } from 'node:test';
 import assert from 'node:assert/strict';
-import { tokenize } from '../../src/lib/tokenizer.js';
+import {
+  tokenize as tokenizeCss,
+  TokenType as CssType,
+} from '@csstools/css-tokenizer';
+import { tokenize, tokenizeTokens } from '../../src/lib/tokenizer.js';
 
 /** Helper: strip trailing EOF for compact assertions. */
 function toks(input) {
@@ -244,4 +248,30 @@ test('tok: token positions point to the first char of each token', () => {
   assert.equal(ts[0].pos, 0); // `12`
   assert.equal(ts[1].pos, 3); // `+`
   assert.equal(ts[2].pos, 5); // `34`
+});
+
+test('tok: converts a source-relative slice from a shared CSS token stream', () => {
+  const css = 'prefix calc(/* gap */-2P\\58 + +3px) suffix';
+  const cssTokens = tokenizeCss({ css });
+  const start = cssTokens.findIndex((token) => token[0] === CssType.Comment);
+  const end = cssTokens.findIndex((token) => token[0] === CssType.CloseParen);
+  const ts = tokenizeTokens(cssTokens.slice(start, end), cssTokens[end][2]);
+
+  assert.deepEqual(
+    ts.map(({ type, value, pos, ws, ...rest }) => ({
+      type,
+      value,
+      pos,
+      ws,
+      ...rest,
+    })),
+    [
+      { type: 'punct', value: '-', pos: 21, ws: true },
+      { type: 'dimension', value: '2', pos: 22, ws: false, unit: 'PX' },
+      { type: 'punct', value: '+', pos: 28, ws: false },
+      { type: 'punct', value: '+', pos: 30, ws: true },
+      { type: 'dimension', value: '3', pos: 31, ws: false, unit: 'px' },
+      { type: 'eof', value: '', pos: 34, ws: false },
+    ]
+  );
 });

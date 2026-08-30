@@ -54,6 +54,13 @@ describe('plugin: basic pipeline', () => {
     assert.equal(css, 'a{b:2px 4px}');
   });
 
+  test('plugin: one value preserves bytes around several token-slice calculations', async () => {
+    const { css } = await process(
+      'a{b:\\66 oo calc(/*a*/-2px + +5px)  /\\*keep*\\/ MIN(4px,2px)\\9}'
+    );
+    assert.equal(css, 'a{b:\\66 oo 3px  /\\*keep*\\/ 2px\\9}');
+  });
+
   test('plugin: declaration transformations are idempotent', async () => {
     await assertIdempotent(
       'a{b:calc(1px + 2px) calc(2px + 3px);c:calc(100% + var(--x))}',
@@ -337,18 +344,46 @@ describe('plugin: bare math functions', () => {
     assert.equal(css, 'a{width: unknown(3px)}');
   });
 
+  test('plugin: supported math is found inside nested simple blocks', async () => {
+    const { css } = await process(
+      'a{width:unknown([calc(1px + 2px)] {max(3px, 4px)})}'
+    );
+    assert.equal(css, 'a{width:unknown([3px] {4px})}');
+  });
+
+  test('plugin: a failing supported outer function suppresses its children', async () => {
+    const inputs = [];
+    const fixture = 'a{width:calc(calc(1 /) + calc(1px + 2px))}';
+    const { css } = await process(fixture, {
+      onParseError: (_, input) => inputs.push(input),
+    });
+    assert.equal(css, fixture);
+    assert.deepEqual(inputs, ['calc(1 /) + calc(1px + 2px)']);
+  });
+
+  test('plugin: stray malformed closers do not hide later calculations', async () => {
+    const { css } = await process('a{width:] calc(1px + 2px)}');
+    assert.equal(css, 'a{width:] 3px}');
+  });
+
+  test('plugin: an unclosed function consumes through the end of a node value', async () => {
+    const root = postcss.root({
+      nodes: [postcss.decl({ prop: 'width', value: 'calc(1px + 2px' })],
+    });
+    const result = await postcss(plugin()).process(root, POSTCSS_OPTS);
+    assert.equal(result.css, 'width: 3px');
+  });
+
   test('plugin: leaves opaque-arg bare min() preserved', async () => {
     const { css } = await process('a{ width: min(1px, var(--x)) }');
     assert.equal(css, 'a{ width: min(1px, var(--x)) }');
   });
 });
 
-// --- Outer-walk round-trip ------
-// The outer traversal runs the whole declaration/selector/param text
-// through @csstools/css-tokenizer + css-parser-algorithms (a strict,
-// spec-compliant parser). These tests pin down that content having
-// nothing to do with calc() still round-trips byte-for-byte through the
-// tokenizer.
+// --- Source-range preservation ------------------------------------------
+// The outer traversal only replaces matched source ranges. These tests pin
+// down that content having nothing to do with calc() remains byte-for-byte
+// unchanged.
 test('plugin: IE backslash hack survives the outer walk untouched', async () => {
   const { css } = await process('a{width:calc(1px + 2px)\\9}');
   assert.equal(css, 'a{width:3px\\9}');
