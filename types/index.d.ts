@@ -1,3 +1,16 @@
+export type TransformValueOptions = {
+    precision?: number | false;
+    warnWhenCannotResolve?: boolean;
+    /**
+     * Invoked when parse/simplify throws.
+     */
+    onParseError?: (error: Error, input: string) => void;
+    /**
+     * Invoked when `warnWhenCannotResolve` is set and an expression cannot be reduced to a single value.
+     */
+    onWarn?: (message: string) => void;
+};
+export type ResolvedTransformOptions = Required<Omit<TransformValueOptions, 'onParseError' | 'onWarn'>> & Pick<TransformValueOptions, 'onParseError' | 'onWarn'>;
 export type PostCssCalcOptions = {
     precision?: number | false;
     warnWhenCannotResolve?: boolean;
@@ -10,9 +23,7 @@ export type PostCssCalcOptions = {
 };
 export type ResolvedOptions = Required<Omit<PostCssCalcOptions, 'onParseError'>> & Pick<PostCssCalcOptions, 'onParseError'>;
 export type TransformContext = {
-    options: ResolvedOptions;
-    result: import('postcss').Result;
-    item: import('postcss').ChildNode;
+    options: ResolvedTransformOptions;
     value: string;
     tokens: import('@csstools/css-tokenizer').CSSToken[];
     replacements: Replacement[];
@@ -25,6 +36,12 @@ export type Replacement = {
     matchedName: string;
 };
 /**
+ * @param {string} value
+ * @param {TransformValueOptions} [opts]
+ * @return {string}
+ */
+declare function transformValue(value: string, opts?: TransformValueOptions): string;
+/**
  * @param {PostCssCalcOptions} [opts]
  * @return {import('postcss').Plugin}
  */
@@ -34,4 +51,4 @@ declare namespace pluginCreator {
 }
 declare const _default: import('postcss').PluginCreator<PostCssCalcOptions>;
 export default _default;
-export { pluginCreator as 'module.exports' };
+export { transformValue as reduceCalc, pluginCreator as 'module.exports' };
