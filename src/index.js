@@ -20,6 +20,16 @@ const BLOCK_CLOSE = new Map([
 ]);
 
 /**
+ * @typedef {object} TransformValueOptions
+ * @property {number | false} [precision]
+ * @property {boolean} [warnWhenCannotResolve]
+ * @property {(error: Error, input: string) => void} [onParseError] Invoked when parse/simplify throws.
+ * @property {(message: string) => void} [onWarn] Invoked when `warnWhenCannotResolve` is set and an expression cannot be reduced to a single value.
+ */
+
+/** @typedef {Required<Omit<TransformValueOptions, 'onParseError' | 'onWarn'>> & Pick<TransformValueOptions, 'onParseError' | 'onWarn'>} ResolvedTransformOptions */
+
+/**
  * @typedef {object} PostCssCalcOptions
  * @property {number | false} [precision]
  * @property {boolean} [warnWhenCannotResolve]
@@ -36,9 +46,7 @@ const BLOCK_CLOSE = new Map([
  * warnWhenCannotResolve message.
  *
  * @typedef {object} TransformContext
- * @property {ResolvedOptions} options
- * @property {import('postcss').Result} result
- * @property {import('postcss').ChildNode} item
+ * @property {ResolvedTransformOptions} options
  * @property {string} value
  * @property {import('@csstools/css-tokenizer').CSSToken[]} tokens
  * @property {Replacement[]} replacements
@@ -112,11 +120,7 @@ function walkTokens(start, expectedClose, ctx, transform) {
       });
     } catch (error) {
       const err = error instanceof Error ? error : new Error('Error');
-      if (ctx.options.onParseError) {
-        ctx.options.onParseError(err, contents);
-      } else {
-        ctx.result.warn(err.message, { node: ctx.item });
-      }
+      ctx.options.onParseError?.(err, contents);
     }
     i = close;
   }
@@ -126,16 +130,21 @@ function walkTokens(start, expectedClose, ctx, transform) {
 
 /**
  * @param {string} value
- * @param {ResolvedOptions} options
- * @param {import('postcss').Result} result
- * @param {import('postcss').ChildNode} item
+ * @param {TransformValueOptions} [opts]
  * @return {string}
  */
-function transformValue(value, options, result, item) {
+function transformValue(value, opts) {
+  /** @type {ResolvedTransformOptions} */
+  const options = {
+    precision: 5,
+    warnWhenCannotResolve: false,
+    ...opts,
+  };
+
   const tokens = cssTokenize({ css: value });
   /** @type {Replacement[]} */
   const replacements = [];
-  const ctx = { options, result, item, value, tokens, replacements };
+  const ctx = { options, value, tokens, replacements };
   walkTokens(0, undefined, ctx, true);
 
   /** @type {(Replacement & {text: string})[]} */
@@ -148,10 +157,7 @@ function transformValue(value, options, result, item) {
       options.warnWhenCannotResolve &&
       text.startsWith(`${replacement.matchedName}(`)
     ) {
-      result.warn('Could not reduce expression: ' + value, {
-        plugin: 'postcss-calc',
-        node: item,
-      });
+      options.onWarn?.('Could not reduce expression: ' + value);
     }
     return { ...replacement, text };
   });
@@ -182,7 +188,21 @@ function transformValue(value, options, result, item) {
  * @return {void}
  */
 function applyTransform(node, current, setProp, options, result) {
-  setProp(node, transformValue(current, options, result, node));
+  setProp(
+    node,
+    transformValue(current, {
+      precision: options.precision,
+      warnWhenCannotResolve: options.warnWhenCannotResolve,
+      onParseError:
+        options.onParseError ??
+        ((error) => {
+          result.warn(error.message, { node });
+        }),
+      onWarn: (message) => {
+        result.warn(message, { plugin: 'postcss-calc', node });
+      },
+    })
+  );
 }
 
 /**
@@ -253,4 +273,4 @@ pluginCreator.postcss = true;
 export default /** @type import('postcss').PluginCreator<PostCssCalcOptions>*/ (
   pluginCreator
 );
-export { pluginCreator as 'module.exports' };
+export { transformValue as reduceCalc, pluginCreator as 'module.exports' };
