@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
 
+## 11.0.3 (2026-09-01)
+
+### Performance improvements
+
+- Improve performance by reducing the number of parsing and serialization steps
+
 ## 11.0.2 (2026-08-30)
 
 ### Performance improvements
