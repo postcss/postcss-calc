@@ -139,7 +139,7 @@ test('reduceCalc: warnWhenCannotResolve surfaces unresolved expressions', () => 
     warnWhenCannotResolve: true,
   });
   assert.equal(warnings.length, 1);
-  assert.match(warnings[0], /Could not reduceWithWarnings/);
+  assert.match(warnings[0], /Could not reduce/);
 });
 
 test('reduceCalc: no warning when expression fully resolves', () => {
