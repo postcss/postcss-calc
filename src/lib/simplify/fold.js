@@ -1,7 +1,20 @@
+import { num, dim } from '../node.js';
 import { baseOf, convert } from '../convertUnits.js';
 
 /** @typedef {import('../node.js').Node} Node */
+/** @typedef {import('../node.js').Num} Num */
+/** @typedef {import('../node.js').Dim} Dim */
 /** @typedef {import('../convertUnits.js').BaseType} BaseType */
+
+/**
+ * Construct a Num or Dim node from a folded result.
+ * @param {{ unit: string }} fold
+ * @param {number} value
+ * @return {Num | Dim}
+ */
+function foldResult(fold, value) {
+  return fold.unit === '' ? num(value) : dim(value, fold.unit);
+}
 
 /**
  * @param {Node[]} args
@@ -62,4 +75,4 @@ function foldDimArgs(args, unit, base) {
   return { values, unit };
 }
 
-export { foldConstArgs };
+export { foldConstArgs, foldResult };

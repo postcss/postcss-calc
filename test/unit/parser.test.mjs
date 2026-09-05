@@ -291,4 +291,10 @@ describe('parser: Anchor', () => {
   test('parse: empty input throws', () => {
     assert.throws(() => parse(tokenize('')), /Unexpected token/);
   });
+
+  test('parser: punctuation helper methods match and expect punctuation tokens', () => {
+    assert.equal(ast('1 + 2 + 3 + 4'), '(+ 1 2 3 4)');
+    assert.equal(ast('2 * 3 * 4 * 5'), '(* 2 3 4 5)');
+    assert.equal(ast('min(1, 2, 3)'), '(min 1 2 3)');
+  });
 });

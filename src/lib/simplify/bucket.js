@@ -21,7 +21,7 @@ import { convert } from '../convertUnits.js';
  * @return {UnitBucket[]}
  */
 function mergeConvertibleBuckets(buckets) {
-  const ordered = [...buckets].sort((a, b) => a.order - b.order);
+  const ordered = buckets.sort((a, b) => a.order - b.order);
   /** @type {Set<string>} */ const merged = new Set();
   /** @type {UnitBucket[]} */ const out = [];
   for (const b of ordered) {

@@ -71,7 +71,7 @@ function mkSum(rawTerms) {
     pushSumTerm(flat, t);
   }
   if (flat.length === 0) {
-    return { type: 'Num', value: 0 };
+    return num(0);
   }
   if (flat.length === 1 && flat[0].sign === 1) {
     return flat[0].node;
@@ -101,10 +101,10 @@ function pushSumTerm(out, term) {
   // canonical-form rule downstream code relies on.
   if (sign === -1) {
     if (node.type === 'Num') {
-      node = { type: 'Num', value: -node.value };
+      node = num(-node.value);
       sign = 1;
     } else if (node.type === 'Dim') {
-      node = { type: 'Dim', value: -node.value, unit: node.unit };
+      node = dim(-node.value, node.unit);
       sign = 1;
     }
   }
@@ -128,7 +128,7 @@ function mkProduct(rawFactors) {
     pushProductFactor(flat, f);
   }
   if (flat.length === 0) {
-    return { type: 'Num', value: 1 };
+    return num(1);
   }
   if (flat.length === 1 && flat[0].exponent === 1) {
     return flat[0].node;
@@ -184,7 +184,7 @@ function negate(node) {
   }
   // Opaque (Ident, Call, Product): wrap as a single negative-sign term —
   // the only case where sign=-1 remains on a SumTerm.
-  return { type: 'Sum', terms: [{ sign: -1, node }] };
+  return mkSum([{ sign: -1, node }]);
 }
 
 export { num, dim, ident, call, mkSum, mkProduct, negate };

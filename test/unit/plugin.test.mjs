@@ -324,6 +324,13 @@ describe('plugin: bare math functions', () => {
     assert.equal(css, 'a{ width: 5px }');
   });
 
+  test('plugin: simplifies clamp() with none keyword', async () => {
+    const { css } = await process(
+      'a{ a: clamp(none, 10px, 20px); b: clamp(10px, 20px, none); c: clamp(none, 10px, none); d: clamp(none, var(--x), 20px) }'
+    );
+    assert.equal(css, 'a{ a: 10px; b: 20px; c: 10px; d: min(var(--x), 20px) }');
+  });
+
   test('plugin: simplifies bare math functions case-insensitively', async () => {
     const { css } = await process('a{ width: MIN(1px, 2px) }');
     assert.equal(css, 'a{ width: 1px }');
