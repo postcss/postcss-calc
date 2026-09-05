@@ -2,7 +2,7 @@
 // that operate on a CSS value string rather than PostCSS node walking.
 import { describe, test } from 'node:test';
 import assert from 'node:assert/strict';
-import { reduceCalc } from '../../src/index.js';
+import reduceCalc from 'postcss-calc/reduce';
 
 function reduceWithWarnings(value, opts = {}) {
   const warnings = [];
