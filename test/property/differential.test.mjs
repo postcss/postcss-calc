@@ -6,6 +6,7 @@
 // (term ordering, spaces, precision, single-value unwrapping) collapse. Any
 // remaining disagreement is a real semantic divergence worth reviewing.
 import { test } from 'node:test';
+import assert from 'node:assert/strict';
 import fc from 'fast-check';
 import { calc as csstoolsCalc } from '@csstools/css-calc';
 import { tokenize } from '../../src/lib/tokenizer.js';
@@ -15,12 +16,18 @@ import { serialize } from '../../src/lib/serialize.js';
 import { astArb, astToCalc, trigExpFlatArb } from '../helpers/arbitraries.mjs';
 const NUM_RUNS = 2000;
 /** Precision high enough to make real divergences visible without catching
- *  IEEE-754 tail-digit noise. csstools rounds at ~12 digits; long
+ *  IEEE-754 tail-digit noise. csstools' output is requested at a higher
+ *  decimal-place precision below; long
  *  multiplication chains accumulate enough drift that the round-half-away
  *  rule occasionally flips the last digit at p=10. p=9 absorbs that flip
  *  without losing semantic divergence detection — confirmed by running
  *  the bumped 2000-run suite repeatedly. */
 const COMPARE_PRECISION = 9;
+// csstools' default is 13 decimal places. That loses significant digits for
+// very small values before canonicalize() gets a chance to apply the shared
+// precision, so request enough fractional digits to preserve the generated
+// arithmetic chains.
+const CSTOOLS_PRECISION = 24;
 function ourOut(input) {
   try {
     return serialize(simplify(parse(tokenize(input))), {
@@ -32,7 +39,7 @@ function ourOut(input) {
 }
 function theirOut(input) {
   try {
-    const result = csstoolsCalc(input);
+    const result = csstoolsCalc(input, { precision: CSTOOLS_PRECISION });
     return typeof result === 'string' ? result : null;
   } catch {
     return null;
@@ -111,6 +118,12 @@ function checkAgreementLoose(input) {
 }
 test('differential: our simplifier agrees with csstools (canonicalized)', () => {
   fc.assert(fc.property(inputArb, checkAgreement), { numRuns: NUM_RUNS });
+});
+test('differential: small division chains retain comparison precision', () => {
+  assert.equal(
+    checkAgreement('calc(1 / 5 / -58 / -30 / 23 / 100 / 100)'),
+    true
+  );
 });
 test('differential: trig/exp Calls (flat, no composition) agree with csstools', () => {
   fc.assert(fc.property(trigExpInputArb, checkAgreementLoose), {
