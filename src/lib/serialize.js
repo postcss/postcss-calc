@@ -3,6 +3,8 @@
 // arithmetic operator. A Sum inside a Product is the only place parens
 // are ever required on valid canonical input.
 
+import { num, dim } from './node.js';
+
 /**
  * @typedef {import('./node.js').Node} Node
  * @typedef {import('./node.js').Sum} Sum
@@ -105,14 +107,11 @@ function serialize(node, opts = {}) {
     node.terms.length > 1 &&
     displaySign(node.terms[0]).sign === -1
   ) {
-    const body = /** @type {Sum} */ ({
-      type: 'Sum',
-      terms: node.terms.map((t) => ({
-        sign: /** @type {1 | -1} */ (-t.sign),
-        node: t.node,
-      })),
-    });
-    return `${calcName}(-(${serializeExpr(body, prec)}))`;
+    const invertedTerms = node.terms.map((t) => ({
+      sign: /** @type {1 | -1} */ (-t.sign),
+      node: t.node,
+    }));
+    return `${calcName}(-(${serializeSumTerms(invertedTerms, prec)}))`;
   }
 
   if (
@@ -182,27 +181,27 @@ function displaySign(term) {
   if (node.type === 'Num' && Number.isFinite(node.value) && node.value < 0) {
     return {
       sign: /** @type {1 | -1} */ (-sign),
-      magnitude: { type: 'Num', value: -node.value },
+      magnitude: num(-node.value),
     };
   }
   if (node.type === 'Dim' && Number.isFinite(node.value) && node.value < 0) {
     return {
       sign: /** @type {1 | -1} */ (-sign),
-      magnitude: { type: 'Dim', value: -node.value, unit: node.unit },
+      magnitude: dim(-node.value, node.unit),
     };
   }
   return { sign, magnitude: node };
 }
 
 /**
- * @param {Sum} sum
+ * @param {import('./node.js').SumTerm[]} terms
  * @param {number | false} prec
  * @return {string}
  */
-function serializeSum(sum, prec) {
+function serializeSumTerms(terms, prec) {
   let out = '';
-  for (const [i, t] of sum.terms.entries()) {
-    const { sign, magnitude } = displaySign(t);
+  for (let i = 0; i < terms.length; i++) {
+    const { sign, magnitude } = displaySign(terms[i]);
     if (i === 0) {
       if (magnitude.type === 'Sum' && magnitude.grouped) {
         const body = `(${serializeExpr(magnitude, prec)})`;
@@ -223,6 +222,15 @@ function serializeSum(sum, prec) {
     }
   }
   return out;
+}
+
+/**
+ * @param {Sum} sum
+ * @param {number | false} prec
+ * @return {string}
+ */
+function serializeSum(sum, prec) {
+  return serializeSumTerms(sum.terms, prec);
 }
 
 /**
@@ -249,11 +257,8 @@ function serializeLeadingNeg(node, prec) {
     const negatedFactors =
       negatedValue === 1
         ? rest
-        : [
-            { exponent: 1, node: { type: 'Num', value: negatedValue } },
-            ...rest,
-          ];
-    return serializeProduct({ type: 'Product', factors: negatedFactors }, prec);
+        : [{ exponent: 1, node: num(negatedValue) }, ...rest];
+    return serializeFactors(negatedFactors, prec);
   }
   const body = serializeExpr(node, prec);
   return node.type === 'Sum' || node.type === 'Product'
@@ -262,13 +267,14 @@ function serializeLeadingNeg(node, prec) {
 }
 
 /**
- * @param {Product} product
+ * @param {ProductFactor[]} factors
  * @param {number | false} prec
  * @return {string}
  */
-function serializeProduct(product, prec) {
+function serializeFactors(factors, prec) {
   let out = '';
-  for (const [i, f] of product.factors.entries()) {
+  for (let i = 0; i < factors.length; i++) {
+    const f = factors[i];
     let body = serializeExpr(f.node, prec);
     // A Sum factor needs parens: `a * (b + c)`. Flat canonical form means
     // this is the only place parens are required.
@@ -283,6 +289,15 @@ function serializeProduct(product, prec) {
     }
   }
   return out;
+}
+
+/**
+ * @param {Product} product
+ * @param {number | false} prec
+ * @return {string}
+ */
+function serializeProduct(product, prec) {
+  return serializeFactors(product.factors, prec);
 }
 
 export { serialize };

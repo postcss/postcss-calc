@@ -1,5 +1,5 @@
-import { num, dim, ident, call } from '../node.js';
-import { foldConstArgs } from './fold.js';
+import { num, ident, call } from '../node.js';
+import { foldConstArgs, foldResult } from './fold.js';
 
 /** @typedef {import('../node.js').Node} Node */
 
@@ -58,14 +58,14 @@ function simplifyRound(args) {
     } else {
       result = a < 0 || Object.is(a, -0) ? -0 : 0;
     }
-    return fold.unit === '' ? num(result) : dim(result, fold.unit);
+    return foldResult(fold, result);
   }
 
   const result = applyRound(strategy, a, b);
   if (Number.isNaN(result)) {
     return num(Number.NaN);
   }
-  return fold.unit === '' ? num(result) : dim(result, fold.unit);
+  return foldResult(fold, result);
 }
 
 /**

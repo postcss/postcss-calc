@@ -1,5 +1,5 @@
-import { num, dim, call } from '../node.js';
-import { foldConstArgs } from './fold.js';
+import { call } from '../node.js';
+import { foldConstArgs, foldResult } from './fold.js';
 
 /** @typedef {import('../node.js').Node} Node */
 
@@ -13,7 +13,7 @@ function simplifyMinMax(name, args) {
   if (fold !== null) {
     const fn = name.toLowerCase() === 'min' ? Math.min : Math.max;
     const value = fn(...fold.values);
-    return fold.unit === '' ? num(value) : dim(value, fold.unit);
+    return foldResult(fold, value);
   }
   return call(name, args);
 }

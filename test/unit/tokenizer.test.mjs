@@ -275,3 +275,14 @@ test('tok: converts a source-relative slice from a shared CSS token stream', () 
     ]
   );
 });
+
+test('tok: converts token stream using start and end indices without slicing', () => {
+  const css = 'prefix calc(/* gap */-2P\\58 + +3px) suffix';
+  const cssTokens = tokenizeCss({ css });
+  const start = cssTokens.findIndex((token) => token[0] === CssType.Comment);
+  const end = cssTokens.findIndex((token) => token[0] === CssType.CloseParen);
+  const sliced = tokenizeTokens(cssTokens.slice(start, end), cssTokens[end][2]);
+  const bounded = tokenizeTokens(cssTokens, cssTokens[end][2], start, end);
+
+  assert.deepEqual(bounded, sliced);
+});

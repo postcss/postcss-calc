@@ -1,7 +1,7 @@
 // §10.5 — hypot. Empty args return null from foldConstArgs naturally.
 
-import { num, dim, call } from '../node.js';
-import { foldConstArgs } from './fold.js';
+import { call } from '../node.js';
+import { foldConstArgs, foldResult } from './fold.js';
 
 /** @typedef {import('../node.js').Node} Node */
 
@@ -16,7 +16,7 @@ function simplifyHypot(args) {
   }
   const sumSq = fold.values.reduce((acc, v) => acc + v * v, 0);
   const result = Math.sqrt(sumSq);
-  return fold.unit === '' ? num(result) : dim(result, fold.unit);
+  return foldResult(fold, result);
 }
 
 export { simplifyHypot };

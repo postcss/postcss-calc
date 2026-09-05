@@ -1,7 +1,5 @@
 // PostCSS adapter over the standalone component-value reducer.
-import reduceCalc from './reduce.js';
-
-/** @typedef {import('./reduce.js').ReduceCalcOptions} ReduceCalcOptions */
+import reduceCalc, { hasPotentialMathFunction } from './reduce.js';
 
 /**
  * @typedef {object} PostCssCalcOptions
@@ -29,21 +27,24 @@ import reduceCalc from './reduce.js';
  * @return {void}
  */
 function applyTransform(node, current, setProp, options, result) {
-  setProp(
-    node,
-    reduceCalc(current, {
-      precision: options.precision,
-      warnWhenCannotResolve: options.warnWhenCannotResolve,
-      onParseError:
-        options.onParseError ??
-        ((error) => {
-          result.warn(error.message, { node });
-        }),
-      onWarn: (message) => {
-        result.warn(message, { plugin: 'postcss-calc', node });
-      },
-    })
-  );
+  if (!hasPotentialMathFunction(current)) {
+    return;
+  }
+  const transformed = reduceCalc(current, {
+    precision: options.precision,
+    warnWhenCannotResolve: options.warnWhenCannotResolve,
+    onParseError:
+      options.onParseError ??
+      ((error) => {
+        result.warn(error.message, { node });
+      }),
+    onWarn: (message) => {
+      result.warn(message, { plugin: 'postcss-calc', node });
+    },
+  });
+  if (transformed !== current) {
+    setProp(node, transformed);
+  }
 }
 
 /**

@@ -1,15 +1,12 @@
 import { describe, test } from 'node:test';
 import assert from 'node:assert/strict';
 import { serialize } from '../../src/lib/serialize.js';
-import { mkSum, mkProduct } from '../../src/lib/node.js';
+import { num, dim, mkSum, mkProduct } from '../../src/lib/node.js';
 
 // Direct serialize() tests — build canonical AST nodes by hand to pin
 // output shape without depending on the parser/simplify.
 // Signed-leaf canonical form: negatives live directly in the Num/Dim
 // value — no wrapper needed.
-const num = (v) => ({ type: 'Num', value: v });
-
-const dim = (v, u) => ({ type: 'Dim', value: v, unit: u });
 
 describe('serialize: Single Number', () => {
   test('serialize: single number — no calc wrapper', () => {

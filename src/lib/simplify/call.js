@@ -26,7 +26,7 @@ import { call } from '../node.js';
 // Bare CSS math functions with implemented simplification semantics, keyed
 // by lowercase name. calc() and its vendor-prefixed forms are handled
 // separately as wrappers in simplifyCall. This map is the single source of
-// truth for both dispatch and `isSupportedMathFunction`.
+// truth for dispatch, `isSupportedMathFunction`, and `QUICK_MATH_TEST`.
 /** @type {Map<string, MathSimplifier>} */
 const MATH_SIMPLIFIERS = new Map([
   ['min', simplifyMinMax],
@@ -50,6 +50,29 @@ const MATH_SIMPLIFIERS = new Map([
   ['log', (_name, args) => simplifyLog(args)],
   ['exp', (_name, args) => simplifyExp(args)],
 ]);
+
+const mathFnNames = [...MATH_SIMPLIFIERS.keys()].sort(
+  (a, b) => b.length - a.length
+);
+
+const QUICK_MATH_TEST = new RegExp(
+  `(?:-(?:webkit|moz)-)?(?:calc|${mathFnNames.join('|')})\\(`,
+  'i'
+);
+
+/**
+ * Fast check to determine whether a CSS component value could contain
+ * a supported calculation or math function call (or an escape sequence
+ * that could decode to one).
+ *
+ * @param {string} value
+ * @return {boolean}
+ */
+function hasPotentialMathFunction(value) {
+  return (
+    value.includes('(') && (QUICK_MATH_TEST.test(value) || value.includes('\\'))
+  );
+}
 
 /**
  * Whether a bare CSS math function has an implemented simplifier.
@@ -91,4 +114,9 @@ function simplifyCall(node, simplify) {
   return call(node.name, args);
 }
 
-export { isSupportedMathFunction, simplifyCall };
+export {
+  isSupportedMathFunction,
+  simplifyCall,
+  hasPotentialMathFunction,
+  QUICK_MATH_TEST,
+};

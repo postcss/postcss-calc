@@ -2,7 +2,10 @@
 // that operate on a CSS value string rather than PostCSS node walking.
 import { describe, test } from 'node:test';
 import assert from 'node:assert/strict';
-import reduceCalc from 'postcss-calc/reduce';
+import reduceCalc, {
+  hasPotentialMathFunction,
+  QUICK_MATH_TEST,
+} from 'postcss-calc/reduce';
 
 function reduceWithWarnings(value, opts = {}) {
   const warnings = [];
@@ -59,6 +62,75 @@ describe('reduceCalc: basic pipeline', () => {
         '\\66 oo calc(/*a*/-2px + +5px)  /\\*keep*\\/ MIN(4px,2px)\\9'
       ),
       '\\66 oo 3px  /\\*keep*\\/ 2px\\9'
+    );
+  });
+
+  test('reduceCalc: non-math functions are preserved quickly without change', () => {
+    assert.equal(reduceCalc('rgb(255, 0, 0)'), 'rgb(255, 0, 0)');
+    assert.equal(reduceCalc('translate(10px, 20px)'), 'translate(10px, 20px)');
+    assert.equal(reduceCalc('var(--my-color)'), 'var(--my-color)');
+  });
+
+  test('reduceCalc: hasPotentialMathFunction detects all supported math functions and escapes', () => {
+    const supported = [
+      'calc',
+      '-webkit-calc',
+      '-moz-calc',
+      'min',
+      'max',
+      'clamp',
+      'abs',
+      'sign',
+      'mod',
+      'rem',
+      'round',
+      'sin',
+      'cos',
+      'tan',
+      'asin',
+      'acos',
+      'atan',
+      'atan2',
+      'pow',
+      'sqrt',
+      'hypot',
+      'log',
+      'exp',
+    ];
+    for (const fn of supported) {
+      assert.equal(
+        hasPotentialMathFunction(`${fn}(10px)`),
+        true,
+        `Expected ${fn}() to be detected`
+      );
+      assert.equal(
+        hasPotentialMathFunction(`${fn.toUpperCase()}(10PX)`),
+        true,
+        `Expected ${fn.toUpperCase()}() to be detected`
+      );
+      assert.equal(
+        QUICK_MATH_TEST.test(`${fn}(10px)`),
+        true,
+        `Expected QUICK_MATH_TEST to match ${fn}()`
+      );
+    }
+
+    // Escapes bypass regex check
+    assert.equal(hasPotentialMathFunction('\\63 alc(10px)'), true);
+    assert.equal(hasPotentialMathFunction('foo\\(bar'), true);
+
+    // Negative cases
+    assert.equal(hasPotentialMathFunction('10px'), false);
+    assert.equal(hasPotentialMathFunction('red'), false);
+    assert.equal(hasPotentialMathFunction('rgb(255, 0, 0)'), false);
+    assert.equal(hasPotentialMathFunction('var(--my-var)'), false);
+    assert.equal(hasPotentialMathFunction('translate(10px, 20px)'), false);
+  });
+
+  test('reduceCalc: nested calculations inside non-math functions are reduced', () => {
+    assert.equal(
+      reduceCalc('translate(calc(10px + 20px), calc(5px * 2))'),
+      'translate(30px, 10px)'
     );
   });
 
@@ -277,6 +349,16 @@ describe('reduceCalc: bare math functions', () => {
 
   test('reduceCalc: simplifies bare clamp() outside of calc()', () => {
     assert.equal(reduceCalc('clamp(0px, 5px, 10px)'), '5px');
+  });
+
+  test('reduceCalc: simplifies clamp() with none keyword', () => {
+    assert.equal(reduceCalc('clamp(none, 10px, 20px)'), '10px');
+    assert.equal(reduceCalc('clamp(10px, 20px, none)'), '20px');
+    assert.equal(reduceCalc('clamp(none, 10px, none)'), '10px');
+    assert.equal(
+      reduceCalc('clamp(none, var(--x), 20px)'),
+      'min(var(--x), 20px)'
+    );
   });
 
   test('reduceCalc: simplifies bare math functions case-insensitively', () => {

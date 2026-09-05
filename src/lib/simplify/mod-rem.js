@@ -1,5 +1,5 @@
-import { num, dim, call } from '../node.js';
-import { foldConstArgs } from './fold.js';
+import { num, call } from '../node.js';
+import { foldConstArgs, foldResult } from './fold.js';
 
 /** @typedef {import('../node.js').Node} Node */
 
@@ -23,7 +23,7 @@ function simplifyModRem(name, args) {
   if (Number.isNaN(result)) {
     return num(Number.NaN);
   }
-  return fold.unit === '' ? num(result) : dim(result, fold.unit);
+  return foldResult(fold, result);
 }
 
 /**
