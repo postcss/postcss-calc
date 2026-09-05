@@ -1,3 +1,4 @@
+import { hasPotentialMathFunction, QUICK_MATH_TEST } from './lib/simplify/call.js';
 export type ReduceCalcOptions = {
     precision?: number | false;
     warnWhenCannotResolve?: boolean;
@@ -32,4 +33,6 @@ export type Replacement = {
  * @param {ReduceCalcOptions} [opts]
  * @return {string}
  */
-export default function reduceCalc(value: string, opts?: ReduceCalcOptions): string;
+declare function reduceCalc(value: string, opts?: ReduceCalcOptions): string;
+export { QUICK_MATH_TEST, hasPotentialMathFunction };
+export default reduceCalc;

@@ -8,7 +8,11 @@ import {
 import { tokenizeTokens } from './lib/tokenizer.js';
 import { parse } from './lib/parser.js';
 import { simplify } from './lib/simplify.js';
-import { isSupportedMathFunction } from './lib/simplify/call.js';
+import {
+  isSupportedMathFunction,
+  hasPotentialMathFunction,
+  QUICK_MATH_TEST,
+} from './lib/simplify/call.js';
 import { serialize } from './lib/serialize.js';
 
 const MATCH_CALC = /^(?:-(?:moz|webkit)-)?calc$/i;
@@ -94,7 +98,7 @@ function walkTokens(start, expectedClose, ctx, transform) {
     const contents = ctx.value.slice(inputStart, inputEnd);
     try {
       const node = simplify(
-        parse(tokenizeTokens(ctx.tokens.slice(sliceStart, sliceEnd), end))
+        parse(tokenizeTokens(ctx.tokens, end, sliceStart, sliceEnd))
       );
       ctx.replacements.push({
         start: token[2],
@@ -122,6 +126,10 @@ function walkTokens(start, expectedClose, ctx, transform) {
  * @return {string}
  */
 function reduceCalc(value, opts) {
+  if (!hasPotentialMathFunction(value)) {
+    return value;
+  }
+
   /** @type {ResolvedReduceCalcOptions} */
   const options = { precision: 5, warnWhenCannotResolve: false, ...opts };
   const tokens = cssTokenize({ css: value });
@@ -129,7 +137,13 @@ function reduceCalc(value, opts) {
   const replacements = [];
   walkTokens(0, undefined, { options, value, tokens, replacements }, true);
 
-  const serialized = replacements.map((replacement) => {
+  if (replacements.length === 0) {
+    return value;
+  }
+
+  let output = '';
+  let lastIndex = 0;
+  for (const replacement of replacements) {
     const text = serialize(replacement.node, {
       precision: options.precision,
       calcName: replacement.calcName,
@@ -140,18 +154,12 @@ function reduceCalc(value, opts) {
     ) {
       options.onWarn?.('Could not reduce expression: ' + value);
     }
-    return { ...replacement, text };
-  });
-
-  let output = value;
-  for (let i = serialized.length - 1; i >= 0; i--) {
-    const replacement = serialized[i];
-    output =
-      output.slice(0, replacement.start) +
-      replacement.text +
-      output.slice(replacement.end);
+    output += value.slice(lastIndex, replacement.start) + text;
+    lastIndex = replacement.end;
   }
+  output += value.slice(lastIndex);
   return output;
 }
 
+export { QUICK_MATH_TEST, hasPotentialMathFunction };
 export default reduceCalc;

@@ -27,58 +27,70 @@ function tokenize(input) {
 }
 
 /**
+ * CSS absorbs leading signs (`-5px` is one token); the parser expects
+ * punct sign + unsigned numeric, so split them back out.
+ * @param {Token[]} tokens
+ * @param {string} raw
+ * @param {string | undefined} unit
+ * @param {number} pos
+ * @param {boolean} ws
+ * @return {void}
+ */
+function pushNumeric(tokens, raw, unit, pos, ws) {
+  let value = /** @type {RegExpExecArray} */ (NUMERIC_RAW.exec(raw))[0];
+  const sign = value[0];
+  if (sign === '+' || sign === '-') {
+    tokens.push({ type: 'punct', value: sign, pos, ws });
+    value = value.slice(1);
+    pos += 1;
+    ws = false;
+  }
+  if (unit === undefined) {
+    tokens.push({ type: 'number', value, pos, ws });
+  } else {
+    tokens.push({ type: 'dimension', value, unit, pos, ws });
+  }
+}
+
+/**
  * Convert a slice of an existing CSS token stream into the token subset used
  * by the calculation parser. Token positions remain relative to the original
  * source text, which keeps parse errors useful to adapter callers.
  *
  * @param {import('@csstools/css-tokenizer').CSSToken[]} cssTokens
  * @param {number} eofPosition
+ * @param {number} [start]
+ * @param {number} [end]
  * @return {Token[]}
  */
-function tokenizeTokens(cssTokens, eofPosition) {
+function tokenizeTokens(
+  cssTokens,
+  eofPosition,
+  start = 0,
+  end = cssTokens.length
+) {
   /** @type {Token[]} */
   const tokens = [];
   let ws = true;
 
-  // CSS absorbs leading signs (`-5px` is one token); the parser expects
-  // punct sign + unsigned numeric, so split them back out.
-  /**
-   * @param {string} raw
-   * @param {string | undefined} unit
-   * @param {number} pos
-   * @return {void}
-   */
-  function pushNumeric(raw, unit, pos) {
-    let value = /** @type {RegExpExecArray} */ (NUMERIC_RAW.exec(raw))[0];
-    const sign = value[0];
-    if (sign === '+' || sign === '-') {
-      tokens.push({ type: 'punct', value: sign, pos, ws });
-      value = value.slice(1);
-      pos += 1;
-      ws = false;
-    }
-    if (unit === undefined) {
-      tokens.push({ type: 'number', value, pos, ws });
-    } else {
-      tokens.push({ type: 'dimension', value, unit, pos, ws });
-    }
-    ws = false;
-  }
-
-  for (const t of cssTokens) {
+  for (let i = start; i < end; i++) {
+    const t = cssTokens[i];
     switch (t[0]) {
       case CssType.Whitespace:
       case CssType.Comment:
         ws = true;
         continue;
       case CssType.Number:
-        pushNumeric(t[1], undefined, t[2]);
+        pushNumeric(tokens, t[1], undefined, t[2], ws);
+        ws = false;
         continue;
       case CssType.Dimension:
-        pushNumeric(t[1], t[4].unit, t[2]);
+        pushNumeric(tokens, t[1], t[4].unit, t[2], ws);
+        ws = false;
         continue;
       case CssType.Percentage:
-        pushNumeric(t[1], '%', t[2]);
+        pushNumeric(tokens, t[1], '%', t[2], ws);
+        ws = false;
         continue;
       case CssType.Ident:
         tokens.push({ type: 'ident', value: t[4].value, pos: t[2], ws });

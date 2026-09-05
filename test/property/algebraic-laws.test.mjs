@@ -11,18 +11,11 @@ import { describe, test } from 'node:test';
 import fc from 'fast-check';
 import { simplify } from '../../src/lib/simplify.js';
 import { serialize } from '../../src/lib/serialize.js';
+import { call, num, dim, ident } from '../../src/lib/node.js';
 
 const NUM_RUNS = 500;
 
 const out = (n) => serialize(simplify(n), { precision: 10 });
-
-const call = (name, args) => ({ type: 'Call', name, args });
-
-const num = (v) => ({ type: 'Num', value: v });
-
-const dim = (v, u) => ({ type: 'Dim', value: v, unit: u });
-
-const ident = (n) => ({ type: 'Ident', name: n });
 
 // Finite, non-zero numeric leaf — domain for most laws.
 const finiteNum = fc.integer({ min: -1000, max: 1000 }).map(num);
@@ -42,7 +35,7 @@ const finiteDim = fc
     fc.integer({ min: -1000, max: 1000 }),
     fc.constantFrom(...SAME_UNIT_DIMS)
   )
-  .map(([v, u]) => ({ type: 'Dim', value: v, unit: u }));
+  .map(([v, u]) => dim(v, u));
 
 const finiteLeaf = fc.oneof(finiteNum, finiteDim);
 

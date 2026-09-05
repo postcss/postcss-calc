@@ -24,7 +24,9 @@ declare function tokenize(input: string): Token[];
  *
  * @param {import('@csstools/css-tokenizer').CSSToken[]} cssTokens
  * @param {number} eofPosition
+ * @param {number} [start]
+ * @param {number} [end]
  * @return {Token[]}
  */
-declare function tokenizeTokens(cssTokens: import('@csstools/css-tokenizer').CSSToken[], eofPosition: number): Token[];
+declare function tokenizeTokens(cssTokens: import('@csstools/css-tokenizer').CSSToken[], eofPosition: number, start?: number, end?: number): Token[];
 export { tokenize, tokenizeTokens };

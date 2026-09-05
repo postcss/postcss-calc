@@ -11,15 +11,6 @@ import { mkSum, mkProduct, negate, num, dim, ident, call } from './node.js';
  */
 
 /**
- * @param {Token} t
- * @param {string} value
- * @return {boolean}
- */
-function isPunct(t, value) {
-  return t.type === 'punct' && t.value === value;
-}
-
-/**
  * §10.9 — case-insensitive except for NaN.
  * @param {string} name
  * @return {Node | null}
@@ -82,6 +73,39 @@ class Parser {
   }
 
   /**
+   * @param {string} value
+   * @param {string} [value2]
+   * @return {boolean}
+   */
+  isPunct(value, value2) {
+    const t = this.peek();
+    return (
+      t.type === 'punct' &&
+      (t.value === value || (value2 !== undefined && t.value === value2))
+    );
+  }
+
+  /**
+   * @param {string} value
+   * @return {boolean}
+   */
+  matchPunct(value) {
+    if (this.isPunct(value)) {
+      this.next();
+      return true;
+    }
+    return false;
+  }
+
+  /**
+   * @param {string} value
+   * @return {Token}
+   */
+  expectPunct(value) {
+    return this.expect('punct', value);
+  }
+
+  /**
    * @param {number} [minBp]
    * @return {Node}
    */
@@ -111,14 +135,7 @@ class Parser {
             sign: /** @type {1 | -1} */ (token.value === '+' ? 1 : -1),
             node: this.parseExpr(ADD_BP + 1),
           });
-          const next = this.peek();
-          if (
-            next.type !== 'punct' ||
-            (next.value !== '+' && next.value !== '-')
-          ) {
-            break;
-          }
-        } while (ADD_BP >= minBp);
+        } while (this.isPunct('+', '-'));
         left = mkSum(terms);
         continue;
       }
@@ -132,14 +149,7 @@ class Parser {
             exponent: /** @type {1 | -1} */ (token.value === '*' ? 1 : -1),
             node: this.parseExpr(MUL_BP + 1),
           });
-          const next = this.peek();
-          if (
-            next.type !== 'punct' ||
-            (next.value !== '*' && next.value !== '/')
-          ) {
-            break;
-          }
-        } while (MUL_BP >= minBp);
+        } while (this.isPunct('*', '/'));
         left = mkProduct(factors);
         continue;
       }
@@ -255,22 +265,19 @@ const PREFIX = {
     ),
 
   ident: (p, t) => {
-    const nxt = p.peek();
-    if (nxt.type === 'punct' && nxt.value === '(') {
-      p.next();
+    if (p.matchPunct('(')) {
       if (OPAQUE_ARG_FUNCTIONS.has(t.value.toLowerCase())) {
         return parseOpaqueCall(p, t.value);
       }
       /** @type {Node[]} */
       const args = [];
-      if (!isPunct(p.peek(), ')')) {
+      if (!p.isPunct(')')) {
         args.push(p.parseExpr(0));
-        while (isPunct(p.peek(), ',')) {
-          p.next();
+        while (p.matchPunct(',')) {
           args.push(p.parseExpr(0));
         }
       }
-      p.expect('punct', ')');
+      p.expectPunct(')');
       return call(t.value, args);
     }
     const kw = foldCalcKeyword(t.value);
@@ -282,7 +289,7 @@ const PREFIX = {
 
   '(': (p) => {
     const e = p.parseExpr(0);
-    p.expect('punct', ')');
+    p.expectPunct(')');
     return e.type === 'Sum' ? { ...e, grouped: true } : e;
   },
 

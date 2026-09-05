@@ -22,6 +22,22 @@ declare class Parser {
      */
     expect(type: TokenType, value?: string): Token;
     /**
+     * @param {string} value
+     * @param {string} [value2]
+     * @return {boolean}
+     */
+    isPunct(value: string, value2?: string): boolean;
+    /**
+     * @param {string} value
+     * @return {boolean}
+     */
+    matchPunct(value: string): boolean;
+    /**
+     * @param {string} value
+     * @return {Token}
+     */
+    expectPunct(value: string): Token;
+    /**
      * @param {number} [minBp]
      * @return {Node}
      */

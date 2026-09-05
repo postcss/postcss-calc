@@ -155,14 +155,13 @@ describe('csstools clamp', () => {
 });
 
 // --- basic/none-in-clamp.mjs (subset) ------------------------------------
-// clamp(none, ...) uses keyword `none` as unbounded. csstools supports this;
-// we treat `none` as an opaque ident, so these preserve.
-test('csstools none-in-clamp: none as lower bound preserved', () => {
-  assert.equal(out('clamp(none, 10px, 20px)'), 'clamp(none, 10px, 20px)');
+// clamp(none, ...) uses keyword `none` as unbounded per §10.5.3.
+test('csstools none-in-clamp: none as lower bound folds via min()', () => {
+  assert.equal(out('clamp(none, 10px, 20px)'), '10px');
 });
 
-test('csstools none-in-clamp: none as upper bound preserved', () => {
-  assert.equal(out('clamp(1px, 10px, none)'), 'clamp(1px, 10px, none)');
+test('csstools none-in-clamp: none as upper bound folds via max()', () => {
+  assert.equal(out('clamp(1px, 10px, none)'), '10px');
 });
 
 // --- wpt/invalid.mjs (subset our tokenizer/parser rejects) ---------------
