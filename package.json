@@ -59,6 +59,6 @@
     "@csstools/css-tokenizer": "^4.0.0"
   },
   "peerDependencies": {
-    "postcss": "^8.5.25"
+    "postcss": "^8.5.28"
   }
 }
