@@ -19,6 +19,10 @@
     ".": {
       "types": "./types/index.d.ts",
       "default": "./src/index.js"
+    },
+    "./reduce": {
+      "types": "./types/reduce.d.ts",
+      "default": "./src/reduce.js"
     }
   },
   "files": [

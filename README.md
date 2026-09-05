@@ -13,7 +13,7 @@ statement is left as is, to fallback to the [W3C calc() implementation].
 npm install postcss-calc
 ```
 
-## Usage
+## PostCSS usage
 
 ```js
 // dependencies
@@ -51,6 +51,38 @@ h1 {
 ```
 
 Checkout [tests] for more examples.
+
+## Use the reducer without PostCSS
+
+For a single CSS component-value string, import the dedicated reducer entry
+point. It reduces `calc()` and the supported CSS math functions it finds while
+leaving all other text untouched.
+
+```js
+import reduceCalc from 'postcss-calc/reduce';
+
+reduceCalc('calc(1in + 10px)');
+// => '1.10417in'
+
+reduceCalc('min(50px, calc(2 * 40px))');
+// => '50px'
+```
+
+It accepts `precision`, `warnWhenCannotResolve`, `onParseError`, and `onWarn`:
+
+```js
+const result = reduceCalc('calc(100% + var(--gap))', {
+  precision: false,
+  warnWhenCannotResolve: true,
+  onWarn: console.warn,
+  onParseError(error, input) {
+    console.error(`Invalid calculation: ${input}`, error);
+  },
+});
+```
+
+Unlike the PostCSS plugin, the standalone reducer does not show warnings
+by default; provide `onParseError` and/or `onWarn` if you want diagnostics.
 
 ### Options
 
