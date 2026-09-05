@@ -48,11 +48,11 @@
   "devDependencies": {
     "@csstools/css-calc": "^3.3.0",
     "@rmenke/css-tokenizer-tests": "^1.2.0",
-    "@types/node": "^26.4.0",
+    "@types/node": "^26.4.1",
     "fast-check": "^4.9.0",
-    "oxfmt": "^0.65.0",
-    "oxlint": "^1.80.0",
-    "postcss": "^8.5.26",
+    "oxfmt": "^0.66.0",
+    "oxlint": "^1.81.0",
+    "postcss": "^8.5.28",
     "typescript": "~7.0.2"
   },
   "dependencies": {
