@@ -200,7 +200,7 @@ describe('csstools round/mod/rem/abs/sign', () => {
   test('csstools round: each strategy', () => {
     assert.equal(out('round(up, 1.1, 1)'), '2');
     assert.equal(out('round(down, 1.9, 1)'), '1');
-    assert.equal(out('round(to-zero, -1.9, 1)'), '-1');
+    assert.equal(out('round(to-zero, -1.9, 1)'), 'calc(-1)');
     assert.equal(out('round(nearest, 1.5, 1)'), '2');
   });
 
@@ -215,12 +215,12 @@ describe('csstools round/mod/rem/abs/sign', () => {
   test('csstools mod: spec examples', () => {
     assert.equal(out('mod(18, 5)'), '3');
     assert.equal(out('mod(-18, 5)'), '2');
-    assert.equal(out('mod(18, -5)'), '-2');
+    assert.equal(out('mod(18, -5)'), 'calc(-2)');
   });
 
   test('csstools rem: spec examples', () => {
     assert.equal(out('rem(18, 5)'), '3');
-    assert.equal(out('rem(-18, 5)'), '-3');
+    assert.equal(out('rem(-18, 5)'), 'calc(-3)');
     assert.equal(out('rem(18, -5)'), '3');
   });
 
@@ -240,10 +240,10 @@ describe('csstools round/mod/rem/abs/sign', () => {
   });
 
   test('csstools sign: number, dim, opaque', () => {
-    assert.equal(out('sign(-5)'), '-1');
+    assert.equal(out('sign(-5)'), 'calc(-1)');
     assert.equal(out('sign(5)'), '1');
     assert.equal(out('sign(0)'), '0');
-    assert.equal(out('sign(-5px)'), '-1');
+    assert.equal(out('sign(-5px)'), 'calc(-1)');
     assert.equal(out('sign(var(--x))'), 'sign(var(--x))');
   });
 
@@ -290,7 +290,7 @@ describe('csstools trig:', () => {
   });
 
   test('csstools trig: cos(180deg) → -1', () => {
-    assert.equal(out('cos(180deg)'), '-1');
+    assert.equal(out('cos(180deg)'), 'calc(-1)');
   });
 
   test('csstools trig: cos(60deg) → 0.5000000000000001 (full precision)', () => {
@@ -330,7 +330,7 @@ describe('csstools trig:', () => {
   });
 
   test('csstools inverse-trig: asin(-1) → -90deg', () => {
-    assert.equal(out('asin(-1)'), '-90deg');
+    assert.equal(out('asin(-1)'), 'calc(-90deg)');
   });
 
   test('csstools inverse-trig: asin(0.5) → 30.000000000000004deg', () => {
@@ -370,7 +370,7 @@ describe('csstools trig:', () => {
   });
 
   test('csstools atan2: (-1, -1) → -135deg', () => {
-    assert.equal(out('atan2(-1, -1)'), '-135deg');
+    assert.equal(out('atan2(-1, -1)'), 'calc(-135deg)');
   });
 
   test('csstools atan2: cross-unit-same-base (1in, 96px) → 45deg', () => {

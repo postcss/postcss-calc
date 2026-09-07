@@ -238,12 +238,12 @@ test('spec §10.3 line 1004: mod(18px, 5px) === 3px', () => {
 
 describe('spec §10.3 line 1005: Mod(-140deg -90deg', () => {
   test('spec §10.3 line 1005: mod(-140deg, -90deg) === -50deg', () => {
-    assert.equal(out('mod(-140deg, -90deg)'), '-50deg');
+    assert.equal(out('mod(-140deg, -90deg)'), 'calc(-50deg)');
   });
 
   test('spec §10.3 line 1007: rem === mod when both args same sign', () => {
     assert.equal(out('rem(18px, 5px)'), '3px');
-    assert.equal(out('rem(-140deg, -90deg)'), '-50deg');
+    assert.equal(out('rem(-140deg, -90deg)'), 'calc(-50deg)');
   });
 
   test('spec §10.3 line 1011: mod(-18px, 5px) === 2px', () => {
@@ -251,11 +251,11 @@ describe('spec §10.3 line 1005: Mod(-140deg -90deg', () => {
   });
 
   test('spec §10.3 line 1012: rem(-18px, 5px) === -3px', () => {
-    assert.equal(out('rem(-18px, 5px)'), '-3px');
+    assert.equal(out('rem(-18px, 5px)'), 'calc(-3px)');
   });
 
   test('spec §10.3 line 1014: mod(140deg, -90deg) === -40deg', () => {
-    assert.equal(out('mod(140deg, -90deg)'), '-40deg');
+    assert.equal(out('mod(140deg, -90deg)'), 'calc(-40deg)');
   });
 
   test('spec §10.3 line 1014: rem(140deg, -90deg) === 50deg', () => {
@@ -266,7 +266,7 @@ describe('spec §10.3 line 1005: Mod(-140deg -90deg', () => {
     // 15 is exactly between 10 and 20; spec says upper wins.
     assert.equal(out('round(15, 10)'), '20');
     // -15 between -20 and -10; upper (+∞-ward) is -10.
-    assert.equal(out('round(-15, 10)'), '-10');
+    assert.equal(out('round(-15, 10)'), 'calc(-10)');
   });
 
   test('spec §10.3 line 991: B defaults to 1 only when A is <number>', () => {
@@ -341,7 +341,7 @@ describe('spec §10.3 line 1005: Mod(-140deg -90deg', () => {
 
   test('spec §10.3.1 line 1039: rem(A, infinity) returns A regardless of sign', () => {
     assert.equal(out('rem(5, infinity)'), '5');
-    assert.equal(out('rem(-5, infinity)'), '-5');
+    assert.equal(out('rem(-5, infinity)'), 'calc(-5)');
     assert.equal(out('rem(0, infinity)'), '0');
   });
 
@@ -355,8 +355,8 @@ describe('spec §10.3 line 1005: Mod(-140deg -90deg', () => {
 
   test('spec §10.6 line 1146: sign(A) always returns <number>', () => {
     // Even when input is a dimension, the result is a bare number.
-    assert.equal(out('sign(-5)'), '-1');
-    assert.equal(out('sign(-5px)'), '-1');
+    assert.equal(out('sign(-5)'), 'calc(-1)');
+    assert.equal(out('sign(-5px)'), 'calc(-1)');
     assert.equal(out('sign(5em)'), '1');
     assert.equal(out('sign(0deg)'), '0');
   });
@@ -374,16 +374,16 @@ describe('CSS keywords case-insensitive: Rounding-strategy Idents', () => {
     // CSS idents are case-insensitive by default; our toLowerCase honors that.
     assert.equal(out('round(UP, 11, 10)'), '20');
     assert.equal(out('round(Down, 19, 10)'), '10');
-    assert.equal(out('round(TO-ZERO, -19, 10)'), '-10');
+    assert.equal(out('round(TO-ZERO, -19, 10)'), 'calc(-10)');
     assert.equal(out('round(Nearest, 14, 10)'), '10');
   });
 
   test('CSS function names case-insensitive: ROUND, MOD, REM, ABS, SIGN', () => {
     assert.equal(out('ROUND(15, 10)'), '20');
     assert.equal(out('MOD(18, 5)'), '3');
-    assert.equal(out('REM(-18, 5)'), '-3');
+    assert.equal(out('REM(-18, 5)'), 'calc(-3)');
     assert.equal(out('ABS(-5)'), '5');
-    assert.equal(out('SIGN(-5)'), '-1');
+    assert.equal(out('SIGN(-5)'), 'calc(-1)');
   });
 });
 
@@ -398,7 +398,7 @@ test('boundary: round at exact tie midpoints across signs', () => {
   assert.equal(out('round(5, 10)'), '10'); // {0, 10}, tie → upper
   assert.equal(out('round(-5, 10)'), '0'); // {-10, 0}, tie → upper (= 0)
   assert.equal(out('round(15, 10)'), '20');
-  assert.equal(out('round(-15, 10)'), '-10');
+  assert.equal(out('round(-15, 10)'), 'calc(-10)');
   assert.equal(out('round(25, 10)'), '30');
   assert.equal(out('round(0.5, 1)'), '1');
   assert.equal(out('round(-0.5, 1)'), '0');
@@ -411,13 +411,13 @@ describe('boundary: Round Just-below-tie', () => {
     assert.equal(out('round(4.9, 10)'), '0');
     assert.equal(out('round(5.1, 10)'), '10');
     assert.equal(out('round(-4.9, 10)'), '0');
-    assert.equal(out('round(-5.1, 10)'), '-10');
+    assert.equal(out('round(-5.1, 10)'), 'calc(-10)');
   });
 
   test('boundary: round on exact multiple preserves value', () => {
     assert.equal(out('round(20, 10)'), '20');
     assert.equal(out('round(0, 10)'), '0');
-    assert.equal(out('round(-30, 10)'), '-30');
+    assert.equal(out('round(-30, 10)'), 'calc(-30)');
     assert.equal(out('round(up, 20, 10)'), '20');
     assert.equal(out('round(down, 20, 10)'), '20');
     assert.equal(out('round(to-zero, 20, 10)'), '20');
@@ -445,7 +445,7 @@ describe('boundary: Round Just-below-tie', () => {
     assert.equal(out('round(999999, 100)'), '1000000');
     // -999999 / 100 = -9999.99: candidates {-1000000, -999900}. Distances:
     // |-999999 - -1000000| = 1, |-999900 - -999999| = 99 → lower (-1000000) closer.
-    assert.equal(out('round(-999999, 100)'), '-1000000');
+    assert.equal(out('round(-999999, 100)'), 'calc(-1000000)');
   });
 
   test('boundary: abs on -0 collapses to 0 (mkSum drop-zero)', () => {
@@ -468,7 +468,7 @@ describe('boundary: Round Just-below-tie', () => {
 
   test('boundary: sign on infinity / NaN', () => {
     assert.equal(out('sign(infinity)'), '1');
-    assert.equal(out('sign(calc(0 - infinity))'), '-1');
+    assert.equal(out('sign(calc(0 - infinity))'), 'calc(-1)');
     assert.equal(out('sign(NaN)'), 'calc(NaN)');
   });
 

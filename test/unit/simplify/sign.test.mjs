@@ -8,7 +8,7 @@ describe('sign: Positive Number', () => {
   });
 
   test('sign: negative number → -1', () => {
-    assert.equal(out('sign(-5)'), '-1');
+    assert.equal(out('sign(-5)'), 'calc(-1)');
   });
 
   test('sign: zero → 0', () => {
@@ -20,7 +20,7 @@ describe('sign: Positive Number', () => {
   });
 
   test('sign: negative dimension → -1', () => {
-    assert.equal(out('sign(-10px)'), '-1');
+    assert.equal(out('sign(-10px)'), 'calc(-1)');
   });
 
   test('sign: zero dimension → 0', () => {
@@ -37,7 +37,7 @@ describe('sign: Positive Number', () => {
   });
 
   test('sign: inner sum folds first then sign', () => {
-    assert.equal(out('sign(calc(1px - 3px))'), '-1');
+    assert.equal(out('sign(calc(1px - 3px))'), 'calc(-1)');
   });
 
   test('sign: infinity → 1', () => {
@@ -45,7 +45,7 @@ describe('sign: Positive Number', () => {
   });
 
   test('sign: -infinity → -1', () => {
-    assert.equal(out('sign(calc(0 - infinity))'), '-1');
+    assert.equal(out('sign(calc(0 - infinity))'), 'calc(-1)');
   });
 
   test('sign: NaN → NaN', () => {

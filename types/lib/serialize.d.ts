@@ -11,6 +11,10 @@ export type SerializeOptions = {
      * Wrapper name to use when `calc()` is needed. Default `'calc'`.
      */
     calcName?: string;
+    /**
+     * Serialize finite negative scalars without a wrapper. Internal selector-only mode.
+     */
+    unwrapSingleNegativeNumber?: boolean;
 };
 /**
  * @param {Node} node

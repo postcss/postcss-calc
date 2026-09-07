@@ -15,6 +15,11 @@ import { parse } from '../../src/lib/parser.js';
 import { simplify } from '../../src/lib/simplify.js';
 import { serialize } from '../../src/lib/serialize.js';
 const out = (s) => serialize(simplify(parse(tokenize(s))), { precision: 10 });
+const scalarText = (text) =>
+  text.startsWith('calc(') && text.endsWith(')')
+    ? text.slice('calc('.length, -1)
+    : text;
+const numeric = (text) => Number.parseFloat(scalarText(text));
 // --- Naive reference impls ----------------------------------------------
 //
 // These use a *different* algorithmic shape from `simplify.ts`:
@@ -120,9 +125,7 @@ for (const row of rows) {
   for (const strategy of STRATEGIES) {
     test(`oracle: round(${strategy}, ${row.a}, ${row.b}) [${row.desc}]`, () => {
       const expected = naiveRound(strategy, row.a, row.b);
-      const got = Number.parseFloat(
-        out(`round(${strategy}, ${row.a}, ${row.b})`)
-      );
+      const got = numeric(out(`round(${strategy}, ${row.a}, ${row.b})`));
       // NaN === NaN check via Object.is.
       if (Number.isNaN(expected)) {
         assert.ok(Number.isNaN(got), `expected NaN, got ${got}`);
@@ -142,7 +145,7 @@ for (const row of rows) {
   if (row.b !== 0 && Math.abs(row.a / row.b) > 100000) continue;
   test(`oracle: mod(${row.a}, ${row.b}) [${row.desc}]`, () => {
     const expected = naiveMod(row.a, row.b);
-    const got = Number.parseFloat(out(`mod(${row.a}, ${row.b})`));
+    const got = numeric(out(`mod(${row.a}, ${row.b})`));
     if (Number.isNaN(expected)) {
       assert.ok(Number.isNaN(got), `expected NaN, got ${got}`);
     } else {
@@ -154,7 +157,7 @@ for (const row of rows) {
   });
   test(`oracle: rem(${row.a}, ${row.b}) [${row.desc}]`, () => {
     const expected = naiveRem(row.a, row.b);
-    const got = Number.parseFloat(out(`rem(${row.a}, ${row.b})`));
+    const got = numeric(out(`rem(${row.a}, ${row.b})`));
     if (Number.isNaN(expected)) {
       assert.ok(Number.isNaN(got), `expected NaN, got ${got}`);
     } else {
@@ -170,14 +173,14 @@ const SIGN_INPUTS = [0, -0, 1, -1, 5, -5, 100, -100, 0.0001, -0.0001];
 for (const a of SIGN_INPUTS) {
   test(`oracle: abs(${a})`, () => {
     const expected = Math.abs(a);
-    const got = Number.parseFloat(out(`abs(${a})`));
+    const got = numeric(out(`abs(${a})`));
     assert.equal(got, expected);
   });
   test(`oracle: sign(${a})`, () => {
     // Math.sign(-0) === -0; we serialize that as "0". Compare via
     // `+got === +expected` to fold ±0.
     const expected = Math.sign(a);
-    const got = Number.parseFloat(out(`sign(${a})`));
+    const got = numeric(out(`sign(${a})`));
     assert.ok(+got === +expected, `naive=${expected}, prod=${got}`);
   });
 }
@@ -207,7 +210,7 @@ const TRIG_RADIAN_INPUTS = [
 for (const x of TRIG_RADIAN_INPUTS) {
   test(`oracle: sin(${x}) [radians]`, () => {
     const expected = Math.sin(x);
-    const got = Number.parseFloat(out(`sin(${x})`));
+    const got = numeric(out(`sin(${x})`));
     assert.ok(
       Math.abs(got - expected) < 1e-9,
       `naive=${expected}, prod=${got}`
@@ -215,7 +218,7 @@ for (const x of TRIG_RADIAN_INPUTS) {
   });
   test(`oracle: cos(${x}) [radians]`, () => {
     const expected = Math.cos(x);
-    const got = Number.parseFloat(out(`cos(${x})`));
+    const got = numeric(out(`cos(${x})`));
     assert.ok(
       Math.abs(got - expected) < 1e-9,
       `naive=${expected}, prod=${got}`
@@ -223,7 +226,7 @@ for (const x of TRIG_RADIAN_INPUTS) {
   });
   test(`oracle: tan(${x}) [radians, may be near-asymptote]`, () => {
     const expected = Math.tan(x);
-    const got = Number.parseFloat(out(`tan(${x})`));
+    const got = numeric(out(`tan(${x})`));
     // tan diverges near ±π/2; compare via relative error there.
     if (Math.abs(expected) > 1e6) {
       // Both sides should be huge and the same sign — exact match
@@ -243,7 +246,7 @@ const INVERSE_TRIG_NUMBER_INPUTS = [-1, -0.5, 0, 0.25, 0.5, 0.75, 1];
 for (const x of INVERSE_TRIG_NUMBER_INPUTS) {
   test(`oracle: asin(${x})`, () => {
     const expectedDeg = (Math.asin(x) * 180) / Math.PI;
-    const got = Number.parseFloat(out(`asin(${x})`));
+    const got = numeric(out(`asin(${x})`));
     assert.ok(
       Math.abs(got - expectedDeg) < 1e-9,
       `naive=${expectedDeg}deg, prod=${got}deg`
@@ -251,7 +254,7 @@ for (const x of INVERSE_TRIG_NUMBER_INPUTS) {
   });
   test(`oracle: acos(${x})`, () => {
     const expectedDeg = (Math.acos(x) * 180) / Math.PI;
-    const got = Number.parseFloat(out(`acos(${x})`));
+    const got = numeric(out(`acos(${x})`));
     assert.ok(
       Math.abs(got - expectedDeg) < 1e-9,
       `naive=${expectedDeg}deg, prod=${got}deg`
@@ -262,7 +265,7 @@ const ATAN_INPUTS = [-1000, -1, -0.5, 0, 0.5, 1, 1000];
 for (const x of ATAN_INPUTS) {
   test(`oracle: atan(${x})`, () => {
     const expectedDeg = (Math.atan(x) * 180) / Math.PI;
-    const got = Number.parseFloat(out(`atan(${x})`));
+    const got = numeric(out(`atan(${x})`));
     assert.ok(
       Math.abs(got - expectedDeg) < 1e-9,
       `naive=${expectedDeg}deg, prod=${got}deg`
@@ -287,7 +290,7 @@ const ATAN2_INPUTS = [
 for (const [y, x] of ATAN2_INPUTS) {
   test(`oracle: atan2(${y}, ${x})`, () => {
     const expectedDeg = (Math.atan2(y, x) * 180) / Math.PI;
-    const got = Number.parseFloat(out(`atan2(${y}, ${x})`));
+    const got = numeric(out(`atan2(${y}, ${x})`));
     assert.ok(
       Math.abs(got - expectedDeg) < 1e-9,
       `naive=${expectedDeg}deg, prod=${got}deg`
@@ -313,7 +316,7 @@ const POW_INPUTS = [
 for (const [a, b] of POW_INPUTS) {
   test(`oracle: pow(${a}, ${b})`, () => {
     const expected = Math.pow(a, b);
-    const got = Number.parseFloat(out(`pow(${a}, ${b})`));
+    const got = numeric(out(`pow(${a}, ${b})`));
     assert.ok(
       Math.abs(got - expected) < 1e-9,
       `naive=${expected}, prod=${got}`
@@ -324,7 +327,7 @@ const SQRT_INPUTS = [0, 1, 2, 4, 9, 16, 25, 100, 0.25];
 for (const x of SQRT_INPUTS) {
   test(`oracle: sqrt(${x})`, () => {
     const expected = Math.sqrt(x);
-    const got = Number.parseFloat(out(`sqrt(${x})`));
+    const got = numeric(out(`sqrt(${x})`));
     assert.ok(
       Math.abs(got - expected) < 1e-9,
       `naive=${expected}, prod=${got}`
@@ -335,7 +338,7 @@ const EXP_INPUTS = [-2, -1, 0, 0.5, 1, 2, 5];
 for (const x of EXP_INPUTS) {
   test(`oracle: exp(${x})`, () => {
     const expected = Math.exp(x);
-    const got = Number.parseFloat(out(`exp(${x})`));
+    const got = numeric(out(`exp(${x})`));
     assert.ok(
       Math.abs(got - expected) < 1e-6,
       `naive=${expected}, prod=${got}`
@@ -346,7 +349,7 @@ const LOG1_INPUTS = [1, 2, Math.E, 10, 100, 0.5];
 for (const x of LOG1_INPUTS) {
   test(`oracle: log(${x})`, () => {
     const expected = Math.log(x);
-    const got = Number.parseFloat(out(`log(${x})`));
+    const got = numeric(out(`log(${x})`));
     assert.ok(
       Math.abs(got - expected) < 1e-9,
       `naive=${expected}, prod=${got}`
@@ -363,7 +366,7 @@ const LOG2_INPUTS = [
 for (const [a, b] of LOG2_INPUTS) {
   test(`oracle: log(${a}, ${b})`, () => {
     const expected = Math.log(a) / Math.log(b);
-    const got = Number.parseFloat(out(`log(${a}, ${b})`));
+    const got = numeric(out(`log(${a}, ${b})`));
     assert.ok(
       Math.abs(got - expected) < 1e-9,
       `naive=${expected}, prod=${got}`
@@ -382,7 +385,7 @@ const HYPOT_INPUTS = [
 for (const args of HYPOT_INPUTS) {
   test(`oracle: hypot(${args.join(', ')})`, () => {
     const expected = Math.hypot(...args);
-    const got = Number.parseFloat(out(`hypot(${args.join(', ')})`));
+    const got = numeric(out(`hypot(${args.join(', ')})`));
     assert.ok(
       Math.abs(got - expected) < 1e-9,
       `naive=${expected}, prod=${got}`

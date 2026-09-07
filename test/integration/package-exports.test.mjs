@@ -48,6 +48,7 @@ test('packed package exposes the standalone reducer with usable types', async ()
       [
         "import reduceCalc from 'postcss-calc/reduce';",
         "if (reduceCalc('calc(1px + 2px)') !== '3px') throw new Error('reducer failed');",
+        "if (reduceCalc('calc(1 - 2)', { unwrapSingleNegativeNumber: true }) !== '-1') throw new Error('bare negative option failed');",
       ].join('\n')
     );
     run(process.execPath, [runtime], { cwd: fixture });
@@ -57,7 +58,7 @@ test('packed package exposes the standalone reducer with usable types', async ()
       types,
       [
         "import reduceCalc, { type ReduceCalcOptions } from 'postcss-calc/reduce';",
-        'const options: ReduceCalcOptions = { precision: false };',
+        'const options: ReduceCalcOptions = { precision: false, unwrapSingleNegativeNumber: true };',
         "const reduced: string = reduceCalc('calc(1px + 2px)', options);",
         'void reduced;',
       ].join('\n')

@@ -1,7 +1,6 @@
 // Spec: https://www.w3.org/TR/css-values-4/#serialize-a-calculation-tree
-// Outer calc() is added only when the top-level result contains an
-// arithmetic operator. A Sum inside a Product is the only place parens
-// are ever required on valid canonical input.
+// Outer calc() is added when the top-level result contains an arithmetic
+// operator, or when a finite scalar is negative.
 
 import { num, dim } from './node.js';
 
@@ -13,6 +12,7 @@ import { num, dim } from './node.js';
  * @typedef {object} SerializeOptions
  * @property {number | false} [precision] Decimal places for numbers. `false` disables rounding. Default 5.
  * @property {string} [calcName] Wrapper name to use when `calc()` is needed. Default `'calc'`.
+ * @property {boolean} [unwrapSingleNegativeNumber] Serialize finite negative scalars without a wrapper. Internal selector-only mode.
  */
 
 // Below this is float noise, not a value: `0.1 + 0.2 - 0.3` is 5.5e-17.
@@ -81,6 +81,20 @@ function serializeNumber(v) {
 }
 
 /**
+ * Round and serialize a finite scalar once so callers can use the same value
+ * to decide its syntactic context and render its text.
+ *
+ * @param {import('./node.js').Num | import('./node.js').Dim} node
+ * @param {number | false} prec
+ * @return {{value: number, text: string}}
+ */
+function serializeScalar(node, prec) {
+  const value = round(node.value, prec);
+  const text = `${serializeNumber(value)}${node.type === 'Dim' ? node.unit : ''}`;
+  return { value, text };
+}
+
+/**
  * @param {Node} node
  * @param {SerializeOptions} [opts]
  * @return {string}
@@ -96,6 +110,22 @@ function serialize(node, opts = {}) {
   }
   if (node.type === 'Dim' && isDegenerate(node.value)) {
     return `${calcName}(${degenerateKeyword(node.value)} * 1${node.unit})`;
+  }
+
+  if (node.type === 'Num' || node.type === 'Dim') {
+    const scalar = serializeScalar(node, prec);
+
+    // A finite negative scalar must stay inside calc() so CSS parses it as a
+    // calculation result (and can apply range clamping) rather than as an
+    // invalid bare value. Base this on the serialized value so tiny negative
+    // floating-point noise that rounds to zero does not get wrapped.
+    if (scalar.value < 0) {
+      return opts.unwrapSingleNegativeNumber
+        ? scalar.text
+        : `${calcName}(${scalar.text})`;
+    }
+
+    return scalar.text;
   }
 
   // A grouped sum with a leading negative term is the canonical result of
@@ -114,12 +144,7 @@ function serialize(node, opts = {}) {
     return `${calcName}(-(${serializeSumTerms(invertedTerms, prec)}))`;
   }
 
-  if (
-    node.type === 'Num' ||
-    node.type === 'Dim' ||
-    node.type === 'Ident' ||
-    node.type === 'Call'
-  ) {
+  if (node.type === 'Ident' || node.type === 'Call') {
     return serializeExpr(node, prec);
   }
 
@@ -145,7 +170,7 @@ function serializeExpr(node, prec) {
       if (isDegenerate(node.value)) {
         return degenerateKeyword(node.value);
       }
-      return serializeNumber(round(node.value, prec));
+      return serializeScalar(node, prec).text;
     case 'Dim':
       if (isDegenerate(node.value)) {
         // Nested degenerate Dim wraps in calc() so the `<kw> * 1<unit>` form
@@ -153,7 +178,7 @@ function serializeExpr(node, prec) {
         // inside a Product — `0 * Dim(Infinity, px)` would re-fold as NaN.
         return `calc(${degenerateKeyword(node.value)} * 1${node.unit})`;
       }
-      return `${serializeNumber(round(node.value, prec))}${node.unit}`;
+      return serializeScalar(node, prec).text;
     case 'Ident':
       return node.name;
     case 'Call': {

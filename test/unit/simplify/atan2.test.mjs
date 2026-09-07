@@ -22,7 +22,7 @@ describe('atan2: 1 0', () => {
   });
 
   test('atan2: (-1, 0) → -90deg', () => {
-    assert.equal(out('atan2(-1, 0)'), '-90deg');
+    assert.equal(out('atan2(-1, 0)'), 'calc(-90deg)');
   });
 
   test('atan2: (1, 1) → 45deg', () => {
@@ -30,7 +30,7 @@ describe('atan2: 1 0', () => {
   });
 
   test('atan2: (-1, 1) → -45deg', () => {
-    assert.equal(out('atan2(-1, 1)'), '-45deg');
+    assert.equal(out('atan2(-1, 1)'), 'calc(-45deg)');
   });
 
   test('atan2: (1, -1) → 135deg', () => {
@@ -38,7 +38,7 @@ describe('atan2: 1 0', () => {
   });
 
   test('atan2: (-1, -1) → -135deg', () => {
-    assert.equal(out('atan2(-1, -1)'), '-135deg');
+    assert.equal(out('atan2(-1, -1)'), 'calc(-135deg)');
   });
 
   test('atan2: same-unit dim args fold (1px, 1px) → 45deg', () => {
@@ -56,7 +56,7 @@ describe('atan2: 1 0', () => {
   });
 
   test('atan2: spec table (-infinity, -infinity) → -135deg', () => {
-    assert.equal(out('atan2(-infinity, -infinity)'), '-135deg');
+    assert.equal(out('atan2(-infinity, -infinity)'), 'calc(-135deg)');
   });
 
   test('atan2: same-base angle args (1deg, 1deg) → 45deg', () => {

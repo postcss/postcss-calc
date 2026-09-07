@@ -3,6 +3,10 @@ export type ReduceCalcOptions = {
     precision?: number | false;
     warnWhenCannotResolve?: boolean;
     /**
+     * Serialize finite negative results without a `calc()` wrapper. Defaults to `false`.
+     */
+    unwrapSingleNegativeNumber?: boolean;
+    /**
      * Invoked when parse/simplify throws.
      */
     onParseError?: (error: Error, input: string) => void;
@@ -23,7 +27,6 @@ export type Replacement = {
     end: number;
     node: import('./lib/node.js').Node;
     calcName: string;
-    matchedName: string;
 };
 /**
  * Simplify every supported CSS math function in a component-value string.
