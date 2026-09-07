@@ -3,6 +3,21 @@
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
 
+## 11.1.0 (2026-09-07)
+
+### Features
+
+- Add dedicated standalone reducer entry point `postcss-calc/reduce` (`reduceCalc`)
+- Simplify `clamp()` with `none` keyword per CSS Values 4 §10.5.3
+
+### Performance improvements
+
+- Improve performance by skipping parsing for values without calculation functions
+
+### Bug fixes
+
+- Update PostCSS peer dependency to `^8.5.28`
+
 ## 11.0.3 (2026-09-01)
 
 ### Performance improvements
