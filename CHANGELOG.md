@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
 
+## 11.1.1 (2026-09-07)
+
+### Bug fixes
+
+- Preserve `calc()` in a declaration when a property value reduces to a negative scalar
+
 ## 11.1.0 (2026-09-07)
 
 ### Features
