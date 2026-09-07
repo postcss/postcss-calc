@@ -9,11 +9,11 @@ import { num, dim, mkSum, mkProduct } from '../../src/lib/node.js';
 // value — no wrapper needed.
 
 describe('serialize: Single Number', () => {
-  test('serialize: single number — no calc wrapper', () => {
+  test('serialize: single number — no calc() function', () => {
     assert.equal(serialize(num(42)), '42');
   });
 
-  test('serialize: single dimension — no calc wrapper', () => {
+  test('serialize: single dimension — no calc() function', () => {
     assert.equal(serialize(dim(10, 'px')), '10px');
   });
 
@@ -70,7 +70,7 @@ describe('serialize: Single Number', () => {
     assert.equal(serialize(dim(-1, 'px')), 'calc(-1px)');
   });
 
-  test('serialize: single-term Sum with opaque gets calc wrapper', () => {
+  test('serialize: single-term Sum with opaque gets calc() function', () => {
     // `-var(--x)` needs calc() so the leading minus isn't ambiguous.
     const ast = mkSum([
       {
@@ -138,7 +138,7 @@ describe('serialize: mutation-targeted tests', () => {
     assert.equal(serialize(ast), 'calc(5px - 2em)');
   });
 
-  test('serialize: negative leading Num keeps calc() wrapper', () => {
+  test('serialize: negative leading Num keeps calc() function', () => {
     assert.equal(serialize(num(-5)), 'calc(-5)');
   });
 
