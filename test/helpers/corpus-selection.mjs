@@ -87,7 +87,7 @@ export function classifyCorpusExpression(input) {
   try {
     const literals = [];
     const ast = parse(tokenize(input));
-    // A calc wrapper accepts exactly one expression. The harvested GitHub
+    // A calc() function accepts exactly one expression. The harvested GitHub
     // pool also contains malformed calc-like calls; those remain covered by
     // invalid-corpus resilience tests instead of becoming differential noise.
     if (
