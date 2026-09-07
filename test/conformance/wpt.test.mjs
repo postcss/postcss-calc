@@ -20,8 +20,7 @@ import { out } from '../helpers/out.mjs';
 // https://github.com/web-platform-tests/wpt/blob/master/css/css-values/calc-serialization.html
 test('WPT calc-serialization: single negative length preserved', () => {
   // Input: `calc(-10px)` → WPT expects `calc(-10px)`.
-  // DIVERGE: we unwrap single values to bare dimensions.
-  assert.equal(out('calc(-10px)'), '-10px');
+  assert.equal(out('calc(-10px)'), 'calc(-10px)');
 });
 
 test('WPT calc-serialization: resolvable + opaque kept as a sum', () => {
@@ -256,8 +255,7 @@ describe('WPT minmax-percentage: Multi-arg Percent', () => {
 // normalization changes the result.
 describe('WPT calc-serialization-002:', () => {
   test('WPT calc-serialization-002: same-family combination (ex)', () => {
-    // WPT: `calc(5ex - 9ex)` → `calc(-4ex)`. Our single-value unwrap: `-4ex`.
-    assert.equal(out('calc(5ex - 9ex)'), '-4ex');
+    assert.equal(out('calc(5ex - 9ex)'), 'calc(-4ex)');
   });
 
   test('WPT calc-serialization-002: cancelled percentage preserved as 0%', () => {
@@ -305,7 +303,7 @@ describe('WPT round:', () => {
   });
 
   test('WPT round: round(to-zero, -19, 10) → -10', () => {
-    assert.equal(out('round(to-zero, -19, 10)'), '-10');
+    assert.equal(out('round(to-zero, -19, 10)'), 'calc(-10)');
   });
 
   test('WPT round: round(3.7) → 4 (B defaults to 1 for <number>)', () => {
@@ -332,7 +330,7 @@ describe('WPT mod: Mod(18px 5px', () => {
   });
 
   test('WPT mod: mod(140deg, -90deg) → -40deg (spec example)', () => {
-    assert.equal(out('mod(140deg, -90deg)'), '-40deg');
+    assert.equal(out('mod(140deg, -90deg)'), 'calc(-40deg)');
   });
 });
 
@@ -344,7 +342,7 @@ describe('WPT rem:', () => {
   });
 
   test('WPT rem: rem(-18px, 5px) → -3px (sign of A, spec example)', () => {
-    assert.equal(out('rem(-18px, 5px)'), '-3px');
+    assert.equal(out('rem(-18px, 5px)'), 'calc(-3px)');
   });
 
   test('WPT rem: rem(140deg, -90deg) → 50deg (spec example)', () => {
@@ -372,7 +370,7 @@ describe('WPT abs:', () => {
 // https://github.com/web-platform-tests/wpt/blob/master/css/css-values/signs-abs-computed.html
 describe('WPT sign:', () => {
   test('WPT sign: sign(-5) → -1', () => {
-    assert.equal(out('sign(-5)'), '-1');
+    assert.equal(out('sign(-5)'), 'calc(-1)');
   });
 
   test('WPT sign: sign(0) → 0', () => {
@@ -404,7 +402,7 @@ describe('WPT sin/cos/tan:', () => {
   });
 
   test('WPT sin/cos/tan: cos(180deg) → -1', () => {
-    assert.equal(out('cos(180deg)'), '-1');
+    assert.equal(out('cos(180deg)'), 'calc(-1)');
   });
 
   test('WPT sin/cos/tan: tan(45deg) → 1 (rounded from 0.999...)', () => {
@@ -434,7 +432,7 @@ describe('WPT trig-pi:', () => {
   });
 
   test('WPT trig-pi: cos(pi) → -1', () => {
-    assert.equal(out('cos(pi)'), '-1');
+    assert.equal(out('cos(pi)'), 'calc(-1)');
   });
 
   test('WPT trig-pi: cos(2 * pi) → 1', () => {
@@ -458,7 +456,7 @@ describe('WPT asin:', () => {
   });
 
   test('WPT asin: asin(-1) → -90deg', () => {
-    assert.equal(out('asin(-1)'), '-90deg');
+    assert.equal(out('asin(-1)'), 'calc(-90deg)');
   });
 
   test('WPT acos: acos(1) → 0deg', () => {
@@ -482,7 +480,7 @@ describe('WPT asin:', () => {
   });
 
   test('WPT atan: atan(-1) → -45deg', () => {
-    assert.equal(out('atan(-1)'), '-45deg');
+    assert.equal(out('atan(-1)'), 'calc(-45deg)');
   });
 
   test('WPT atan: atan(infinity) → 90deg', () => {
@@ -506,7 +504,7 @@ describe('WPT atan2:', () => {
   });
 
   test('WPT atan2: atan2(-1, 0) → -90deg', () => {
-    assert.equal(out('atan2(-1, 0)'), '-90deg');
+    assert.equal(out('atan2(-1, 0)'), 'calc(-90deg)');
   });
 
   test('WPT atan2: atan2(1, 1) → 45deg', () => {

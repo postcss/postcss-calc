@@ -106,7 +106,7 @@ test('distribute: number × resolvable-sum folds through each term', () => {
 
 describe('distribute: Preserves Negative', () => {
   test('distribute: preserves negative signs across each term', () => {
-    assert.equal(out('calc(2 * (1em - 3em))'), '-4em');
+    assert.equal(out('calc(2 * (1em - 3em))'), 'calc(-4em)');
   });
 
   test('distribute: distribute-then-merge same-unit results', () => {
@@ -200,10 +200,10 @@ describe('arithmetic: 1 /', () => {
 test('precision: dim value folds in original left-to-right position, not last', () => {
   assert.equal(
     out('calc(-11px * -57 * -80 * -70 / 17 * -19)', { precision: false }),
-    '-3924282.3529411764px'
+    'calc(-3924282.3529411764px)'
   );
   assert.equal(
     out('calc(-57 * -11px * -80 * -70 / 17 * -19)', { precision: false }),
-    '-3924282.3529411764px'
+    'calc(-3924282.3529411764px)'
   );
 });

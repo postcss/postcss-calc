@@ -24,9 +24,17 @@ import reduceCalc, { hasPotentialMathFunction } from './reduce.js';
  * @param {(target: import('postcss').ChildNode, value: string) => void} setProp
  * @param {ResolvedOptions} options
  * @param {import('postcss').Result} result
+ * @param {boolean} unwrapSingleNegativeNumber
  * @return {void}
  */
-function applyTransform(node, current, setProp, options, result) {
+function applyTransform(
+  node,
+  current,
+  setProp,
+  options,
+  result,
+  unwrapSingleNegativeNumber
+) {
   if (!hasPotentialMathFunction(current)) {
     return;
   }
@@ -41,6 +49,7 @@ function applyTransform(node, current, setProp, options, result) {
     onWarn: (message) => {
       result.warn(message, { plugin: 'postcss-calc', node });
     },
+    unwrapSingleNegativeNumber,
   });
   if (transformed !== current) {
     setProp(node, transformed);
@@ -77,7 +86,8 @@ function pluginCreator(opts) {
               /** @type {import('postcss').Declaration} */ (n).value = v;
             },
             options,
-            result
+            result,
+            false
           );
         }
         if (node.type === 'atrule' && options.mediaQueries) {
@@ -88,7 +98,8 @@ function pluginCreator(opts) {
               /** @type {import('postcss').AtRule} */ (n).params = v;
             },
             options,
-            result
+            result,
+            false
           );
         }
         if (node.type === 'rule' && options.selectors) {
@@ -101,7 +112,8 @@ function pluginCreator(opts) {
               /** @type {import('postcss').Rule} */ (n).selector = v;
             },
             options,
-            result
+            result,
+            true
           );
         }
       });

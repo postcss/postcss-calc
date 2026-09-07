@@ -64,10 +64,10 @@ describe('serialize: Single Number', () => {
     assert.equal(serialize(ast), 'calc((1 + 2) * 3)');
   });
 
-  test('serialize: negative Dim via signed leaf → bare -Xpx', () => {
+  test('serialize: negative Dim via signed leaf → calc(-Xpx)', () => {
     // Negatives live directly in the Dim value. The constructor helper
     // `dim(-1, 'px')` returns a Dim with value -1, no Sum wrapper.
-    assert.equal(serialize(dim(-1, 'px')), '-1px');
+    assert.equal(serialize(dim(-1, 'px')), 'calc(-1px)');
   });
 
   test('serialize: single-term Sum with opaque gets calc wrapper', () => {
@@ -99,7 +99,7 @@ describe('serialize: Single Number', () => {
 
   test('serialize: omits the leading zero from fractional numbers', () => {
     assert.equal(serialize(num(0.5)), '.5');
-    assert.equal(serialize(num(-0.000001)), '-.000001');
+    assert.equal(serialize(num(-0.000001)), 'calc(-.000001)');
     assert.equal(serialize(dim(0.25, 'px')), '.25px');
     assert.equal(serialize(num(0)), '0');
     assert.equal(serialize(num(1e-7)), '1e-7');
@@ -138,9 +138,8 @@ describe('serialize: mutation-targeted tests', () => {
     assert.equal(serialize(ast), 'calc(5px - 2em)');
   });
 
-  test('serialize: negative leading Num serializes without calc() wrap', () => {
-    // Top-level bare Num(-5) — no calc() needed.
-    assert.equal(serialize({ type: 'Num', value: -5 }), '-5');
+  test('serialize: negative leading Num keeps calc() wrapper', () => {
+    assert.equal(serialize(num(-5)), 'calc(-5)');
   });
 
   test('serialize: single-term Sum with sign=-1 and opaque Call → calc(-call)', () => {

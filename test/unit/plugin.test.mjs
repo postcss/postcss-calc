@@ -46,7 +46,21 @@ describe('plugin: basic pipeline', () => {
     const { css } = await process(
       'a{a:calc(1px + 2px);b:calc(10% - 2%);c:calc(1 / 4);d:calc(-2px + 1px);e:calc(1PX + 2PX)}'
     );
-    assert.equal(css, 'a{a:3px;b:8%;c:.25;d:-1px;e:3px}');
+    assert.equal(css, 'a{a:3px;b:8%;c:.25;d:calc(-1px);e:3px}');
+  });
+
+  test('plugin: negative scalar results retain calc()', async () => {
+    const { css } = await process('a{width:calc(5px - 10px)}');
+    assert.equal(css, 'a{width:calc(-5px)}');
+  });
+
+  test('plugin: rounded negative floating-point noise does not retain calc()', async () => {
+    const { css } = await process('a{width:calc(cos(270deg) * 100px)}');
+    assert.equal(css, 'a{width:0px}');
+    const unrounded = await process('a{width:calc(cos(270deg) * 100px)}', {
+      precision: false,
+    });
+    assert.equal(unrounded.css, 'a{width:calc(-1.8369701987210297e-14px)}');
   });
 
   test('plugin: multiple calcs in one value', async () => {
@@ -140,6 +154,14 @@ test('plugin: no warning when expression fully resolves', async () => {
   const { warnings } = await process('a{b:calc(1px + 2px)}', {
     warnWhenCannotResolve: true,
   });
+  assert.equal(warnings.length, 0);
+});
+
+test('plugin: no warning when a negative expression fully resolves', async () => {
+  const { css, warnings } = await process('a{b:calc(1px - 2px)}', {
+    warnWhenCannotResolve: true,
+  });
+  assert.equal(css, 'a{b:calc(-1px)}');
   assert.equal(warnings.length, 0);
 });
 
@@ -276,6 +298,19 @@ describe('plugin: option combinations', () => {
 
   test('plugin: selector transformations are idempotent', async () => {
     await assertIdempotent('a:nth-child(calc(1 + 2)) { b: c }', {
+      selectors: true,
+    });
+  });
+
+  test('plugin: selectors serialize negative scalars without calc()', async () => {
+    const { css } = await process('a:nth-child(calc(1 - 2)) { b: c }', {
+      selectors: true,
+    });
+    assert.equal(css, 'a:nth-child(-1) { b: c }');
+  });
+
+  test('plugin: negative selector transformations are idempotent', async () => {
+    await assertIdempotent('a:nth-child(calc(1 - 2)) { b: c }', {
       selectors: true,
     });
   });

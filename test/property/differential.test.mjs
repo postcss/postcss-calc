@@ -50,6 +50,9 @@ function canonicalize(s) {
   try {
     return serialize(simplify(parse(tokenize(s))), {
       precision: COMPARE_PRECISION,
+      // Differential comparison ignores the wrapper-only distinction. The
+      // production serializer keeps it for range-safe value output.
+      unwrapSingleNegativeNumber: true,
     });
   } catch {
     return null;
@@ -84,6 +87,7 @@ function canonicalizeLoose(s) {
   try {
     return serialize(simplify(parse(tokenize(s))), {
       precision: COMPARE_PRECISION_LOOSE,
+      unwrapSingleNegativeNumber: true,
     });
   } catch {
     return null;
@@ -105,7 +109,7 @@ function checkAgreement(input) {
   if (canonicalTheirs === null) {
     return true;
   }
-  return ours === canonicalTheirs;
+  return canonicalize(ours) === canonicalTheirs;
 }
 function checkAgreementLoose(input) {
   const ours = ourOutLoose(input);
@@ -114,7 +118,7 @@ function checkAgreementLoose(input) {
   if (ours === theirs) return true;
   const canonicalTheirs = canonicalizeLoose(theirs);
   if (canonicalTheirs === null) return true;
-  return ours === canonicalTheirs;
+  return canonicalizeLoose(ours) === canonicalTheirs;
 }
 test('differential: our simplifier agrees with csstools (canonicalized)', () => {
   fc.assert(fc.property(inputArb, checkAgreement), { numRuns: NUM_RUNS });

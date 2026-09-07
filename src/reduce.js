@@ -27,6 +27,7 @@ const BLOCK_CLOSE = new Map([
  * @typedef {object} ReduceCalcOptions
  * @property {number | false} [precision]
  * @property {boolean} [warnWhenCannotResolve]
+ * @property {boolean} [unwrapSingleNegativeNumber] Serialize finite negative results without a `calc()` wrapper. Defaults to `false`.
  * @property {(error: Error, input: string) => void} [onParseError] Invoked when parse/simplify throws.
  * @property {(message: string) => void} [onWarn] Invoked when `warnWhenCannotResolve` is set and an expression cannot be reduced to a single value.
  */
@@ -34,9 +35,7 @@ const BLOCK_CLOSE = new Map([
 /** @typedef {Required<Omit<ReduceCalcOptions, 'onParseError' | 'onWarn'>> & Pick<ReduceCalcOptions, 'onParseError' | 'onWarn'>} ResolvedReduceCalcOptions */
 
 /**
- * Fields threaded unchanged through the token-range walk.
- * `value` is the original full property text, used only for the
- * warnWhenCannotResolve message.
+ * Fields threaded through the internal token-range walk.
  *
  * @typedef {object} TransformContext
  * @property {ResolvedReduceCalcOptions} options
@@ -51,7 +50,6 @@ const BLOCK_CLOSE = new Map([
  * @property {number} end
  * @property {import('./lib/node.js').Node} node
  * @property {string} calcName
- * @property {string} matchedName
  */
 
 /**
@@ -105,7 +103,6 @@ function walkTokens(start, expectedClose, ctx, transform) {
         end,
         node,
         calcName: isCalc ? name : 'calc',
-        matchedName: name,
       });
     } catch (error) {
       const err = error instanceof Error ? error : new Error('Error');
@@ -115,6 +112,17 @@ function walkTokens(start, expectedClose, ctx, transform) {
   }
 
   return ctx.tokens.length - 1;
+}
+
+/**
+ * @param {import('./lib/node.js').Node} node
+ * @return {boolean}
+ */
+function isUnresolvedResult(node) {
+  if (node.type === 'Sum' || node.type === 'Product') {
+    return true;
+  }
+  return node.type === 'Call' && isSupportedMathFunction(node.name);
 }
 
 /**
@@ -131,7 +139,12 @@ function reduceCalc(value, opts) {
   }
 
   /** @type {ResolvedReduceCalcOptions} */
-  const options = { precision: 5, warnWhenCannotResolve: false, ...opts };
+  const options = {
+    precision: 5,
+    warnWhenCannotResolve: false,
+    unwrapSingleNegativeNumber: false,
+    ...opts,
+  };
   const tokens = cssTokenize({ css: value });
   /** @type {Replacement[]} */
   const replacements = [];
@@ -147,11 +160,9 @@ function reduceCalc(value, opts) {
     const text = serialize(replacement.node, {
       precision: options.precision,
       calcName: replacement.calcName,
+      unwrapSingleNegativeNumber: options.unwrapSingleNegativeNumber,
     });
-    if (
-      options.warnWhenCannotResolve &&
-      text.startsWith(`${replacement.matchedName}(`)
-    ) {
+    if (options.warnWhenCannotResolve && isUnresolvedResult(replacement.node)) {
       options.onWarn?.('Could not reduce expression: ' + value);
     }
     output += value.slice(lastIndex, replacement.start) + text;

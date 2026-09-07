@@ -48,8 +48,34 @@ describe('reduceCalc: basic pipeline', () => {
     assert.equal(reduceCalc('calc(1px + 2px)'), '3px');
     assert.equal(reduceCalc('calc(10% - 2%)'), '8%');
     assert.equal(reduceCalc('calc(1 / 4)'), '.25');
-    assert.equal(reduceCalc('calc(-2px + 1px)'), '-1px');
+    assert.equal(reduceCalc('calc(-2px + 1px)'), 'calc(-1px)');
     assert.equal(reduceCalc('calc(1PX + 2PX)'), '3px');
+  });
+
+  test('reduceCalc: negative scalar results retain calc()', () => {
+    assert.equal(reduceCalc('calc(5px - 10px)'), 'calc(-5px)');
+    assert.equal(reduceCalc('calc(5% - 10%)'), 'calc(-5%)');
+  });
+
+  test('reduceCalc: rounded negative floating-point noise does not retain calc()', () => {
+    assert.equal(reduceCalc('calc(cos(270deg) * 100px)'), '0px');
+    assert.equal(
+      reduceCalc('calc(cos(270deg) * 100px)', { precision: false }),
+      'calc(-1.8369701987210297e-14px)'
+    );
+  });
+
+  test('reduceCalc: unwrapSingleNegativeNumber controls negative scalar serialization', () => {
+    assert.equal(
+      reduceCalc('a:nth-child(calc(1 - 2))', {
+        unwrapSingleNegativeNumber: true,
+      }),
+      'a:nth-child(-1)'
+    );
+    assert.equal(
+      reduceCalc('calc(1 - 2)', { unwrapSingleNegativeNumber: true }),
+      '-1'
+    );
   });
 
   test('reduceCalc: multiple calcs in one value', () => {
@@ -219,6 +245,21 @@ test('reduceCalc: no warning when expression fully resolves', () => {
     warnWhenCannotResolve: true,
   });
   assert.equal(warnings.length, 0);
+});
+
+test('reduceCalc: no warning when a negative expression fully resolves', () => {
+  const { output, warnings } = reduceWithWarnings('calc(1px - 2px)', {
+    warnWhenCannotResolve: true,
+  });
+  assert.equal(output, 'calc(-1px)');
+  assert.equal(warnings.length, 0);
+});
+
+test('reduceCalc: warns for an unresolved supported math call', () => {
+  const { warnings } = reduceWithWarnings('calc(abs(var(--x)))', {
+    warnWhenCannotResolve: true,
+  });
+  assert.equal(warnings.length, 1);
 });
 
 // --- mediaQueries / selectors (value strings the plugin would pass) ------

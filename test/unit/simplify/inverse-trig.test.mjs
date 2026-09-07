@@ -16,7 +16,7 @@ describe('asin: 1 →', () => {
   });
 
   test('asin: -1 → -90deg', () => {
-    assert.equal(out('asin(-1)'), '-90deg');
+    assert.equal(out('asin(-1)'), 'calc(-90deg)');
   });
 
   test('asin: 0.5 → 30deg (Math.asin(0.5)*180/π = 30.0000... rounds to 30)', () => {
@@ -48,7 +48,7 @@ describe('atan: 0 →', () => {
   });
 
   test('atan: -1 → -45deg', () => {
-    assert.equal(out('atan(-1)'), '-45deg');
+    assert.equal(out('atan(-1)'), 'calc(-45deg)');
   });
 
   test('atan: infinity → 90deg (Math.atan(Infinity) = π/2 exactly)', () => {
@@ -56,7 +56,7 @@ describe('atan: 0 →', () => {
   });
 
   test('atan: -infinity → -90deg', () => {
-    assert.equal(out('atan(-infinity)'), '-90deg');
+    assert.equal(out('atan(-infinity)'), 'calc(-90deg)');
   });
 });
 

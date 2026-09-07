@@ -19,23 +19,23 @@ describe('round: Default Strategy', () => {
 
   test('round: tie breaks to upper B (§10.3 line 978)', () => {
     assert.equal(out('round(15, 10)'), '20');
-    assert.equal(out('round(-15, 10)'), '-10'); // upper of {-20, -10} is -10
+    assert.equal(out('round(-15, 10)'), 'calc(-10)'); // upper of {-20, -10} is -10
   });
 
   test('round: up strategy → ceiling step', () => {
     assert.equal(out('round(up, 11, 10)'), '20');
     assert.equal(out('round(up, 10, 10)'), '10'); // exact multiple
-    assert.equal(out('round(up, -11, 10)'), '-10');
+    assert.equal(out('round(up, -11, 10)'), 'calc(-10)');
   });
 
   test('round: down strategy → floor step', () => {
     assert.equal(out('round(down, 19, 10)'), '10');
-    assert.equal(out('round(down, -11, 10)'), '-20');
+    assert.equal(out('round(down, -11, 10)'), 'calc(-20)');
   });
 
   test('round: to-zero strategy', () => {
     assert.equal(out('round(to-zero, 19, 10)'), '10');
-    assert.equal(out('round(to-zero, -19, 10)'), '-10');
+    assert.equal(out('round(to-zero, -19, 10)'), 'calc(-10)');
     assert.equal(out('round(to-zero, 1, 10)'), '0');
     assert.equal(out('round(to-zero, -1, 10)'), '0');
   });
@@ -84,10 +84,10 @@ describe('round: Default Strategy', () => {
   });
 
   test('round: negative A with each strategy', () => {
-    assert.equal(out('round(nearest, -7, 5)'), '-5'); // {-10, -5}, |-2| < |-3|
-    assert.equal(out('round(up, -7, 5)'), '-5');
-    assert.equal(out('round(down, -7, 5)'), '-10');
-    assert.equal(out('round(to-zero, -7, 5)'), '-5');
+    assert.equal(out('round(nearest, -7, 5)'), 'calc(-5)'); // {-10, -5}, |-2| < |-3|
+    assert.equal(out('round(up, -7, 5)'), 'calc(-5)');
+    assert.equal(out('round(down, -7, 5)'), 'calc(-10)');
+    assert.equal(out('round(to-zero, -7, 5)'), 'calc(-5)');
   });
 
   test('round: negative B is allowed', () => {

@@ -20,7 +20,7 @@ describe('pow: Zero Base', () => {
   });
 
   test('pow: negative base with integer exponent', () => {
-    assert.equal(out('pow(-2, 3)'), '-8');
+    assert.equal(out('pow(-2, 3)'), 'calc(-8)');
   });
 
   test('pow: negative base with non-integer exponent → NaN', () => {

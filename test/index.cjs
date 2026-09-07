@@ -432,7 +432,7 @@ describe('Keep', () => {
 
   test(
     'should keep a negative value smaller than the precision',
-    testValue('calc(-1/1000000)', '-.000001')
+    testValue('calc(-1/1000000)', 'calc(-.000001)')
   );
 
   test(
@@ -517,7 +517,7 @@ test(
 describe('Reduce', () => {
   test(
     'should reduce substraction from zero',
-    testValue('calc( 0 - 10px)', '-10px')
+    testValue('calc( 0 - 10px)', 'calc(-10px)')
   );
 
   test(
@@ -1057,13 +1057,13 @@ describe('Plus', () => {
 });
 
 describe('Minus', () => {
-  test('minus sign', testValue('calc(-100px + -100px)', '-200px'));
+  test('minus sign', testValue('calc(-100px + -100px)', 'calc(-200px)'));
 
   test('minus sign (#2)', testValue('calc(-100px - -100px)', '0px'));
 
-  test('minus sign (#3)', testValue('calc(200px * -1)', '-200px'));
+  test('minus sign (#3)', testValue('calc(200px * -1)', 'calc(-200px)'));
 
-  test('minus sign (#4)', testValue('calc(200px / -1)', '-200px'));
+  test('minus sign (#4)', testValue('calc(200px / -1)', 'calc(-200px)'));
 });
 
 describe('Whitespace', () => {

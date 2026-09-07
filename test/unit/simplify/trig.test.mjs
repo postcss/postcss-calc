@@ -48,7 +48,7 @@ describe('sin: 0.5turn →', () => {
 
 describe('cos: Pi Keyword', () => {
   test('cos: pi keyword → -1', () => {
-    assert.equal(out('cos(pi)'), '-1');
+    assert.equal(out('cos(pi)'), 'calc(-1)');
   });
 
   test('cos: 60deg → 0.5', () => {

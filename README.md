@@ -68,7 +68,8 @@ reduceCalc('min(50px, calc(2 * 40px))');
 // => '50px'
 ```
 
-It accepts `precision`, `warnWhenCannotResolve`, `onParseError`, and `onWarn`:
+It accepts `precision`, `unwrapSingleNegativeNumber`, `warnWhenCannotResolve`, `onParseError`,
+and `onWarn`:
 
 ```js
 const result = reduceCalc('calc(100% + var(--gap))', {
@@ -84,7 +85,30 @@ const result = reduceCalc('calc(100% + var(--gap))', {
 Unlike the PostCSS plugin, the standalone reducer does not show warnings
 by default; provide `onParseError` and/or `onWarn` if you want diagnostics.
 
-### Options
+### Standalone reducer options
+
+#### `unwrapSingleNegativeNumber` (default: `false`)
+
+Controls whether a finite negative result is serialized as a bare value or
+wrapped in `calc()`. Keep the default when reducing declaration values; set it
+to `true` when the surrounding CSS context requires a bare negative value, such
+as a selector:
+
+```js
+reduceCalc('calc(5px - 10px)');
+// => 'calc(-5px)'
+
+reduceCalc('calc(5px - 10px)', { unwrapNegativeNumbers: true });
+// => '-5px'
+```
+
+### PostCSS plugin options
+
+These options apply when using the PostCSS plugin:
+
+```js
+postcss().use(calc({ precision: 10 }));
+```
 
 #### `precision` (default: `5`)
 
@@ -139,7 +163,11 @@ With `mediaQueries: true`, this becomes:
 
 #### `selectors` (default: `false`)
 
-Allows calc() usage as part of selectors.
+Reduces `calc()` functions found in selectors. Selectors do not accept
+`calc()` functions, so the plugin replaces them with their reduced values.
+Finite negative results are serialized as bare values because a selector cannot
+contain a `calc()` function; the plugin enables `unwrapSingleNegativeNumber` automatically
+for selectors.
 
 ```js
 var out = postcss()
@@ -163,11 +191,13 @@ Callback invoked when a `calc()` body fails to parse or simplify. Matches
 [`@csstools/css-calc`][csstools-css-calc]'s shape:
 
 ```js
-calc({
-  onParseError: (err, input) => {
-    throw err; // or log, route to a different channel, etc.
-  },
-});
+postcss().use(
+  calc({
+    onParseError: (err, input) => {
+      throw err; // or log, route to a different channel, etc.
+    },
+  })
+);
 ```
 
 When omitted, errors are reported via PostCSS `result.warn()` so the
