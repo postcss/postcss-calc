@@ -199,9 +199,9 @@ describe('tok: Comment Between', () => {
   });
 
   test('tok: leading comment marks first token ws=true (no surprise)', () => {
-    const ts = tokenize('/* hi */1px').filter((t) => t.type !== 'eof');
-    assert.equal(ts[0].value, '1');
-    assert.equal(ts[0].ws, true);
+    const first = tokenize('/* hi */1px').find((t) => t.type !== 'eof');
+    assert.equal(first.value, '1');
+    assert.equal(first.ws, true);
   });
 
   test('tok: empty comment /**/ is allowed', () => {
