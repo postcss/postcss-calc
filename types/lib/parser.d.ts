@@ -10,8 +10,6 @@ export type Token = {
     signCharacter?: '+' | '-';
     pos: number;
     ws: boolean;
-    leadingRaw: string;
-    native?: CSSToken;
 };
 export type PrefixParselet = (p: Parser, token: Token) => Node;
 /** Bounded cursor that skips trivia but records whether it preceded a token. */

@@ -93,16 +93,6 @@ function isSupportedMathFunction(name) {
 function simplifyCall(node, simplify) {
   const name = node.name.toLowerCase();
 
-  const components = getComponents(node);
-  if (components) {
-    const result = call(
-      node.name,
-      node.args.map((arg) => simplify(arg)),
-      node.rawName
-    );
-    return setComponents(result, simplifyComponents(components, simplify));
-  }
-
   if (name === 'calc' || name === '-webkit-calc' || name === '-moz-calc') {
     if (node.args.length !== 1) {
       throw new Error(`${node.name}() takes exactly one argument`);
@@ -111,6 +101,12 @@ function simplifyCall(node, simplify) {
   }
 
   const args = node.args.map((a) => simplify(a));
+
+  const components = getComponents(node);
+  if (components) {
+    const result = call(node.name, args, node.rawName);
+    return setComponents(result, simplifyComponents(components, simplify));
+  }
 
   const simplifier = MATH_SIMPLIFIERS.get(name);
   if (simplifier) {

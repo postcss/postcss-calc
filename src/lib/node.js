@@ -108,14 +108,9 @@ function pushSumTerm(out, term) {
 
   // sign=-1 around a Num/Dim leaf collapses into the value's sign — the
   // canonical-form rule downstream code relies on.
-  if (sign === -1) {
-    if (node.type === 'Num') {
-      node = num(-node.value);
-      sign = 1;
-    } else if (node.type === 'Dim') {
-      node = dim(-node.value, node.unit, node.rawUnit);
-      sign = 1;
-    }
+  if (sign === -1 && (node.type === 'Num' || node.type === 'Dim')) {
+    node = negate(node);
+    sign = 1;
   }
 
   // Drop zero-valued Nums. Dims with value 0 stay — the unit carries type.
