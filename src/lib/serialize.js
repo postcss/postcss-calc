@@ -185,7 +185,10 @@ function serializeExpr(node, prec) {
     case 'Call': {
       const components = getComponents(node);
       if (components) {
-        return `${node.rawName ?? node.name}(${serializeExpr(node.args[0], prec)}${serializeComponents(components, (child) => serializeExpr(child, prec))})`;
+        const args = node.args
+          .map((arg) => serializeExpr(arg, prec))
+          .join(', ');
+        return `${node.rawName ?? node.name}(${args}${serializeComponents(components, (child) => serialize(child, { precision: prec }))})`;
       }
       const args = node.args.map((a) => serializeExpr(a, prec)).join(', ');
       return `${node.rawName ?? node.name}(${args})`;

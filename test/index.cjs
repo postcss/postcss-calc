@@ -289,24 +289,21 @@ describe('Skip special functions', () => {
     // single-value calc() unwrapped (§10.6).
     testValue(
       'calc(constant(safe-area-inset-left))',
-      /* 'calc(constant(safe-area-inset-left))' */ 'constant(safe-area-inset-left)'
+      'constant(safe-area-inset-left)'
     )
   );
 
   test(
     'should skip env function',
     // single-value calc() unwrapped (§10.6).
-    testValue(
-      'calc(env(safe-area-inset-left))',
-      /* 'calc(env(safe-area-inset-left))' */ 'env(safe-area-inset-left)'
-    )
+    testValue('calc(env(safe-area-inset-left))', 'env(safe-area-inset-left)')
   );
 
   test(
     'should skip env function (#1)',
     testValue(
       'calc(env(safe-area-inset-left, 50px 20px))',
-      'calc(env(safe-area-inset-left, 50px 20px))'
+      'env(safe-area-inset-left, 50px 20px)'
     )
   );
 
@@ -315,7 +312,15 @@ describe('Skip special functions', () => {
     // single-value calc() unwrapped (§10.6).
     testValue(
       'calc(unknown(safe-area-inset-left))',
-      /* 'calc(unknown(safe-area-inset-left))' */ 'unknown(safe-area-inset-left)'
+      'unknown(safe-area-inset-left)'
+    )
+  );
+
+  test(
+    'should skip attr function',
+    testCssDoesNotThrow(
+      'foo { width: calc(attr(size ch) * 1.1); }',
+      'foo { width: calc(1.1 * attr(size ch)); }'
     )
   );
 });

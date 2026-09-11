@@ -137,9 +137,9 @@ const parserRejectedAcceptedByCsstools = selection.parserRejected.filter(
 // These are Sass/preprocessor and malformed inputs harvested by the GitHub
 // pool. They are checked separately because css-calc passes them through,
 // while this package intentionally rejects them as non-CSS expressions.
-const EXPECTED_PARSER_REJECTED_COUNT = 2321;
-const EXPECTED_PARSER_REJECTED_HASH = 3210289525;
-const EXPECTED_PARSER_REJECTED_ACCEPTED_BY_CSSTOOLS = 2321;
+const EXPECTED_PARSER_REJECTED_COUNT = 2282;
+const EXPECTED_PARSER_REJECTED_HASH = 895423645;
+const EXPECTED_PARSER_REJECTED_ACCEPTED_BY_CSSTOOLS = 2282;
 
 test(`corpus: ${fullCorpus ? 'full' : 'structural sample'} differential`, () => {
   if (!fullCorpus) {

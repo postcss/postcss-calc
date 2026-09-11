@@ -229,47 +229,64 @@ describe('parser: exponentials', () => {
   });
 });
 
-// --- Opaque-arg functions: anchor() / anchor-size() ---------------------
+// --- Opaque non-math functions -------------------------------------------
 //
-// CSS Anchor Positioning takes space-separated `<anchor-name> <anchor-side>`
-// arguments instead of comma-separated calc expressions. The parser slurps
-// them as raw text so they round-trip unchanged through simplify+serialize.
+// Non-math functions use CSS component-value syntax rather than the math
+// grammar. Keeping all of them opaque avoids a name allowlist that must be
+// updated for every future CSS function.
 describe('parser: Anchor', () => {
   test('parser: anchor() with `<name> <side>` parses as opaque single arg', () => {
-    assert.equal(ast('anchor(--foo top)'), '(anchor --foo top)');
+    assert.equal(
+      serialize(parse(tokenize('anchor(--foo top)'))),
+      'anchor(--foo top)'
+    );
   });
 
   test('parser: anchor() with `implicit <side>` keyword name', () => {
-    assert.equal(ast('anchor(implicit bottom)'), '(anchor implicit bottom)');
+    assert.equal(
+      serialize(parse(tokenize('anchor(implicit bottom)'))),
+      'anchor(implicit bottom)'
+    );
   });
 
   test('parser: anchor() with comma-separated fallback', () => {
-    assert.equal(ast('anchor(--foo top, 50px)'), '(anchor --foo top 50px)');
+    assert.equal(
+      serialize(parse(tokenize('anchor(--foo top, 50px)'))),
+      'anchor(--foo top, 50px)'
+    );
   });
 
   test('parser: anchor-size() also takes space-separated args', () => {
     assert.equal(
-      ast('anchor-size(--foo height)'),
-      '(anchor-size --foo height)'
+      serialize(parse(tokenize('anchor-size(--foo height)'))),
+      'anchor-size(--foo height)'
     );
   });
 
   test('parser: anchor() composes inside calc() arithmetic', () => {
-    // Sum canonicalization pushes the negative sign into the term, so
-    // `x - 42px` arrives as `+ (anchor) + -42px` in raw AST form.
     assert.equal(
-      ast('calc(anchor(--foo top) - 42px)'),
-      '(calc (+ (anchor --foo top) -42px))'
+      serialize(parse(tokenize('calc(anchor(--foo top) - 42px)'))),
+      'calc(anchor(--foo top) - 42px)'
     );
   });
 
   test('parser: anchor() with single side keyword', () => {
-    assert.equal(ast('anchor(top)'), '(anchor top)');
+    assert.equal(serialize(parse(tokenize('anchor(top)'))), 'anchor(top)');
   });
 
   test('parser: anchor arguments preserve escaped lexical spelling', () => {
     const input = String.raw`anchor(--x\ top left)`;
     assert.equal(serialize(parse(tokenize(input))), input);
+  });
+
+  test('parser: arbitrary non-math function contents stay opaque', () => {
+    for (const input of [
+      'attr(size ch)',
+      'future-fn("x", [a b] {c: #fff})',
+      'unknown(1px + 2px)',
+    ]) {
+      assert.equal(serialize(parse(tokenize(input))), input);
+    }
   });
 
   test('parser: unclosed anchor() throws', () => {

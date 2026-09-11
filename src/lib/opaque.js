@@ -1,4 +1,4 @@
-// Private metadata for opaque component values (currently var() fallbacks).
+// Private metadata for opaque function contents (including var() fallbacks).
 // Keeping it in a WeakMap means the public calculation AST remains unchanged.
 /** @typedef {import('./node.js').Node} Node */
 /** @typedef {string | Node | Component[]} Component */

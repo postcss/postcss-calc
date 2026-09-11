@@ -293,60 +293,18 @@ function foldCalcKeyword(name) {
 
 const ADD_BP = 1;
 const MUL_BP = 3;
-const OPAQUE_ARG_FUNCTIONS = new Set(['anchor', 'anchor-size']);
+const MATCH_CALC = /^(?:-(?:moz|webkit)-)?calc$/i;
 
 /** @param {Parser} p @param {string} name @param {string} rawName @return {Node} */
 function parseOpaqueCall(p, name, rawName) {
-  /** @type {Node[]} */ const args = [];
-  /** @type {Token[]} */ let tokens = [];
-  let depth = 1;
-  const flush = () => {
-    if (tokens.length) {
-      const raw = tokens
-        .map((t, i) => `${i === 0 ? '' : t.leadingRaw}${t.raw}`)
-        .join('');
-      const decoded = tokens
-        .map(
-          (t, i) =>
-            `${i > 0 && t.ws ? ' ' : ''}${decodedTokenText(/** @type {CSSToken} */ (t.native))}`
-        )
-        .join('');
-      args.push(ident(decoded, sourceSpelling(raw, decoded)));
-    }
-    tokens = [];
-  };
-  while (true) {
-    const tk = p.peek();
-    if (tk.type === 'eof')
-      throw new Error(`Unclosed ${name}( at position ${tk.pos}`);
-    const native = /** @type {CSSToken} */ (tk.native);
-    if (native[0] === CssType.Function || native[0] === CssType.OpenParen)
-      depth++;
-    else if (native[0] === CssType.CloseParen) {
-      depth--;
-      if (depth === 0) {
-        p.next();
-        flush();
-        return call(name, args, sourceSpelling(rawName, name));
-      }
-    } else if (native[0] === CssType.Comma && depth === 1) {
-      p.next();
-      flush();
-      continue;
-    }
-    tokens.push(tk);
-    p.next();
-  }
-}
-
-/** @param {CSSToken} t @return {string} */
-function decodedTokenText(t) {
-  if (t[0] === CssType.Ident) return t[4].value;
-  if (t[0] === CssType.Function) return `${t[4].value}(`;
-  if (t[0] === CssType.Dimension) return `${t[4].value}${t[4].unit}`;
-  if (t[0] === CssType.Number) return String(t[4].value);
-  if (t[0] === CssType.Percentage) return `${t[4].value}%`;
-  return t[1];
+  const { start, close, tokens, ends } = p.functionRange();
+  if (close === -1)
+    throw new Error(`Unclosed ${name}( at position ${p.eofPosition()}`);
+  p.consumeThrough(close + 1);
+  return setComponents(
+    call(name, [], sourceSpelling(rawName, name)),
+    componentTree(tokens, start, close, ends)
+  );
 }
 
 /** @param {Parser} p @param {Token} token */
@@ -362,7 +320,7 @@ function parseCall(p, t) {
   const name = String(t.value);
   const rawName = t.raw.slice(0, -1);
   if (name.toLowerCase() === 'var') return parseVar(p, name, rawName);
-  if (OPAQUE_ARG_FUNCTIONS.has(name.toLowerCase()))
+  if (!MATCH_CALC.test(name) && !isSupportedMathFunction(name))
     return parseOpaqueCall(p, name, rawName);
   /** @type {Node[]} */ const args = [];
   if (!p.isPunct(')')) {

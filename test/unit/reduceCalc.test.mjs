@@ -232,6 +232,17 @@ describe('reduceCalc: basic pipeline', () => {
     );
   });
 
+  test('reduceCalc: preserves unresolved calc grouping in opaque fallbacks', () => {
+    assert.equal(
+      reduceCalc('calc(env(foo, calc(var(--x) + 1px) solid))'),
+      'env(foo, calc(1px + var(--x)) solid)'
+    );
+    assert.equal(
+      reduceCalc('calc(2 * env(foo, calc(var(--x) + 1px)))'),
+      'calc(2 * env(foo, calc(1px + var(--x))))'
+    );
+  });
+
   test('reduceCalc: simplifies supported math anywhere in valid var() fallbacks', () => {
     assert.equal(
       reduceCalc(
