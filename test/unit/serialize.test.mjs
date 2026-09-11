@@ -51,6 +51,44 @@ describe('serialize: Single Number', () => {
     assert.equal(serialize(ast), 'var(--x)');
   });
 
+  // #313 — a decoded Ident.name that contains a character that isn't
+  // valid unescaped at that position (e.g. a literal `.` right after a
+  // digit-like custom-property segment) must be re-escaped on
+  // serialization, or the output re-tokenizes as two tokens.
+  test('serialize: var() call re-escapes a dotted custom-property name', () => {
+    const ast = {
+      type: 'Call',
+      name: 'var',
+      args: [{ type: 'Ident', name: '--kendo-spacing-1.5' }],
+    };
+    assert.equal(serialize(ast), 'var(--kendo-spacing-1\\.5)');
+  });
+
+  test('serialize: var() call re-escapes a dotted custom-property name with a fallback', () => {
+    const ast = {
+      type: 'Call',
+      name: 'var',
+      args: [{ type: 'Ident', name: '--kendo-spacing-1.5' }, dim(0.375, 'rem')],
+    };
+    assert.equal(serialize(ast), 'var(--kendo-spacing-1\\.5, 0.375rem)');
+  });
+
+  test('serialize: Ident leaves plain identifiers untouched', () => {
+    assert.equal(serialize({ type: 'Ident', name: '--x' }), '--x');
+  });
+
+  test('serialize: Ident re-escapes a leading-digit name', () => {
+    assert.equal(serialize({ type: 'Ident', name: '1foo' }), '\\31 foo');
+  });
+
+  test('serialize: Ident re-escapes a hyphen-digit-leading name', () => {
+    assert.equal(serialize({ type: 'Ident', name: '-1foo' }), '-\\31 foo');
+  });
+
+  test('serialize: Ident escapes a lone hyphen', () => {
+    assert.equal(serialize({ type: 'Ident', name: '-' }), '\\-');
+  });
+
   test('serialize: Sum inside Product gets parens', () => {
     // (1 + 2) * 3 — the Sum as a factor must be parenthesized.
     const innerSum = mkSum([

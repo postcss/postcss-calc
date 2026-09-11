@@ -160,6 +160,116 @@ function serialize(node, opts = {}) {
 // --- Inside calc() expression --------------------------------------------
 
 /**
+ * @param {number} code
+ * @return {boolean}
+ */
+function isDigit(code) {
+  return code >= 0x30 && code <= 0x39;
+}
+
+/**
+ * @param {number} code
+ * @return {boolean}
+ */
+function isAsciiLetter(code) {
+  return (code >= 0x41 && code <= 0x5a) || (code >= 0x61 && code <= 0x7a);
+}
+
+/**
+ * A code point that never needs escaping regardless of position:
+ * `-`, `_`, ASCII alphanumerics, and anything outside the ASCII range.
+ *
+ * @param {number} code
+ * @param {string} char
+ * @return {boolean}
+ */
+function isPlainIdentChar(code, char) {
+  return (
+    code >= 0x80 ||
+    char === '-' ||
+    char === '_' ||
+    isDigit(code) ||
+    isAsciiLetter(code)
+  );
+}
+
+/**
+ * Escape sequence for a code point that CSSOM requires as a hex escape
+ * (control characters, DELETE, and digits that would otherwise start or
+ * continue a number at this position).
+ *
+ * @param {number} code
+ * @return {string}
+ */
+function hexEscape(code) {
+  return `\\${code.toString(16)} `;
+}
+
+/**
+ * Whether `code` at index `i` of `name` must use a hex escape per the
+ * CSSOM "serialize an identifier" algorithm: control characters and
+ * DELETE anywhere, or a digit that would otherwise be read as a number
+ * (as the first character, or as the second character after a leading
+ * `-`).
+ *
+ * @param {string} name
+ * @param {number} i
+ * @param {number} code
+ * @return {boolean}
+ */
+function needsHexEscape(name, i, code) {
+  if ((code >= 0x1 && code <= 0x1f) || code === 0x7f) {
+    return true;
+  }
+  if (i === 0 && isDigit(code)) {
+    return true;
+  }
+  return i === 1 && isDigit(code) && name[0] === '-';
+}
+
+/**
+ * Serialize a CSS identifier per the CSSOM "serialize an identifier"
+ * algorithm: https://drafts.csswg.org/cssom/#serialize-an-identifier
+ *
+ * The parser (backed by @csstools/css-tokenizer) decodes escape sequences
+ * into their represented code point when building an Ident's `name` — e.g.
+ * `--kendo-spacing-1\.5` becomes the plain string `--kendo-spacing-1.5`.
+ * Re-serializing that string verbatim would round-trip to different CSS: a
+ * bare `.` after `-1` re-tokenizes as an ident followed by a number token,
+ * breaking `var(--kendo-spacing-1.5)`'s grammar. This re-escapes any code
+ * point that cannot appear literally at its position so the output
+ * tokenizes back to the same identifier it started as.
+ *
+ * @param {string} name
+ * @return {string}
+ */
+function serializeIdent(name) {
+  let out = '';
+  for (let i = 0; i < name.length; i++) {
+    const code = /** @type {number} */ (name.codePointAt(i));
+    const isSupplementary = code > 0xffff;
+    const char = isSupplementary ? name.slice(i, i + 2) : name[i];
+
+    if (code === 0) {
+      out += '\uFFFD';
+    } else if (needsHexEscape(name, i, code)) {
+      out += hexEscape(code);
+    } else if (i === 0 && char === '-' && name.length === 1) {
+      out += '\\-';
+    } else if (isPlainIdentChar(code, char)) {
+      out += char;
+    } else {
+      out += `\\${char}`;
+    }
+
+    if (isSupplementary) {
+      i++;
+    }
+  }
+  return out;
+}
+
+/**
  * @param {Node} node
  * @param {number | false} prec
  * @return {string}
@@ -180,7 +290,7 @@ function serializeExpr(node, prec) {
       }
       return serializeScalar(node, prec).text;
     case 'Ident':
-      return node.name;
+      return serializeIdent(node.name);
     case 'Call': {
       const args = node.args.map((a) => serializeExpr(a, prec)).join(', ');
       return `${node.name}(${args})`;
