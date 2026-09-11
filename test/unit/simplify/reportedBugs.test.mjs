@@ -23,11 +23,11 @@ test('converts nested vars', () => {
     out(
       'calc(\n' +
         '    max(\n' +
-        '       var(1, var(2,3)), \n' +
-        '       var(4, var(5,6))\n' +
+        '       var(--one, var(--two,3)), \n' +
+        '       var(--four, var(--five,6))\n' +
         '    ) * 1)'
     ),
-    'max(var(1, var(2, 3)), var(4, var(5, 6)))'
+    'max(var(--one, var(--two,3)), var(--four, var(--five,6)))'
   );
 });
 

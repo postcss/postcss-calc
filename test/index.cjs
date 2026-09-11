@@ -190,7 +190,7 @@ describe('Reduce', () => {
   );
 });
 
-describe('Ignore', () => {
+describe('CSS custom properties', () => {
   test(
     'should ignore calc with css variables (1)',
     // spec-style spaces; canonical order puts the dim first.
@@ -249,6 +249,14 @@ describe('Ignore', () => {
     testValue(
       'calc(var(--popupHeight) / 2 + var(--popupWidth) / 2)',
       'calc(.5 * var(--popupHeight) + .5 * var(--popupWidth))'
+    )
+  );
+
+  test(
+    'should preserve escapes inside custom property identifiers',
+    testValue(
+      '.a { margin: calc(-1 * var(--kendo-spacing-1\\.5, .375rem)); }',
+      '.a { margin: calc(-1 * var(--kendo-spacing-1\\.5, .375rem)); }'
     )
   );
 });

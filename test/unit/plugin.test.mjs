@@ -27,6 +27,13 @@ describe('plugin: basic pipeline', () => {
     assert.equal(css, 'a{b:3px}');
   });
 
+  test('plugin: mixed-unit expression folds correctly in a declaration', async () => {
+    const { css } = await process(
+      'a{margin:calc(1em + 1px + 1in);padding:calc(1px + 1em + 1in)}'
+    );
+    assert.equal(css, 'a{margin:calc(1em + 97px);padding:calc(97px + 1em)}');
+  });
+
   test('plugin: preserves non-calc values', async () => {
     const { css } = await process('a{b:red}');
     assert.equal(css, 'a{b:red}');

@@ -9,10 +9,10 @@ import { convert } from '../convertUnits.js';
 /**
  * @typedef {object} UnitBucket
  * @property {string} unit
+ * @property {string} [rawUnit]
  * @property {number} total
  * @property {number} scale largest |term| accumulated into `total`, for noise detection
  * @property {import('../convertUnits.js').BaseType | null} base
- * @property {number} order
  */
 
 /** Mutates `buckets` in place — totals of survivor buckets accumulate the
@@ -21,32 +21,27 @@ import { convert } from '../convertUnits.js';
  * @return {UnitBucket[]}
  */
 function mergeConvertibleBuckets(buckets) {
-  const ordered = buckets.sort((a, b) => a.order - b.order);
-  /** @type {Set<string>} */ const merged = new Set();
+  /** @type {Map<import('../convertUnits.js').BaseType, UnitBucket>} */ const representative =
+    new Map();
   /** @type {UnitBucket[]} */ const out = [];
-  for (const b of ordered) {
-    const keyB = b.unit.toLowerCase();
-    if (merged.has(keyB)) {
+  for (const b of buckets) {
+    if (b.base === null) {
+      out.push(b);
       continue;
     }
-    merged.add(keyB);
-    if (b.base !== null) {
-      for (const other of ordered) {
-        const keyO = other.unit.toLowerCase();
-        if (merged.has(keyO)) {
-          continue;
-        }
-        if (other.base !== b.base) {
-          continue;
-        }
-        const converted = convert(other.total, other.unit, b.unit);
-        if (converted !== null) {
-          b.total += converted;
-          merged.add(keyO);
-        }
-      }
+    const first = representative.get(b.base);
+    if (!first) {
+      representative.set(b.base, b);
+      out.push(b);
+      continue;
     }
-    out.push(b);
+    const converted = convert(b.total, b.unit, first.unit);
+    if (converted === null) {
+      out.push(b);
+      continue;
+    }
+    first.total += converted;
+    first.scale = Math.max(first.scale, Math.abs(converted));
   }
   return out;
 }

@@ -15,7 +15,7 @@ function simplifyAbs(args) {
     return num(Math.abs(a.value));
   }
   if (a.type === 'Dim' && a.unit !== '%') {
-    return dim(Math.abs(a.value), a.unit);
+    return dim(Math.abs(a.value), a.unit, a.rawUnit);
   }
   return call('abs', [a]);
 }

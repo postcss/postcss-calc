@@ -15,7 +15,7 @@ import { tryCancelPair } from './cancel.js';
  */
 function simplifyProduct(product, simplify) {
   let coeff = 1;
-  /** @type {{exponent: 1 | -1, value: number, unit: string}[]} */
+  /** @type {{exponent: 1 | -1, value: number, unit: string, rawUnit?: string}[]} */
   const dims = [];
   /** @type {ProductFactor[]} */
   const opaque = [];
@@ -54,7 +54,7 @@ function simplifyProduct(product, simplify) {
       return;
     }
     if (n.type === 'Dim') {
-      dims.push({ exponent, value: n.value, unit: n.unit });
+      dims.push({ exponent, value: n.value, unit: n.unit, rawUnit: n.rawUnit });
       scalarChain.push({ exponent, value: n.value });
       return;
     }
@@ -112,7 +112,7 @@ function simplifyProduct(product, simplify) {
         value = value / f.value;
       }
     }
-    return dim(value, d.unit);
+    return dim(value, d.unit, d.rawUnit);
   }
 
   if (remainingDims.length === 0 && opaque.length === 0) {
@@ -125,7 +125,10 @@ function simplifyProduct(product, simplify) {
     factors.push({ exponent: 1, node: num(coeff) });
   }
   for (const d of remainingDims) {
-    factors.push({ exponent: d.exponent, node: dim(d.value, d.unit) });
+    factors.push({
+      exponent: d.exponent,
+      node: dim(d.value, d.unit, d.rawUnit),
+    });
   }
   factors.push(...opaque);
 

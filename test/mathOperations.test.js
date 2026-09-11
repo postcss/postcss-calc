@@ -90,17 +90,14 @@ describe('Subtraction from zero', () => {
     // reciprocal; zero bucket kept; coefficient first.
     testValue(
       'calc( 0px - (var(--foo, 4px) / 2))',
-      /* 'calc(0px - var(--foo, 4px)/2)' */ 'calc(0px - .5 * var(--foo, 4px))'
+      'calc(0px - .5 * var(--foo, 4px))'
     )
   );
 
   test(
     'should reduce nested expression',
     // zero bucket kept for type info.
-    testValue(
-      'calc( (1em - calc( 10px + 1em)) / 2)',
-      /* '-5px' */ 'calc(0em - 5px)'
-    )
+    testValue('calc( (1em - calc( 10px + 1em)) / 2)', 'calc(0em - 5px)')
   );
 });
 
@@ -122,7 +119,7 @@ describe('Division precedence', () => {
     // spec-style spaces around `/`, redundant parens dropped.
     testValue(
       'calc(100%/(var(--aspect-ratio)))',
-      /* 'calc(100%/(var(--aspect-ratio)))' */ 'calc(100% / var(--aspect-ratio))'
+      'calc(100% / var(--aspect-ratio))'
     )
   );
 
@@ -141,10 +138,7 @@ describe('Division precedence', () => {
   test(
     'should preserve division precedence (3)',
     // `1/(10/x)` folds to `.1 * x` via reciprocal.
-    testValue(
-      'calc(1/(10/var(--dot-size)))',
-      /* 'calc(1/(10/var(--dot-size)))' */ 'calc(.1 * var(--dot-size))'
-    )
+    testValue('calc(1/(10/var(--dot-size)))', 'calc(.1 * var(--dot-size))')
   );
 
   test(
@@ -152,7 +146,7 @@ describe('Division precedence', () => {
     // reciprocal of inner `/16` folds into the coefficient: `16 / (...)`.
     testValue(
       'calc(1/((var(--a) - var(--b))/16))',
-      /* 'calc(1/(var(--a) - var(--b))/16)' */ 'calc(16 / (var(--a) - var(--b)))'
+      'calc(16 / (var(--a) - var(--b)))'
     )
   );
 });

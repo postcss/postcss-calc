@@ -16,9 +16,9 @@
 
 /**
  * @typedef {{type: 'Num', value: number}} Num
- * @typedef {{type: 'Dim', value: number, unit: string}} Dim
- * @typedef {{type: 'Ident', name: string}} Ident
- * @typedef {{type: 'Call', name: string, args: Node[]}} Call
+ * @typedef {{type: 'Dim', value: number, unit: string, rawUnit?: string}} Dim
+ * @typedef {{type: 'Ident', name: string, rawName?: string}} Ident
+ * @typedef {{type: 'Call', name: string, args: Node[], rawName?: string}} Call
  * @typedef {{sign: 1 | -1, node: Node}} SumTerm Sign is always +1 when node is Num or Dim.
  * @typedef {{type: 'Sum', terms: SumTerm[], grouped?: boolean}} Sum
  * @typedef {{exponent: 1 | -1, node: Node}} ProductFactor exponent +1 = numerator, -1 = denominator.
@@ -37,27 +37,36 @@ function num(value) {
 /**
  * @param {number} value
  * @param {string} unit
+ * @param {string} [rawUnit]
  * @return {Dim}
  */
-function dim(value, unit) {
-  return { type: 'Dim', value, unit };
+function dim(value, unit, rawUnit) {
+  return rawUnit === undefined
+    ? { type: 'Dim', value, unit }
+    : { type: 'Dim', value, unit, rawUnit };
 }
 
 /**
  * @param {string} name
+ * @param {string} [rawName]
  * @return {Ident}
  */
-function ident(name) {
-  return { type: 'Ident', name };
+function ident(name, rawName) {
+  return rawName === undefined
+    ? { type: 'Ident', name }
+    : { type: 'Ident', name, rawName };
 }
 
 /**
  * @param {string} name
  * @param {Node[]} args
+ * @param {string} [rawName]
  * @return {Call}
  */
-function call(name, args) {
-  return { type: 'Call', name, args };
+function call(name, args, rawName) {
+  return rawName === undefined
+    ? { type: 'Call', name, args }
+    : { type: 'Call', name, args, rawName };
 }
 
 /**
@@ -104,7 +113,7 @@ function pushSumTerm(out, term) {
       node = num(-node.value);
       sign = 1;
     } else if (node.type === 'Dim') {
-      node = dim(-node.value, node.unit);
+      node = dim(-node.value, node.unit, node.rawUnit);
       sign = 1;
     }
   }
@@ -169,7 +178,7 @@ function negate(node) {
     return num(-node.value);
   }
   if (node.type === 'Dim') {
-    return dim(-node.value, node.unit);
+    return dim(-node.value, node.unit, node.rawUnit);
   }
   if (node.type === 'Sum') {
     const result = mkSum(
