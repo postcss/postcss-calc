@@ -207,18 +207,15 @@ describe('Math edge cases', () => {
 
 describe('Math constants', () => {
   test(
-    'should preserve e',
+    'should calculate e',
     // fold `e` (§10.7.1).
-    testValue('calc(e)', /* 'calc(e)' */ '2.71828')
+    testValue('calc(e)', '2.71828')
   );
 
   test(
     'should ignore multiplication with infinity',
     // spec-style spaces around `*`.
-    testValue(
-      'calc(infinity * 1px)',
-      /* 'calc(infinity*1px)' */ 'calc(infinity * 1px)'
-    )
+    testValue('calc(infinity * 1px)', 'calc(infinity * 1px)')
   );
 
   test(
@@ -227,14 +224,72 @@ describe('Math constants', () => {
   );
 
   test(
-    'should ignore multiplication with pi',
+    'should perform multiplication with pi',
     // fold `pi` (§10.7.1).
-    testValue('calc(1px * pi)', /* 'calc(1px*pi)' */ '3.14159px')
+    testValue('calc(1px * pi)', '3.14159px')
   );
 
   test(
-    'should ignore addition with pi',
+    'should perform addition with pi',
     // fold `pi` (§10.7.1).
-    testValue('calc(43 + pi)', /* 'calc(43 + pi)' */ '46.14159')
+    testValue('calc(43 + pi)', '46.14159')
+  );
+});
+
+describe('Precision', () => {
+  test(
+    'should handle precision correctly (1)',
+    testValue('calc(1/100)', '.01')
+  );
+
+  test(
+    'should handle precision correctly (2)',
+    testValue('calc(5/1000000)', '.00001')
+  );
+
+  test(
+    'should handle precision correctly (3)',
+    testValue('calc(5/1000000)', '.000005', { precision: 6 })
+  );
+
+  test(
+    'should keep a value smaller than the precision instead of rounding it to zero',
+    testValue('calc(1/1000000)', '.000001')
+  );
+
+  test(
+    'should keep a dimension smaller than the precision',
+    testValue('calc(1px/1000000)', '.000001px')
+  );
+
+  test(
+    'should keep a negative value smaller than the precision',
+    testValue('calc(-1/1000000)', 'calc(-.000001)')
+  );
+
+  test(
+    'should keep the ratio between two values smaller than the precision',
+    testValue('calc(2/1000000)', '.000002')
+  );
+
+  test(
+    'should limit a value smaller than the precision to that many significant digits',
+    testValue('calc(1/3000000)', '3.3333e-7')
+  );
+
+  test(
+    'should still round float noise down to zero',
+    testValue('calc(0.1px + 0.2px - 0.3px)', '0px')
+  );
+
+  test(
+    'should fold exact cancellation with large operands to zero, not a phantom',
+    testValue('calc(0.07px * 1e7 - 700000px)', '0px')
+  );
+  test('precision for calc', testValue('calc(100% / 3 * 3)', '100%'));
+
+  test(
+    'precision for nested calc',
+    testValue('calc(calc(100% / 3) * 3)', '100%')
   );
 });
