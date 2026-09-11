@@ -5,7 +5,6 @@ import {
   tokenize as cssTokenize,
   TokenType as CssType,
 } from '@csstools/css-tokenizer';
-import { tokenizeTokens } from './lib/tokenizer.js';
 import { parse } from './lib/parser.js';
 import { simplify } from './lib/simplify.js';
 import {
@@ -95,9 +94,7 @@ function walkTokens(start, expectedClose, ctx, transform) {
     const inputEnd = closed && isCalc ? ctx.tokens[close][2] : end;
     const contents = ctx.value.slice(inputStart, inputEnd);
     try {
-      const node = simplify(
-        parse(tokenizeTokens(ctx.tokens, end, sliceStart, sliceEnd))
-      );
+      const node = simplify(parse(ctx.tokens, sliceStart, sliceEnd));
       ctx.replacements.push({
         start: token[2],
         end,

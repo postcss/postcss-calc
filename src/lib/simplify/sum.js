@@ -1,5 +1,5 @@
 import { mkSum, num, dim } from '../node.js';
-import { baseOf } from '../convertUnits.js';
+import { staticBaseOf } from '../convertUnits.js';
 import { mergeConvertibleBuckets } from './bucket.js';
 
 /**
@@ -39,7 +39,6 @@ function simplifySum(sum, simplify) {
   const byUnit = new Map();
   /** @type {SumTerm[]} */
   const opaque = [];
-  let bucketOrder = 0;
 
   /**
    * @param {1 | -1} sign
@@ -78,10 +77,10 @@ function simplifySum(sum, simplify) {
       } else {
         byUnit.set(key, {
           unit: n.unit,
+          rawUnit: n.rawUnit,
           total: sign * n.value,
           scale: Math.abs(n.value),
-          base: baseOf(n.unit),
-          order: bucketOrder++,
+          base: staticBaseOf(n.unit),
         });
       }
       return;
@@ -101,7 +100,11 @@ function simplifySum(sum, simplify) {
   for (const bucket of mergeConvertibleBuckets([...byUnit.values()])) {
     terms.push({
       sign: 1,
-      node: dim(denoise(bucket.total, bucket.scale), bucket.unit),
+      node: dim(
+        denoise(bucket.total, bucket.scale),
+        bucket.unit,
+        bucket.rawUnit
+      ),
     });
   }
   terms.push(...opaque);

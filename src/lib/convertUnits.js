@@ -139,4 +139,18 @@ function convert(value, from, to) {
   return (value * f) / t;
 }
 
-export { baseOf, convert };
+/**
+ * Return a base type only for units present in the static conversion table.
+ * Units with context-dependent values (em, rem, vw, etc.) return null.
+ * @param {string} unit
+ * @return {BaseType | null}
+ */
+function staticBaseOf(unit) {
+  const key = unit.toLowerCase();
+  if (TO_CANONICAL[key] === undefined) {
+    return null;
+  }
+  return UNIT_TO_BASE[key] ?? null;
+}
+
+export { baseOf, staticBaseOf, convert };

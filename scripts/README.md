@@ -2,6 +2,8 @@
 
 None of these run in `pnpm test` or CI — run directly with `node scripts/<name>.mjs`.
 
+- **`benchmark-arithmetic-chains.mjs`** — times parser construction and flattening across long arithmetic chains.
+- **`benchmark-nested-fallbacks.mjs`** — measures parser scaling for nested var() fallbacks with increasing depths.
 - **`harvest-github.mjs`** — scrapes real-world `calc()` expressions from
   public GitHub into `test/corpus/github/expressions.txt`.
 - **`split-corpus.mjs`** — splits that file into `github-pure.txt` (feeds

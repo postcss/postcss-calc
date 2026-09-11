@@ -108,4 +108,36 @@ describe('bucket: Cross-family Conversion', () => {
     // rem appears before em; output respects that order.
     assert.equal(out('calc(1rem + 1em + 1rem)'), 'calc(2rem + 1em)');
   });
+
+  test('bucket: relative units before, between, and after convertible absolute units', () => {
+    assert.equal(out('calc(1em + 1px + 1in)'), 'calc(1em + 97px)');
+    assert.equal(out('calc(1px + 1em + 1in)'), 'calc(97px + 1em)');
+    assert.equal(out('calc(1px + 1in + 1em)'), 'calc(97px + 1em)');
+  });
+
+  test('bucket: multiple relative units with convertible absolute units', () => {
+    assert.equal(
+      out('calc(1em + 2rem + 1px + 1in)'),
+      'calc(1em + 2rem + 97px)'
+    );
+    assert.equal(
+      out('calc(1px + 1em + 1in + 2rem)'),
+      'calc(97px + 1em + 2rem)'
+    );
+  });
+
+  test('bucket: relative units with time and angle conversion families', () => {
+    assert.equal(out('calc(1em + 100ms + 1s)'), 'calc(1em + 1100ms)');
+    assert.equal(out('calc(100ms + 1em + 1s)'), 'calc(1100ms + 1em)');
+    assert.equal(out('calc(1s + 1em + 100ms)'), 'calc(1.1s + 1em)');
+    assert.equal(out('calc(1em + 90deg + 1turn)'), 'calc(1em + 450deg)');
+    assert.equal(out('calc(90deg + 1em + 1turn)'), 'calc(450deg + 1em)');
+  });
+
+  test('bucket: subtraction preserves relative buckets while merging absolutes', () => {
+    assert.equal(out('calc(1em - 1px - 1in)'), 'calc(1em - 97px)');
+    assert.equal(out('calc(1px - 1em - 1in)'), 'calc(-95px - 1em)');
+    assert.equal(out('calc(1px - 1in - 1em)'), 'calc(-95px - 1em)');
+    assert.equal(out('calc(1in - 1px - 1em)'), 'calc(.98958in - 1em)');
+  });
 });

@@ -3,6 +3,7 @@
 // before simplify runs. Uses sexpr for compact structural assertions.
 import { describe, test } from 'node:test';
 import assert from 'node:assert/strict';
+import { TokenType } from '@csstools/css-tokenizer';
 import { tokenize } from '../../src/lib/tokenizer.js';
 import { parse } from '../../src/lib/parser.js';
 import { serialize } from '../../src/lib/serialize.js';
@@ -10,6 +11,39 @@ import { sexpr } from '../helpers/sexpr.mjs';
 
 /** Parse input, return its S-expression. */
 const ast = (input) => sexpr(parse(tokenize(input)));
+
+test('parser: accepts a bounded range of a shared native token stream', () => {
+  const tokens = tokenize('prefix calc(/* gap */-2px + 3px) suffix');
+  const start = tokens.findIndex((token) => token[1] === '/* gap */');
+  const end = tokens.findIndex((token) => token[1] === ')');
+
+  assert.equal(sexpr(parse(tokens, start, end)), '(+ -2px 3px)');
+});
+
+test('parser: bounded virtual EOF keeps its source-relative position', () => {
+  const tokens = tokenize('prefix calc(1 *) suffix');
+  const start = tokens.findIndex((token) => token[1] === '1');
+  const end = tokens.findIndex((token) => token[1] === ')');
+
+  assert.throws(() => parse(tokens, start, end), /position 15/);
+});
+
+test('parser: bounded range shares block boundaries through var fallbacks', () => {
+  const input =
+    'prefix calc(var(--x, [calc(1px + 2px), {a: calc(3px + 4px)}], calc(5px + 6px))) suffix';
+  const tokens = tokenize(input);
+  const start = tokens.findIndex(
+    (token) => token[0] === TokenType.Function && token[4].value === 'calc'
+  );
+  const end = tokens.findLastIndex(
+    (token) => token[0] === TokenType.CloseParen
+  );
+
+  assert.equal(
+    serialize(parse(tokens, start + 1, end)),
+    'var(--x, [calc(1px + 2px), {a: calc(3px + 4px)}], calc(5px + 6px))'
+  );
+});
 
 // --- Literal parselets ----------------------------------------------------
 describe('parser: Bare', () => {
@@ -146,6 +180,28 @@ describe('parser: Function calls', () => {
   test('parser: calc() wraps its single argument as a Call', () => {
     assert.equal(ast('calc(1 + 2)'), '(calc (+ 1 2))');
   });
+
+  test('parser: native function tokens preserve escaped opaque names', () => {
+    const tree = parse(tokenize(String.raw`f\,n(1px)`));
+    assert.equal(serialize(tree), String.raw`f\,n(1px)`);
+  });
+
+  test('parser: escaped punctuation stays inside opaque identifiers', () => {
+    for (const input of [
+      String.raw`var(--kendo-spacing-1\.5)`,
+      String.raw`var(--x\,fallback)`,
+      String.raw`var(--x\ fallback)`,
+    ]) {
+      assert.equal(serialize(parse(tokenize(input))), input);
+    }
+  });
+
+  test('parser: custom dimension preserves escaped unit spelling', () => {
+    assert.equal(
+      serialize(parse(tokenize(String.raw`10\foo`))),
+      String.raw`10\foo`
+    );
+  });
 });
 
 // --- §10.5 exponential function calls round-trip as opaque -------------
@@ -211,6 +267,11 @@ describe('parser: Anchor', () => {
     assert.equal(ast('anchor(top)'), '(anchor top)');
   });
 
+  test('parser: anchor arguments preserve escaped lexical spelling', () => {
+    const input = String.raw`anchor(--x\ top left)`;
+    assert.equal(serialize(parse(tokenize(input))), input);
+  });
+
   test('parser: unclosed anchor() throws', () => {
     assert.throws(
       () => parse(tokenize('anchor(--foo top')),
@@ -261,6 +322,10 @@ describe('parser: Anchor', () => {
     assert.equal(ast('1\t+\n2'), '(+ 1 2)');
     assert.equal(ast('1\n-\t2'), '(+ 1 -2)');
   });
+  test('parser: comments satisfy the §10.1 whitespace rule', () => {
+    assert.equal(ast('1px/* gap */+/* gap */2px'), '(+ 1px 2px)');
+    assert.equal(ast('/* gap */1px + 2px'), '(+ 1px 2px)');
+  });
   // --- Error positions ------------------------------------------------------
   test('parser: trailing operator throws (whitespace-before-EOF fails)', () => {
     // `1 +` has space before `+` but nothing after — EOF has ws=false, so
@@ -283,6 +348,13 @@ describe('parser: Anchor', () => {
 
   test('parser: unclosed call throws with expected-token message', () => {
     assert.throws(() => parse(tokenize('min(1, 2')), /Expected \)/);
+  });
+
+  test('parser: unclosed var throws with unclosed message and position', () => {
+    assert.throws(
+      () => parse(tokenize('var(--foo')),
+      /Unclosed var\( at position 4/
+    );
   });
   // --- Trailing tokens ------------------------------------------------------
   test('parse: rejects input with trailing tokens after a complete expression', () => {

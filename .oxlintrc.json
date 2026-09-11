@@ -63,5 +63,6 @@
   },
   "env": {
     "builtin": true
-  }
+  },
+  "ignorePatterns": ["types/**"]
 }

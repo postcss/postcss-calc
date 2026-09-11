@@ -1,6 +1,6 @@
 import { describe, test } from 'node:test';
 import assert from 'node:assert/strict';
-import { baseOf, convert } from '../../src/lib/convertUnits.js';
+import { baseOf, staticBaseOf, convert } from '../../src/lib/convertUnits.js';
 
 describe('baseOf:', () => {
   test('baseOf: returns base type for known units', () => {
@@ -28,6 +28,29 @@ describe('baseOf:', () => {
     for (const u of ['svw', 'lvh', 'dvmin', 'cqw', 'cqh', 'cqi', 'cqmin']) {
       assert.equal(baseOf(u), 'length', `${u} should be length`);
     }
+  });
+});
+
+describe('staticBaseOf:', () => {
+  test('staticBaseOf: returns base only for statically convertible units', () => {
+    assert.equal(staticBaseOf('px'), 'length');
+    assert.equal(staticBaseOf('in'), 'length');
+    assert.equal(staticBaseOf('deg'), 'angle');
+    assert.equal(staticBaseOf('s'), 'time');
+    assert.equal(staticBaseOf('ms'), 'time');
+  });
+
+  test('staticBaseOf: returns null for context-dependent units despite having length base', () => {
+    assert.equal(staticBaseOf('em'), null);
+    assert.equal(staticBaseOf('rem'), null);
+    assert.equal(staticBaseOf('vw'), null);
+    assert.equal(staticBaseOf('cqw'), null);
+  });
+
+  test('staticBaseOf: case-insensitive and returns null for unknown units', () => {
+    assert.equal(staticBaseOf('PX'), 'length');
+    assert.equal(staticBaseOf('EM'), null);
+    assert.equal(staticBaseOf('foo'), null);
   });
 });
 

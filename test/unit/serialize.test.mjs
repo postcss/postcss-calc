@@ -1,7 +1,7 @@
 import { describe, test } from 'node:test';
 import assert from 'node:assert/strict';
 import { serialize } from '../../src/lib/serialize.js';
-import { num, dim, mkSum, mkProduct } from '../../src/lib/node.js';
+import { num, dim, call, ident, mkSum, mkProduct } from '../../src/lib/node.js';
 
 // Direct serialize() tests — build canonical AST nodes by hand to pin
 // output shape without depending on the parser/simplify.
@@ -227,6 +227,24 @@ describe('serialize: degenerate numeric', () => {
 
   test('serialize: Dim(NaN, deg) → calc(NaN * 1deg)', () => {
     assert.equal(serialize(dim(Number.NaN, 'deg')), 'calc(NaN * 1deg)');
+  });
+
+  test('serialize: degenerate Dim preserves escaped raw unit', () => {
+    assert.equal(
+      serialize(dim(Infinity, 'f,oo', String.raw`f\2c oo`)),
+      String.raw`calc(infinity * 1f\2c oo)`
+    );
+  });
+
+  test('serialize: nested degenerate Dim preserves escaped raw unit', () => {
+    const ast = mkProduct([
+      { exponent: 1, node: call('var', [ident('--x')]) },
+      { exponent: 1, node: dim(Number.NaN, 'f,oo', String.raw`f\2c oo`) },
+    ]);
+    assert.equal(
+      serialize(ast),
+      String.raw`calc(var(--x) * calc(NaN * 1f\2c oo))`
+    );
   });
 
   test('serialize: degenerate uses calcName option (vendor prefix)', () => {

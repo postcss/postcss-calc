@@ -50,6 +50,23 @@ describe('reduceCalc: basic pipeline', () => {
     assert.equal(reduceCalc('calc(1 / 4)'), '.25');
     assert.equal(reduceCalc('calc(-2px + 1px)'), 'calc(-1px)');
     assert.equal(reduceCalc('calc(1PX + 2PX)'), '3px');
+    assert.equal(reduceCalc(String.raw`calc(1P\58  + 2px)`), '3px');
+  });
+
+  test('reduceCalc: opaque escaped spellings survive simplification', () => {
+    assert.equal(
+      reduceCalc(String.raw`calc(var(--kendo-spacing-1\.5) + 1px)`),
+      String.raw`calc(1px + var(--kendo-spacing-1\.5))`
+    );
+    assert.equal(
+      reduceCalc(String.raw`calc(var(--x\,fallback) + 1px)`),
+      String.raw`calc(1px + var(--x\,fallback))`
+    );
+    assert.equal(
+      reduceCalc(String.raw`calc(f\,n(1px) + anchor(--x\ top left))`),
+      String.raw`calc(f\,n(1px) + anchor(--x\ top left))`
+    );
+    assert.equal(reduceCalc(String.raw`calc(1f\6fo * 2)`), String.raw`2f\6fo`);
   });
 
   test('reduceCalc: negative scalar results retain calc()', () => {
@@ -215,6 +232,58 @@ describe('reduceCalc: basic pipeline', () => {
     );
   });
 
+  test('reduceCalc: simplifies supported math anywhere in valid var() fallbacks', () => {
+    assert.equal(
+      reduceCalc(
+        'calc(var(--theme\\-size , foo(calc(1px + 2px), [max(4px, 5px)]), calc(6px + 7px)) + 1px)'
+      ),
+      'calc(1px + var(--theme\\-size , foo(3px, [5px]), 13px))'
+    );
+  });
+
+  test('reduceCalc: preserves arbitrary fallback components and invalid var names', () => {
+    assert.equal(
+      reduceCalc(
+        'calc(var(--x, "calc(1px + 2px)", /* calc */ {x: calc(2px + 3px)}) + 1px)'
+      ),
+      'calc(1px + var(--x, "calc(1px + 2px)", /* calc */ {x: 5px}))'
+    );
+    assert.equal(
+      reduceCalc('calc(var(--, calc(1px + 2px)) + 1px)'),
+      'calc(var(--, calc(1px + 2px)) + 1px)'
+    );
+  });
+
+  test('reduceCalc: mixed relative and convertible absolute units fold correctly regardless of order', () => {
+    assert.equal(reduceCalc('calc(1em + 1px + 1in)'), 'calc(1em + 97px)');
+    assert.equal(reduceCalc('calc(1px + 1em + 1in)'), 'calc(97px + 1em)');
+  });
+
+  test('reduceCalc: simplify deepest calculation and preserve fallback syntax with alternating nested var fallbacks ', () => {
+    const input =
+      'calc(var(--step-1, /* comment */ calc(var(--step-2, [extra], calc(var(--step-3, calc(10px + 20px)))))))';
+    const expected =
+      'var(--step-1, /* comment */ var(--step-2, [extra], var(--step-3, 30px)))';
+    assert.equal(reduceCalc(input), expected);
+
+    const inputWithMath =
+      'calc(var(--step-1, /* comment */ calc(var(--step-2, [extra], calc(var(--step-3, calc(10px + 20px)))))) + 1px)';
+    const expectedWithMath =
+      'calc(1px + var(--step-1, /* comment */ var(--step-2, [extra], var(--step-3, 30px))))';
+    assert.equal(reduceCalc(inputWithMath), expectedWithMath);
+  });
+
+  test('reduceCalc: nested block commas stay inside var fallbacks', () => {
+    const input =
+      'calc(var(--x, [calc(1px + 2px), {a: calc(3px + 4px), b: calc(5px + 6px)}], calc(7px + 8px)))';
+    assert.equal(reduceCalc(input), 'var(--x, [3px, {a: 7px, b: 11px}], 15px)');
+  });
+
+  test('reduceCalc: mismatched blocks do not hide nested calculations', () => {
+    assert.equal(reduceCalc('[calc(1px + 2px)'), '[3px');
+    assert.equal(reduceCalc('{calc(3px + 4px)]'), '{7px]');
+  });
+
   test('reduceCalc: vendor-prefix calcs get the same simplification', () => {
     assert.equal(reduceCalc('-webkit-calc(1px + 2px)'), '3px');
   });
@@ -309,6 +378,13 @@ describe('reduceCalc: OnParseError', () => {
     });
     assert.equal(captured.length, 0);
     assert.equal(output, 'calc(infinity * 1px)');
+  });
+
+  test('reduceCalc: division by zero preserves escaped unknown units', () => {
+    assert.equal(
+      reduceCalc(String.raw`calc(1f\2c oo / 0)`),
+      String.raw`calc(infinity * 1f\2c oo)`
+    );
   });
 });
 

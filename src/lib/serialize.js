@@ -3,6 +3,7 @@
 // operator, or when a finite scalar is negative.
 
 import { num, dim } from './node.js';
+import { getComponents, serializeComponents } from './opaque.js';
 
 /**
  * @typedef {import('./node.js').Node} Node
@@ -90,7 +91,7 @@ function serializeNumber(v) {
  */
 function serializeScalar(node, prec) {
   const value = round(node.value, prec);
-  const text = `${serializeNumber(value)}${node.type === 'Dim' ? node.unit : ''}`;
+  const text = `${serializeNumber(value)}${node.type === 'Dim' ? (node.rawUnit ?? node.unit) : ''}`;
   return { value, text };
 }
 
@@ -109,7 +110,7 @@ function serialize(node, opts = {}) {
     return `${calcName}(${degenerateKeyword(node.value)})`;
   }
   if (node.type === 'Dim' && isDegenerate(node.value)) {
-    return `${calcName}(${degenerateKeyword(node.value)} * 1${node.unit})`;
+    return `${calcName}(${degenerateKeyword(node.value)} * 1${node.rawUnit ?? node.unit})`;
   }
 
   if (node.type === 'Num' || node.type === 'Dim') {
@@ -176,14 +177,18 @@ function serializeExpr(node, prec) {
         // Nested degenerate Dim wraps in calc() so the `<kw> * 1<unit>` form
         // parses back as one Dim factor. The bare form round-trips wrong
         // inside a Product — `0 * Dim(Infinity, px)` would re-fold as NaN.
-        return `calc(${degenerateKeyword(node.value)} * 1${node.unit})`;
+        return `calc(${degenerateKeyword(node.value)} * 1${node.rawUnit ?? node.unit})`;
       }
       return serializeScalar(node, prec).text;
     case 'Ident':
-      return node.name;
+      return node.rawName ?? node.name;
     case 'Call': {
+      const components = getComponents(node);
+      if (components) {
+        return `${node.rawName ?? node.name}(${serializeExpr(node.args[0], prec)}${serializeComponents(components, (child) => serializeExpr(child, prec))})`;
+      }
       const args = node.args.map((a) => serializeExpr(a, prec)).join(', ');
-      return `${node.name}(${args})`;
+      return `${node.rawName ?? node.name}(${args})`;
     }
     case 'Sum':
       return serializeSum(node, prec);
@@ -212,7 +217,7 @@ function displaySign(term) {
   if (node.type === 'Dim' && Number.isFinite(node.value) && node.value < 0) {
     return {
       sign: /** @type {1 | -1} */ (-sign),
-      magnitude: dim(-node.value, node.unit),
+      magnitude: dim(-node.value, node.unit, node.rawUnit),
     };
   }
   return { sign, magnitude: node };
