@@ -18,8 +18,6 @@ import { isSupportedMathFunction } from './simplify/call.js';
  * @property {'+' | '-'} [signCharacter]
  * @property {number} pos
  * @property {boolean} ws
- * @property {string} leadingRaw
- * @property {CSSToken} [native]
  */
 /** @typedef {(p: Parser, token: Token) => Node} PrefixParselet */
 
@@ -91,18 +89,16 @@ class Parser {
 
   /** @return {Token} */
   read() {
-    let leadingRaw = '';
     while (this.#i < this.#end) {
       const native = this.#tokens[this.#i++];
       if (native[0] === CssType.Whitespace || native[0] === CssType.Comment) {
         this.#precededByWhitespace = true;
-        leadingRaw += native[1];
         continue;
       }
       if (native[0] === CssType.EOF) break;
       const ws = this.#precededByWhitespace;
       this.#precededByWhitespace = false;
-      return normalizeToken(native, ws, leadingRaw);
+      return normalizeToken(native, ws);
     }
     return {
       type: 'eof',
@@ -110,7 +106,6 @@ class Parser {
       raw: '',
       pos: this.eofPosition(),
       ws: this.#precededByWhitespace,
-      leadingRaw,
     };
   }
 
@@ -225,54 +220,61 @@ class Parser {
   }
 }
 
-/** @param {CSSToken} t @param {boolean} ws @param {string} leadingRaw @return {Token} */
-function normalizeToken(t, ws, leadingRaw) {
-  const common = { raw: t[1], pos: t[2], ws, leadingRaw, native: t };
-  switch (t[0]) {
+/** @param {CSSToken} t @param {boolean} ws @return {Token} */
+function normalizeToken(t, ws) {
+  const [type, raw, pos, , detail] = t;
+  switch (type) {
     case CssType.Number:
       return {
-        ...common,
         type: 'number',
-        value: t[4].value,
-        signCharacter: t[4].signCharacter,
+        value: detail.value,
+        raw,
+        pos,
+        ws,
+        signCharacter: detail.signCharacter,
       };
     case CssType.Dimension: {
-      const match = NUMERIC_RAW.exec(t[1]);
+      const match = NUMERIC_RAW.exec(raw);
       return {
-        ...common,
         type: 'dimension',
-        value: t[4].value,
-        unit: t[4].unit,
-        rawUnit: match ? t[1].slice(match[0].length) : t[4].unit,
-        signCharacter: t[4].signCharacter,
+        value: detail.value,
+        raw,
+        pos,
+        ws,
+        unit: detail.unit,
+        rawUnit: match ? raw.slice(match[0].length) : detail.unit,
+        signCharacter: detail.signCharacter,
       };
     }
     case CssType.Percentage:
       return {
-        ...common,
         type: 'dimension',
-        value: t[4].value,
+        value: detail.value,
+        raw,
+        pos,
+        ws,
         unit: '%',
         rawUnit: '%',
-        signCharacter: t[4].signCharacter,
+        signCharacter: detail.signCharacter,
       };
     case CssType.Ident:
-      return { ...common, type: 'ident', value: t[4].value };
     case CssType.Function:
-      return { ...common, type: 'function', value: t[4].value };
+      return {
+        type: type === CssType.Ident ? 'ident' : 'function',
+        value: detail.value,
+        raw,
+        pos,
+        ws,
+      };
     case CssType.OpenParen:
-      return { ...common, type: 'punct', value: '(' };
     case CssType.CloseParen:
-      return { ...common, type: 'punct', value: ')' };
     case CssType.Comma:
-      return { ...common, type: 'punct', value: ',' };
+      return { type: 'punct', value: raw, raw, pos, ws };
     case CssType.Delim:
-      if (PUNCT_DELIMS.has(t[4].value))
-        return { ...common, type: 'punct', value: t[4].value };
+      if (PUNCT_DELIMS.has(detail.value))
+        return { type: 'punct', value: detail.value, raw, pos, ws };
   }
-  throw new Error(
-    `Unexpected character "${t[1][0] ?? ''}" at position ${t[2]}`
-  );
+  throw new Error(`Unexpected character "${raw[0] ?? ''}" at position ${pos}`);
 }
 
 /** §10.9 — case-insensitive except for NaN. @param {string} name @return {Node | null} */
@@ -370,17 +372,20 @@ function blockEnds(tokens, start, end) {
 }
 /** @param {CSSToken[]} tokens @param {number} start @param {number} end */
 function customProperty(tokens, start, end) {
-  /** @type {{token: CSSToken, index: number}[]} */
-  const meaningful = [];
-  for (let i = start; i < end; i++)
-    if (tokens[i][0] !== CssType.Whitespace && tokens[i][0] !== CssType.Comment)
-      meaningful.push({ token: tokens[i], index: i });
-  if (meaningful.length !== 1 || meaningful[0].token[0] !== CssType.Ident)
-    return null;
-  const { token, index } = meaningful[0];
-  const decoded = token[4].value;
+  /** @type {CSSToken | null} */
+  let found = null;
+  let foundIndex = -1;
+  for (let i = start; i < end; i++) {
+    const type = tokens[i][0];
+    if (type === CssType.Whitespace || type === CssType.Comment) continue;
+    if (found !== null) return null;
+    found = tokens[i];
+    foundIndex = i;
+  }
+  if (!found || found[0] !== CssType.Ident) return null;
+  const decoded = found[4].value;
   return decoded.startsWith('--') && decoded !== '--'
-    ? { decoded, raw: token[1], index }
+    ? { decoded, raw: found[1], index: foundIndex }
     : null;
 }
 /** @param {CSSToken[]} tokens @param {number} start @param {number} end @param {Map<number, number>} ends @return {Component[]} */
@@ -399,21 +404,15 @@ function componentTree(tokens, start, end, ends) {
       push(token[1]);
       continue;
     }
-    if (token[0] === CssType.Function) {
-      const name = token[4].value;
-      const supported =
-        /^(?:-(?:moz|webkit)-)?calc$/i.test(name) ||
-        isSupportedMathFunction(name);
-      if (supported) {
-        try {
-          push(parseRange(tokens, i, close + 1, ends));
-        } catch {
-          push(rawTokens(tokens, i, close + 1));
-        }
-      } else {
-        push(token[1]);
-        push(componentTree(tokens, i + 1, close, ends));
-        push(tokens[close][1]);
+    const isMathFunction =
+      token[0] === CssType.Function &&
+      (MATCH_CALC.test(token[4].value) ||
+        isSupportedMathFunction(token[4].value));
+    if (isMathFunction) {
+      try {
+        push(parseRange(tokens, i, close + 1, ends));
+      } catch {
+        push(rawTokens(tokens, i, close + 1));
       }
     } else {
       push(token[1]);
