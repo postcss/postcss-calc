@@ -7,6 +7,10 @@ export type ReduceCalcOptions = {
      */
     unwrapSingleNegativeNumber?: boolean;
     /**
+     * Serialize finite negative results and unitless fractions without a `calc()` wrapper. Defaults to `false`.
+     */
+    unwrapSingleNumber?: boolean;
+    /**
      * Invoked when parse/simplify throws.
      */
     onParseError?: (error: Error, input: string) => void;

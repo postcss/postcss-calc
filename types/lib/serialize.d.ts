@@ -15,6 +15,10 @@ export type SerializeOptions = {
      * Serialize finite negative scalars without a wrapper. Internal selector-only mode.
      */
     unwrapSingleNegativeNumber?: boolean;
+    /**
+     * Serialize finite negative scalars and unitless fractions without a wrapper.
+     */
+    unwrapSingleNumber?: boolean;
 };
 /**
  * @param {Node} node
