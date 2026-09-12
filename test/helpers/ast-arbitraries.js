@@ -1,15 +1,13 @@
 // Shared fast-check arbitraries for property-based and differential tests.
 // Kept in a module-private file so the test runner doesn't pick it up.
 import fc from 'fast-check';
-import { mkSum, mkProduct } from '../../src/lib/node.js';
+import { call, dim, ident, mkSum, mkProduct, num } from '../../src/lib/node.js';
 import { serialize } from '../../src/lib/serialize.js';
 const KNOWN_UNITS = ['px', 'em', 'rem', 'vw', 's', 'ms', 'deg', 'turn', '%'];
-const numLeaf = fc
-  .integer({ min: -100, max: 100 })
-  .map((v) => ({ type: 'Num', value: v }));
+const numLeaf = fc.integer({ min: -100, max: 100 }).map((v) => num(v));
 const dimLeaf = fc
   .tuple(fc.integer({ min: -100, max: 100 }), fc.constantFrom(...KNOWN_UNITS))
-  .map(([v, u]) => ({ type: 'Dim', value: v, unit: u }));
+  .map(([v, u]) => dim(v, u));
 const leafArb = fc.oneof(numLeaf, dimLeaf);
 // Float-valued leaves. Used by property tests that benefit from FP-noise
 // stress (idempotence, fixed-point) but not by the differential test —
@@ -21,12 +19,10 @@ const FLOAT_RANGE = {
   noNaN: true,
   noDefaultInfinity: true,
 };
-const floatNumLeaf = fc
-  .float(FLOAT_RANGE)
-  .map((v) => ({ type: 'Num', value: v }));
+const floatNumLeaf = fc.float(FLOAT_RANGE).map((v) => num(v));
 const floatDimLeaf = fc
   .tuple(fc.float(FLOAT_RANGE), fc.constantFrom(...KNOWN_UNITS))
-  .map(([v, u]) => ({ type: 'Dim', value: v, unit: u }));
+  .map(([v, u]) => dim(v, u));
 const floatLeafArb = fc.oneof(floatNumLeaf, floatDimLeaf);
 // Degenerate leaves (Infinity, -Infinity, NaN, 0). Mixed at low weight to
 // drive §10.13 serialization paths and IEEE-754 propagation under random
@@ -36,13 +32,13 @@ const floatLeafArb = fc.oneof(floatNumLeaf, floatDimLeaf);
 // adding signal.
 const degenerateNumLeaf = fc
   .constantFrom(Infinity, -Infinity, Number.NaN, 0)
-  .map((v) => ({ type: 'Num', value: v }));
+  .map((v) => num(v));
 const degenerateDimLeaf = fc
   .tuple(
     fc.constantFrom(Infinity, -Infinity, Number.NaN),
     fc.constantFrom(...KNOWN_UNITS)
   )
-  .map(([v, u]) => ({ type: 'Dim', value: v, unit: u }));
+  .map(([v, u]) => dim(v, u));
 const degenerateLeafArb = fc.oneof(degenerateNumLeaf, degenerateDimLeaf);
 const signArb = fc.constantFrom(1, -1);
 // Stepped-value / sign-related Call shapes (round, mod, rem, abs, sign)
@@ -59,7 +55,7 @@ const signArb = fc.constantFrom(1, -1);
 //     it. Cross-unit math is covered by explicit unit tests.
 const numUnits = ['', ...KNOWN_UNITS.filter((u) => u !== '%')];
 function makeLeaf(value, unit) {
-  return unit === '' ? { type: 'Num', value } : { type: 'Dim', value, unit };
+  return unit === '' ? num(value) : dim(value, unit);
 }
 /** A single (value, unit) pair → leaf with that unit. */
 const valueWithUnit = (positive) =>
@@ -104,11 +100,7 @@ const trigExpCallArb = fc.oneof(
       fc.constantFrom('sin', 'cos'),
       fc.integer({ min: -10, max: 10 })
     )
-    .map(([name, v]) => ({
-      type: 'Call',
-      name,
-      args: [{ type: 'Num', value: v }],
-    })),
+    .map(([name, v]) => call(name, [num(v)])),
   // sin/cos/tan with angle dim — exercises unit-conversion path.
   fc
     .tuple(
@@ -120,71 +112,33 @@ const trigExpCallArb = fc.oneof(
       fc.integer({ min: -360, max: 360 }),
       fc.constantFrom('deg', 'rad', 'grad', 'turn')
     )
-    .map(([name, v, u]) => ({
-      type: 'Call',
-      name,
-      args: [{ type: 'Dim', value: v, unit: u }],
-    })),
+    .map(([name, v, u]) => call(name, [dim(v, u)])),
   // pow: small int A, small int B.
   fc
     .tuple(fc.integer({ min: 1, max: 10 }), fc.integer({ min: 0, max: 5 }))
-    .map(([a, b]) => ({
-      type: 'Call',
-      name: 'pow',
-      args: [
-        { type: 'Num', value: a },
-        { type: 'Num', value: b },
-      ],
-    })),
+    .map(([a, b]) => call('pow', [num(a), num(b)])),
   // sqrt: non-negative.
-  fc.integer({ min: 0, max: 1000 }).map((v) => ({
-    type: 'Call',
-    name: 'sqrt',
-    args: [{ type: 'Num', value: v }],
-  })),
+  fc.integer({ min: 0, max: 1000 }).map((v) => call('sqrt', [num(v)])),
   // exp: small range to stay finite at precision 10.
-  fc.integer({ min: -10, max: 10 }).map((v) => ({
-    type: 'Call',
-    name: 'exp',
-    args: [{ type: 'Num', value: v }],
-  })),
+  fc.integer({ min: -10, max: 10 }).map((v) => call('exp', [num(v)])),
   // log single arg — strictly positive.
-  fc.integer({ min: 1, max: 1000 }).map((v) => ({
-    type: 'Call',
-    name: 'log',
-    args: [{ type: 'Num', value: v }],
-  })),
+  fc.integer({ min: 1, max: 1000 }).map((v) => call('log', [num(v)])),
   // log(a, b) — positive a, base ≥ 2.
   fc
     .tuple(fc.integer({ min: 1, max: 1000 }), fc.integer({ min: 2, max: 100 }))
-    .map(([a, b]) => ({
-      type: 'Call',
-      name: 'log',
-      args: [
-        { type: 'Num', value: a },
-        { type: 'Num', value: b },
-      ],
-    })),
+    .map(([a, b]) => call('log', [num(a), num(b)])),
   // hypot — same-unit pair (single-arg case is exercised by sameUnitPair shape).
-  sameUnitPair.map(([a, b]) => ({
-    type: 'Call',
-    name: 'hypot',
-    args: [a, b],
-  }))
+  sameUnitPair.map(([a, b]) => call('hypot', [a, b]))
 );
 const stepwiseCallArb = fc.oneof(
   // abs / sign — single arg; no % (we keep % opaque, csstools folds it).
   fc
     .tuple(fc.constantFrom('abs', 'sign'), valueWithUnit(false))
-    .map(([name, { value, unit }]) => ({
-      type: 'Call',
-      name,
-      args: [makeLeaf(value, unit)],
-    })),
+    .map(([name, { value, unit }]) => call(name, [makeLeaf(value, unit)])),
   // mod / rem — two args sharing a unit.
   fc
     .tuple(fc.constantFrom('mod', 'rem'), sameUnitPair)
-    .map(([name, [a, b]]) => ({ type: 'Call', name, args: [a, b] })),
+    .map(([name, [a, b]]) => call(name, [a, b])),
   // round — optional strategy ident; 1 or 2 args sharing a unit.
   fc
     .tuple(
@@ -196,7 +150,7 @@ const stepwiseCallArb = fc.oneof(
     )
     .map(([strategy, [a, b], includeB]) => {
       const args = [];
-      if (strategy !== null) args.push({ type: 'Ident', name: strategy });
+      if (strategy !== null) args.push(ident(strategy));
       args.push(a);
       if (includeB) args.push(b);
       else if (a.type !== 'Num') {
@@ -205,7 +159,7 @@ const stepwiseCallArb = fc.oneof(
         // representations. Force B in to keep agreement.
         args.push(b);
       }
-      return { type: 'Call', name: 'round', args };
+      return call('round', args);
     })
 );
 /**

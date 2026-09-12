@@ -18,15 +18,8 @@ import {
   astArbWithDegenerate,
   numericAstArb,
 } from '../helpers/arbitraries.js';
-import { mkProduct, mkSum, negate } from '../../src/lib/node.js';
+import { num, mkProduct, mkSum, negate } from '../../src/lib/node.js';
 const NUM_RUNS = 500;
-function trySimplify(ast) {
-  try {
-    return simplify(ast);
-  } catch {
-    return null;
-  }
-}
 function str(n) {
   return serialize(n, { precision: false });
 }
@@ -36,14 +29,8 @@ function str(n) {
 test('property: simplify is idempotent', () => {
   fc.assert(
     fc.property(astArb(4), (ast) => {
-      const once = trySimplify(ast);
-      if (once === null) {
-        return true;
-      }
-      const twice = trySimplify(once);
-      if (twice === null) {
-        return false;
-      }
+      const once = simplify(ast);
+      const twice = simplify(once);
       return str(once) === str(twice);
     }),
     { numRuns: NUM_RUNS }
@@ -55,17 +42,9 @@ test('property: simplify is idempotent', () => {
 test('property: simplify → serialize → parse → simplify is a fixed point', () => {
   fc.assert(
     fc.property(astArb(4), (ast) => {
-      const first = trySimplify(ast);
-      if (first === null) {
-        return true;
-      }
+      const first = simplify(ast);
       const str1 = str(first);
-      let second;
-      try {
-        second = simplify(parse(tokenize(str1)));
-      } catch {
-        return false;
-      }
+      const second = simplify(parse(tokenize(str1)));
       return str1 === str(second);
     }),
     { numRuns: NUM_RUNS }
@@ -77,13 +56,10 @@ test('property: x * 1 ≡ simplify(x)', () => {
     fc.property(astArb(3), (ast) => {
       const withOne = mkProduct([
         { exponent: 1, node: ast },
-        { exponent: 1, node: { type: 'Num', value: 1 } },
+        { exponent: 1, node: num(1) },
       ]);
-      const lhs = trySimplify(withOne);
-      const rhs = trySimplify(ast);
-      if (lhs === null || rhs === null) {
-        return true;
-      }
+      const lhs = simplify(withOne);
+      const rhs = simplify(ast);
       return str(lhs) === str(rhs);
     }),
     { numRuns: NUM_RUNS }
@@ -95,13 +71,10 @@ test('property: numeric x + 0 ≡ simplify(x)', () => {
     fc.property(numericAstArb(3), (ast) => {
       const withZero = mkSum([
         { sign: 1, node: ast },
-        { sign: 1, node: { type: 'Num', value: 0 } },
+        { sign: 1, node: num(0) },
       ]);
-      const lhs = trySimplify(withZero);
-      const rhs = trySimplify(ast);
-      if (lhs === null || rhs === null) {
-        return true;
-      }
+      const lhs = simplify(withZero);
+      const rhs = simplify(ast);
       return str(lhs) === str(rhs);
     }),
     { numRuns: NUM_RUNS }
@@ -112,11 +85,8 @@ test('property: -(-x) ≡ simplify(x)', () => {
   fc.assert(
     fc.property(astArb(3), (ast) => {
       const doubleNeg = negate(negate(ast));
-      const lhs = trySimplify(doubleNeg);
-      const rhs = trySimplify(ast);
-      if (lhs === null || rhs === null) {
-        return true;
-      }
+      const lhs = simplify(doubleNeg);
+      const rhs = simplify(ast);
       return str(lhs) === str(rhs);
     }),
     { numRuns: NUM_RUNS }
@@ -128,10 +98,8 @@ test('property: -(-x) ≡ simplify(x)', () => {
 test('property: simplify is idempotent under degenerate / float leaves', () => {
   fc.assert(
     fc.property(astArbWithDegenerate(4), (ast) => {
-      const once = trySimplify(ast);
-      if (once === null) return true;
-      const twice = trySimplify(once);
-      if (twice === null) return false;
+      const once = simplify(ast);
+      const twice = simplify(once);
       return str(once) === str(twice);
     }),
     { numRuns: NUM_RUNS }
@@ -140,15 +108,9 @@ test('property: simplify is idempotent under degenerate / float leaves', () => {
 test('property: round-trip stable under degenerate / float leaves', () => {
   fc.assert(
     fc.property(astArbWithDegenerate(4), (ast) => {
-      const first = trySimplify(ast);
-      if (first === null) return true;
+      const first = simplify(ast);
       const str1 = str(first);
-      let second;
-      try {
-        second = simplify(parse(tokenize(str1)));
-      } catch {
-        return false;
-      }
+      const second = simplify(parse(tokenize(str1)));
       return str1 === str(second);
     }),
     { numRuns: NUM_RUNS }

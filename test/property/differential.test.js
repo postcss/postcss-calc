@@ -29,13 +29,9 @@ const COMPARE_PRECISION = 9;
 // arithmetic chains.
 const CSTOOLS_PRECISION = 24;
 function ourOut(input) {
-  try {
-    return serialize(simplify(parse(tokenize(input))), {
-      precision: COMPARE_PRECISION,
-    });
-  } catch {
-    return null;
-  }
+  return serialize(simplify(parse(tokenize(input))), {
+    precision: COMPARE_PRECISION,
+  });
 }
 function theirOut(input) {
   try {
@@ -47,16 +43,12 @@ function theirOut(input) {
 }
 /** Re-simplify a string via our pipeline at the shared precision. */
 function canonicalize(s) {
-  try {
-    return serialize(simplify(parse(tokenize(s))), {
-      precision: COMPARE_PRECISION,
-      // Differential comparison ignores the wrapper-only distinction. The
-      // production serializer keeps it for range-safe value output.
-      unwrapSingleNegativeNumber: true,
-    });
-  } catch {
-    return null;
-  }
+  return serialize(simplify(parse(tokenize(s))), {
+    precision: COMPARE_PRECISION,
+    // Differential comparison ignores the wrapper-only distinction. The
+    // production serializer keeps it for range-safe value output.
+    unwrapSingleNegativeNumber: true,
+  });
 }
 // Generator depth 3 keeps the input small enough to debug counterexamples
 // by hand; fast-check still explores hundreds of variations in seconds.
@@ -75,38 +67,32 @@ const trigExpInputArb = trigExpFlatArb.map((ast) => astToCalc(ast));
  *  point of differential coverage for this generator. */
 const COMPARE_PRECISION_LOOSE = 8;
 function ourOutLoose(input) {
-  try {
-    return serialize(simplify(parse(tokenize(input))), {
-      precision: COMPARE_PRECISION_LOOSE,
-    });
-  } catch {
-    return null;
-  }
+  return serialize(simplify(parse(tokenize(input))), {
+    precision: COMPARE_PRECISION_LOOSE,
+  });
 }
 function canonicalizeLoose(s) {
-  try {
-    return serialize(simplify(parse(tokenize(s))), {
-      precision: COMPARE_PRECISION_LOOSE,
-      unwrapSingleNegativeNumber: true,
-    });
-  } catch {
-    return null;
-  }
+  return serialize(simplify(parse(tokenize(s))), {
+    precision: COMPARE_PRECISION_LOOSE,
+    unwrapSingleNegativeNumber: true,
+  });
 }
 function checkAgreement(input) {
   const ours = ourOut(input);
   const theirs = theirOut(input);
-  // Either side couldn't handle the input — neutral. csstools has
-  // features we don't (e.g. relative color); we throw on things it
-  // serializes. Mismatched error handling isn't a simplification bug.
-  if (ours === null || theirs === null) {
+  // csstools has features we don't (e.g. relative color); unsupported
+  // reference behavior is neutral, but our implementation must fail loudly.
+  if (theirs === null) {
     return true;
   }
   if (ours === theirs) {
     return true;
   }
-  const canonicalTheirs = canonicalize(theirs);
-  if (canonicalTheirs === null) {
+  let canonicalTheirs;
+  try {
+    canonicalTheirs = canonicalize(theirs);
+  } catch {
+    // The reference returned output outside our parser's supported surface.
     return true;
   }
   return canonicalize(ours) === canonicalTheirs;
@@ -114,10 +100,14 @@ function checkAgreement(input) {
 function checkAgreementLoose(input) {
   const ours = ourOutLoose(input);
   const theirs = theirOut(input);
-  if (ours === null || theirs === null) return true;
+  if (theirs === null) return true;
   if (ours === theirs) return true;
-  const canonicalTheirs = canonicalizeLoose(theirs);
-  if (canonicalTheirs === null) return true;
+  let canonicalTheirs;
+  try {
+    canonicalTheirs = canonicalizeLoose(theirs);
+  } catch {
+    return true;
+  }
   return canonicalizeLoose(ours) === canonicalTheirs;
 }
 test('differential: our simplifier agrees with csstools (canonicalized)', () => {
