@@ -33,11 +33,11 @@
   "scripts": {
     "lint": "oxlint . && tsc && oxfmt --check",
     "fmt": "oxfmt",
-    "benchmark:arithmetic-chains": "node scripts/benchmark-arithmetic-chains.mjs",
-    "benchmark:nested-fallbacks": "node scripts/benchmark-nested-fallbacks.mjs",
-    "test": "node --test --test-reporter=dot 'test/**/*.test.mjs' test/index.cjs test/convertUnit.cjs",
-    "test:mutation:corpus": "node test/mutation/corpus-selection.mjs",
-    "test:corpus:full": "POSTCSS_CALC_FULL_CORPUS=1 node --test test/conformance/corpus.test.mjs"
+    "benchmark:arithmetic-chains": "node scripts/benchmark-arithmetic-chains.js",
+    "benchmark:nested-fallbacks": "node scripts/benchmark-nested-fallbacks.js",
+    "test": "node --test --test-reporter=dot 'test/**/*.test.js' 'test/**/*.test.cjs'",
+    "test:mutation:corpus": "node test/mutation/corpus-selection.js",
+    "test:corpus:full": "POSTCSS_CALC_FULL_CORPUS=1 node --test test/conformance/corpus.test.js"
   },
   "author": "Andy Jansson",
   "license": "MIT",
