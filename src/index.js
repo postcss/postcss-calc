@@ -24,7 +24,7 @@ import reduceCalc, { hasPotentialMathFunction } from './reduce.js';
  * @param {(target: import('postcss').ChildNode, value: string) => void} setProp
  * @param {ResolvedOptions} options
  * @param {import('postcss').Result} result
- * @param {boolean} unwrapSingleNegativeNumber
+ * @param {boolean} unwrapSingleNumber
  * @return {void}
  */
 function applyTransform(
@@ -33,7 +33,7 @@ function applyTransform(
   setProp,
   options,
   result,
-  unwrapSingleNegativeNumber
+  unwrapSingleNumber
 ) {
   if (!hasPotentialMathFunction(current)) {
     return;
@@ -49,7 +49,7 @@ function applyTransform(
     onWarn: (message) => {
       result.warn(message, { plugin: 'postcss-calc', node });
     },
-    unwrapSingleNegativeNumber,
+    unwrapSingleNumber,
   });
   if (transformed !== current) {
     setProp(node, transformed);

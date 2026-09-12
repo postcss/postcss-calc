@@ -42,7 +42,7 @@ describe('pow: Zero Base', () => {
   });
 
   test('pow: e and pi keywords fold then pow', () => {
-    assert.equal(out('pow(e, 2)'), '7.38906');
+    assert.equal(out('pow(e, 2)'), 'calc(7.38906)');
   });
 
   test('pow: dim arg → opaque (number-only per spec)', () => {

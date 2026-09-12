@@ -294,19 +294,19 @@ describe('csstools trig:', () => {
   });
 
   test('csstools trig: cos(60deg) → 0.5000000000000001 (full precision)', () => {
-    assert.equal(out('cos(60deg)'), '.5000000000000001');
+    assert.equal(out('cos(60deg)'), 'calc(.5000000000000001)');
   });
 
   test('csstools trig: tan(45deg) → 0.9999999999999999 (full precision)', () => {
-    assert.equal(out('tan(45deg)'), '.9999999999999999');
+    assert.equal(out('tan(45deg)'), 'calc(.9999999999999999)');
   });
 
   test('csstools trig: sin(pi) → 1.2246467991473532e-16 (full precision)', () => {
-    assert.equal(out('sin(pi)'), '1.2246467991473532e-16');
+    assert.equal(out('sin(pi)'), 'calc(1.2246467991473532e-16)');
   });
 
   test('csstools trig: sin(0.5turn) → 1.2246467991473532e-16', () => {
-    assert.equal(out('sin(0.5turn)'), '1.2246467991473532e-16');
+    assert.equal(out('sin(0.5turn)'), 'calc(1.2246467991473532e-16)');
   });
 
   test('csstools trig: bare-number arg is radians — sin(pi / 2) → 1', () => {

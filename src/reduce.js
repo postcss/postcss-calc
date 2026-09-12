@@ -27,6 +27,7 @@ const BLOCK_CLOSE = new Map([
  * @property {number | false} [precision]
  * @property {boolean} [warnWhenCannotResolve]
  * @property {boolean} [unwrapSingleNegativeNumber] Serialize finite negative results without a `calc()` wrapper. Defaults to `false`.
+ * @property {boolean} [unwrapSingleNumber] Serialize finite negative results and unitless fractions without a `calc()` wrapper. Defaults to `false`.
  * @property {(error: Error, input: string) => void} [onParseError] Invoked when parse/simplify throws.
  * @property {(message: string) => void} [onWarn] Invoked when `warnWhenCannotResolve` is set and an expression cannot be reduced to a single value.
  */
@@ -140,6 +141,7 @@ function reduceCalc(value, opts) {
     precision: 5,
     warnWhenCannotResolve: false,
     unwrapSingleNegativeNumber: false,
+    unwrapSingleNumber: false,
     ...opts,
   };
   const tokens = cssTokenize({ css: value });
@@ -158,6 +160,7 @@ function reduceCalc(value, opts) {
       precision: options.precision,
       calcName: replacement.calcName,
       unwrapSingleNegativeNumber: options.unwrapSingleNegativeNumber,
+      unwrapSingleNumber: options.unwrapSingleNumber,
     });
     if (options.warnWhenCannotResolve && isUnresolvedResult(replacement.node)) {
       options.onWarn?.('Could not reduce expression: ' + value);

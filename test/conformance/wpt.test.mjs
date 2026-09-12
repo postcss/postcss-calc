@@ -92,11 +92,11 @@ describe('WPT calc-keyword:', () => {
   test('WPT calc-keyword: pi resolves in a calc', () => {
     // WPT cases expect `calc(3.14159265358979)` with ~15 digits; our default
     // precision of 5 produces `3.14159`. Same number, different formatting.
-    assert.equal(out('calc(pi)'), '3.14159');
+    assert.equal(out('calc(pi)'), 'calc(3.14159)');
   });
 
   test('WPT calc-keyword: e resolves in a calc', () => {
-    assert.equal(out('calc(e)'), '2.71828');
+    assert.equal(out('calc(e)'), 'calc(2.71828)');
   });
 
   test('WPT calc-keyword: pi multiplied by a unit', () => {
@@ -154,31 +154,31 @@ test('WPT tokenization: 1px-2 is a single unknown-unit dimension', () => {
 // --- minmax-number-serialize.html ----------------------------------------
 // https://github.com/web-platform-tests/wpt/blob/master/css/css-values/minmax-number-serialize.html
 test('WPT minmax-number: single .1', () => {
-  assert.equal(out('min(.1)'), '.1');
-  assert.equal(out('max(.1)'), '.1');
+  assert.equal(out('min(.1)'), 'calc(.1)');
+  assert.equal(out('max(.1)'), 'calc(.1)');
 });
 
 describe('WPT minmax-number: Min Picks', () => {
   test('WPT minmax-number: min picks smallest number', () => {
-    assert.equal(out('min(.1, .2, .3)'), '.1');
-    assert.equal(out('min(.3, .2, .1)'), '.1');
+    assert.equal(out('min(.1, .2, .3)'), 'calc(.1)');
+    assert.equal(out('min(.3, .2, .1)'), 'calc(.1)');
   });
 
   test('WPT minmax-number: max picks largest number', () => {
-    assert.equal(out('max(.1, .2, .3)'), '.3');
-    assert.equal(out('max(.3, .2, .1)'), '.3');
+    assert.equal(out('max(.1, .2, .3)'), 'calc(.3)');
+    assert.equal(out('max(.3, .2, .1)'), 'calc(.3)');
   });
 
   test('WPT minmax-number: min folded inside a sum', () => {
-    assert.equal(out('calc(min(.1) + min(.2))'), '.3');
+    assert.equal(out('calc(min(.1) + min(.2))'), 'calc(.3)');
   });
 
   test('WPT minmax-number: max inside a sum', () => {
-    assert.equal(out('calc(max(.1) + max(.2))'), '.3');
+    assert.equal(out('calc(max(.1) + max(.2))'), 'calc(.3)');
   });
 
   test('WPT minmax-number: sum of number and folded min', () => {
-    assert.equal(out('calc(.1 + min(.1))'), '.2');
+    assert.equal(out('calc(.1 + min(.1))'), 'calc(.2)');
   });
 });
 
@@ -532,7 +532,7 @@ describe('WPT pow:', () => {
   });
 
   test('WPT pow: pow(2, 0.5) ≈ 1.41421', () => {
-    assert.equal(out('pow(2, 0.5)'), '1.41421');
+    assert.equal(out('pow(2, 0.5)'), 'calc(1.41421)');
   });
 
   test('WPT pow: pow(-2, 0.5) → NaN', () => {
@@ -548,7 +548,7 @@ describe('WPT pow:', () => {
   });
 
   test('WPT sqrt: sqrt(2) ≈ 1.41421', () => {
-    assert.equal(out('sqrt(2)'), '1.41421');
+    assert.equal(out('sqrt(2)'), 'calc(1.41421)');
   });
 
   test('WPT sqrt: sqrt(-1) → NaN', () => {
@@ -564,7 +564,7 @@ describe('WPT pow:', () => {
   });
 
   test('WPT exp: exp(1) ≈ 2.71828', () => {
-    assert.equal(out('exp(1)'), '2.71828');
+    assert.equal(out('exp(1)'), 'calc(2.71828)');
   });
 
   test('WPT exp: exp(-infinity) → 0', () => {

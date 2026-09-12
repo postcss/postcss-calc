@@ -47,7 +47,7 @@ describe('reduceCalc: basic pipeline', () => {
   test('reduceCalc: simple resolved results preserve canonical token text', () => {
     assert.equal(reduceCalc('calc(1px + 2px)'), '3px');
     assert.equal(reduceCalc('calc(10% - 2%)'), '8%');
-    assert.equal(reduceCalc('calc(1 / 4)'), '.25');
+    assert.equal(reduceCalc('calc(1 / 4)'), 'calc(.25)');
     assert.equal(reduceCalc('calc(-2px + 1px)'), 'calc(-1px)');
     assert.equal(reduceCalc('calc(1PX + 2PX)'), '3px');
     assert.equal(reduceCalc(String.raw`calc(1P\58  + 2px)`), '3px');
@@ -93,6 +93,15 @@ describe('reduceCalc: basic pipeline', () => {
       reduceCalc('calc(1 - 2)', { unwrapSingleNegativeNumber: true }),
       '-1'
     );
+    assert.equal(
+      reduceCalc('calc(1 / 2)', { unwrapSingleNegativeNumber: true }),
+      'calc(.5)'
+    );
+  });
+
+  test('reduceCalc: unwrapSingleNumber unwraps negative and fractional scalars', () => {
+    assert.equal(reduceCalc('calc(1 - 2)', { unwrapSingleNumber: true }), '-1');
+    assert.equal(reduceCalc('calc(1 / 2)', { unwrapSingleNumber: true }), '.5');
   });
 
   test('reduceCalc: multiple calcs in one value', () => {
@@ -190,7 +199,13 @@ describe('reduceCalc: basic pipeline', () => {
 
   test('reduceCalc: removes leading zero from resolved decimals', () => {
     assert.equal(reduceCalc('calc(1px / 4)'), '.25px');
-    assert.equal(reduceCalc('calc(1 / 2000000)'), '5e-7');
+    assert.equal(reduceCalc('calc(1 / 2000000)'), 'calc(5e-7)');
+  });
+
+  test('reduceCalc: fractional unitless math results retain calc()', () => {
+    assert.equal(reduceCalc('calc(1 / 2)'), 'calc(.5)');
+    assert.equal(reduceCalc('sqrt(2)'), 'calc(1.41421)');
+    assert.equal(reduceCalc('calc(2 / 1)'), '2');
   });
 
   test('reduceCalc: preserves grouping through unary negation', () => {

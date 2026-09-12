@@ -1,6 +1,6 @@
 // Spec: https://www.w3.org/TR/css-values-4/#serialize-a-calculation-tree
 // Outer calc() is added when the top-level result contains an arithmetic
-// operator, or when a finite scalar is negative.
+// operator, or when a finite scalar is negative or a unitless fraction.
 
 import { num, dim } from './node.js';
 import { getComponents, serializeComponents } from './opaque.js';
@@ -14,6 +14,7 @@ import { getComponents, serializeComponents } from './opaque.js';
  * @property {number | false} [precision] Decimal places for numbers. `false` disables rounding. Default 5.
  * @property {string} [calcName] Wrapper name to use when `calc()` is needed. Default `'calc'`.
  * @property {boolean} [unwrapSingleNegativeNumber] Serialize finite negative scalars without a wrapper. Internal selector-only mode.
+ * @property {boolean} [unwrapSingleNumber] Serialize finite negative scalars and unitless fractions without a wrapper.
  */
 
 // Below this is float noise, not a value: `0.1 + 0.2 - 0.3` is 5.5e-17.
@@ -116,14 +117,18 @@ function serialize(node, opts = {}) {
   if (node.type === 'Num' || node.type === 'Dim') {
     const scalar = serializeScalar(node, prec);
 
-    // A finite negative scalar must stay inside calc() so CSS parses it as a
-    // calculation result (and can apply range clamping) rather than as an
-    // invalid bare value. Base this on the serialized value so tiny negative
-    // floating-point noise that rounds to zero does not get wrapped.
-    if (scalar.value < 0) {
-      return opts.unwrapSingleNegativeNumber
-        ? scalar.text
-        : `${calcName}(${scalar.text})`;
+    // A finite negative scalar or unitless fraction must stay inside calc() so
+    // CSS parses it as a calculation result (and can apply range clamping)
+    // rather than as an invalid bare value. Base this on the serialized value
+    // so precision-adjusted values decide the syntactic context.
+    const unwrapScalar =
+      opts.unwrapSingleNumber ||
+      (opts.unwrapSingleNegativeNumber && scalar.value < 0);
+    if (
+      scalar.value < 0 ||
+      (node.type === 'Num' && !Number.isInteger(scalar.value))
+    ) {
+      return unwrapScalar ? scalar.text : `${calcName}(${scalar.text})`;
     }
 
     return scalar.text;

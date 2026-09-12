@@ -8,7 +8,7 @@ describe('exp: 0 →', () => {
   });
 
   test('exp: 1 → e (rounds to 2.71828 at precision 5)', () => {
-    assert.equal(out('exp(1)'), '2.71828');
+    assert.equal(out('exp(1)'), 'calc(2.71828)');
   });
 
   test('exp: -infinity → 0', () => {
@@ -20,7 +20,7 @@ describe('exp: 0 →', () => {
   });
 
   test('exp: pi keyword folds first', () => {
-    assert.equal(out('exp(pi)'), '23.14069');
+    assert.equal(out('exp(pi)'), 'calc(23.14069)');
   });
 
   test('exp: dim arg → opaque', () => {

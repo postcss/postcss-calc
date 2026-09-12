@@ -68,8 +68,8 @@ reduceCalc('min(50px, calc(2 * 40px))');
 // => '50px'
 ```
 
-It accepts `precision`, `unwrapSingleNegativeNumber`, `warnWhenCannotResolve`, `onParseError`,
-and `onWarn`:
+It accepts `precision`, `unwrapSingleNegativeNumber`, `unwrapSingleNumber`,
+`warnWhenCannotResolve`, `onParseError`, and `onWarn`:
 
 ```js
 const result = reduceCalc('calc(100% + var(--gap))', {
@@ -98,8 +98,16 @@ as a selector:
 reduceCalc('calc(5px - 10px)');
 // => 'calc(-5px)'
 
-reduceCalc('calc(5px - 10px)', { unwrapNegativeNumbers: true });
+reduceCalc('calc(5px - 10px)', { unwrapSingleNegativeNumber: true });
 // => '-5px'
+```
+
+This legacy option only unwraps negative results. Use `unwrapSingleNumber` when
+the surrounding context also cannot contain fractional unitless results:
+
+```js
+reduceCalc('calc(1 / 2)', { unwrapSingleNumber: true });
+// => '.5'
 ```
 
 ### PostCSS plugin options
@@ -165,9 +173,9 @@ With `mediaQueries: true`, this becomes:
 
 Reduces `calc()` functions found in selectors. Selectors do not accept
 `calc()` functions, so the plugin replaces them with their reduced values.
-Finite negative results are serialized as bare values because a selector cannot
-contain a `calc()` function; the plugin enables `unwrapSingleNegativeNumber` automatically
-for selectors.
+Finite negative and fractional unitless results are serialized as bare values
+because a selector cannot contain a `calc()` function; the plugin enables the
+broader `unwrapSingleNumber` mode automatically for selectors.
 
 ```js
 var out = postcss()
