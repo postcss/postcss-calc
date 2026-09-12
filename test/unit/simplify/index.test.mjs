@@ -18,12 +18,12 @@ test('simplify: nested calc() collapses', () => {
 // expression contents.
 // --- Calc keywords (§10.9) ------------------------------------------------
 test('simplify: pi folds to a number', () => {
-  assert.equal(out('calc(pi)'), '3.14159');
+  assert.equal(out('calc(pi)'), 'calc(3.14159)');
 });
 
 describe('simplify: E Folds', () => {
   test('simplify: e folds to a number', () => {
-    assert.equal(out('calc(e)'), '2.71828');
+    assert.equal(out('calc(e)'), 'calc(2.71828)');
   });
 
   test('simplify: pi in a product with a unit', () => {
@@ -31,7 +31,7 @@ describe('simplify: E Folds', () => {
   });
 
   test('simplify: calc-keyword names are case-insensitive except NaN', () => {
-    assert.equal(out('calc(PI)'), '3.14159');
+    assert.equal(out('calc(PI)'), 'calc(3.14159)');
     assert.equal(out('calc(Infinity)'), 'calc(infinity)');
     // `nan` lowercase is treated as a plain ident (opaque), not the keyword
     assert.equal(out('calc(nan)'), 'nan');

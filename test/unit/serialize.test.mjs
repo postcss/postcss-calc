@@ -88,6 +88,8 @@ describe('serialize: Single Number', () => {
   test('serialize: precision option applied to numbers and dimensions', () => {
     assert.equal(serialize(dim(1.123456789, 'px'), { precision: 2 }), '1.12px');
     assert.equal(serialize(num(1.123456789), { precision: 0 }), '1');
+    assert.equal(serialize(num(1.4), { precision: 0 }), '1');
+    assert.equal(serialize(num(1.4), { precision: 1 }), 'calc(1.4)');
   });
 
   test('serialize: precision false keeps full value', () => {
@@ -98,11 +100,11 @@ describe('serialize: Single Number', () => {
   });
 
   test('serialize: omits the leading zero from fractional numbers', () => {
-    assert.equal(serialize(num(0.5)), '.5');
+    assert.equal(serialize(num(0.5)), 'calc(.5)');
     assert.equal(serialize(num(-0.000001)), 'calc(-.000001)');
     assert.equal(serialize(dim(0.25, 'px')), '.25px');
     assert.equal(serialize(num(0)), '0');
-    assert.equal(serialize(num(1e-7)), '1e-7');
+    assert.equal(serialize(num(1e-7)), 'calc(1e-7)');
   });
 
   test('serialize: custom calcName', () => {

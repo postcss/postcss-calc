@@ -209,7 +209,7 @@ describe('Math constants', () => {
   test(
     'should calculate e',
     // fold `e` (§10.7.1).
-    testValue('calc(e)', '2.71828')
+    testValue('calc(e)', 'calc(2.71828)')
   );
 
   test(
@@ -232,29 +232,29 @@ describe('Math constants', () => {
   test(
     'should perform addition with pi',
     // fold `pi` (§10.7.1).
-    testValue('calc(43 + pi)', '46.14159')
+    testValue('calc(43 + pi)', 'calc(46.14159)')
   );
 });
 
 describe('Precision', () => {
   test(
     'should handle precision correctly (1)',
-    testValue('calc(1/100)', '.01')
+    testValue('calc(1/100)', 'calc(.01)')
   );
 
   test(
     'should handle precision correctly (2)',
-    testValue('calc(5/1000000)', '.00001')
+    testValue('calc(5/1000000)', 'calc(.00001)')
   );
 
   test(
     'should handle precision correctly (3)',
-    testValue('calc(5/1000000)', '.000005', { precision: 6 })
+    testValue('calc(5/1000000)', 'calc(.000005)', { precision: 6 })
   );
 
   test(
     'should keep a value smaller than the precision instead of rounding it to zero',
-    testValue('calc(1/1000000)', '.000001')
+    testValue('calc(1/1000000)', 'calc(.000001)')
   );
 
   test(
@@ -269,12 +269,12 @@ describe('Precision', () => {
 
   test(
     'should keep the ratio between two values smaller than the precision',
-    testValue('calc(2/1000000)', '.000002')
+    testValue('calc(2/1000000)', 'calc(.000002)')
   );
 
   test(
     'should limit a value smaller than the precision to that many significant digits',
-    testValue('calc(1/3000000)', '3.3333e-7')
+    testValue('calc(1/3000000)', 'calc(3.3333e-7)')
   );
 
   test(

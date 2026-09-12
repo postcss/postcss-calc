@@ -53,7 +53,7 @@ describe('plugin: basic pipeline', () => {
     const { css } = await process(
       'a{a:calc(1px + 2px);b:calc(10% - 2%);c:calc(1 / 4);d:calc(-2px + 1px);e:calc(1PX + 2PX)}'
     );
-    assert.equal(css, 'a{a:3px;b:8%;c:.25;d:calc(-1px);e:3px}');
+    assert.equal(css, 'a{a:3px;b:8%;c:calc(.25);d:calc(-1px);e:3px}');
   });
 
   test('plugin: negative scalar results retain calc()', async () => {
@@ -91,7 +91,17 @@ describe('plugin: basic pipeline', () => {
 
   test('plugin: removes leading zero from resolved decimals', async () => {
     const { css } = await process('a{b:calc(1px / 4);c:calc(1 / 2000000)}');
-    assert.equal(css, 'a{b:.25px;c:5e-7}');
+    assert.equal(css, 'a{b:.25px;c:calc(5e-7)}');
+  });
+
+  test('plugin: preserves fractional unitless results for integer contexts', async () => {
+    const { css } = await process(
+      'a{z-index:calc(1 / 2);z-index:calc(3 / 2);order:calc(2 / 1);width:calc(1px / 2)}'
+    );
+    assert.equal(
+      css,
+      'a{z-index:calc(.5);z-index:calc(1.5);order:2;width:.5px}'
+    );
   });
 
   test('plugin: preserves grouping through unary negation', async () => {
@@ -314,6 +324,13 @@ describe('plugin: option combinations', () => {
       selectors: true,
     });
     assert.equal(css, 'a:nth-child(-1) { b: c }');
+  });
+
+  test('plugin: selectors serialize fractional scalars without calc()', async () => {
+    const { css } = await process('a:nth-child(calc(1 / 2)) { b: c }', {
+      selectors: true,
+    });
+    assert.equal(css, 'a:nth-child(.5) { b: c }');
   });
 
   test('plugin: negative selector transformations are idempotent', async () => {

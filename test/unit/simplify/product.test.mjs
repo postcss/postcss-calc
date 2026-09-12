@@ -17,7 +17,7 @@ describe('simplify: Dim *', () => {
   });
 
   test('simplify: number / number', () => {
-    assert.equal(out('calc(10 / 4)'), '2.5');
+    assert.equal(out('calc(10 / 4)'), 'calc(2.5)');
   });
 
   test('simplify: dim * dim preserved (unit^2 not expressible)', () => {
@@ -59,7 +59,7 @@ describe('simplify: Dim *', () => {
 
   test('simplify: mixed * and / chain at the same precedence (left-assoc)', () => {
     // 2 * 3 / 4 * 5 = (((2 * 3) / 4) * 5) = 7.5
-    assert.equal(out('calc(2 * 3 / 4 * 5)'), '7.5');
+    assert.equal(out('calc(2 * 3 / 4 * 5)'), 'calc(7.5)');
   });
 });
 
