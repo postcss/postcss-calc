@@ -90,9 +90,9 @@ by default; provide `onParseError` and/or `onWarn` if you want diagnostics.
 #### `unwrapSingleNegativeNumber` (default: `false`)
 
 Controls whether a finite negative result is serialized as a bare value or
-wrapped in `calc()`. Keep the default when reducing declaration values; set it
-to `true` when the surrounding CSS context requires a bare negative value, such
-as a selector:
+wrapped in `calc()`. Keep the default when reducing declaration values, media
+queries, or standalone values so CSS can perform range checking. Set it to
+`true` for a context that requires bare negative values, such as a selector:
 
 ```js
 reduceCalc('calc(5px - 10px)');
@@ -102,8 +102,11 @@ reduceCalc('calc(5px - 10px)', { unwrapSingleNegativeNumber: true });
 // => '-5px'
 ```
 
-This legacy option only unwraps negative results. Use `unwrapSingleNumber` when
-the surrounding context also cannot contain fractional unitless results:
+This compatibility option unwraps negative dimensions and integral unitless
+results. Fractional unitless results remain wrapped because the browser may
+need to round them in an integer-valued property. Use `unwrapSingleNumber` when
+the surrounding context cannot contain either negative results or fractional
+unitless results:
 
 ```js
 reduceCalc('calc(1 / 2)', { unwrapSingleNumber: true });

@@ -145,7 +145,10 @@ describe('Mixed units', () => {
   test(
     'should correctly reduce calc with mixed units (cssnano#211)',
     // zero bucket kept for type info.
-    testValue('calc(99.99% * 1/1 - 0rem)', /* '99.99%' */ 'calc(99.99% + 0rem)')
+    testValue(
+      'calc(99.99% * 1/1 - 0rem)',
+      /* '99.99%' */ 'calc(99.99% + -0rem)'
+    )
   );
 
   test(

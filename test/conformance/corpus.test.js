@@ -44,6 +44,11 @@ function theirOut(input) {
  * here means the design choice is deliberate — not a workaround.
  */
 const KNOWN_DIVERGENCES = new Set([
+  // css-calc censors a signed zero before an unresolved product can be
+  // evaluated. Keep the IEEE-754 sign for the browser's final evaluation.
+  'calc(sin(360deg) * var(--radius))',
+  'calc(cos(270deg) * var(--radius))',
+  'calc(sin(360deg) * var(--amplitude))',
   // Mixed-unit angle sum: when an inverse trig function output (radians)
   // is summed with degrees, we fold to a single deg-unit constant
   // (`atan(.5) + 90deg` → `116.5650511771deg`); csstools keeps the rad+deg

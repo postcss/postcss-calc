@@ -120,6 +120,15 @@ describe('mkSum:', () => {
     assert.deepEqual(result, { type: 'Num', value: 5 });
   });
 
+  test('mkSum: negative zero Num is retained until evaluation finishes', () => {
+    const result = mkSum([
+      { sign: 1, node: num(-0) },
+      { sign: 1, node: ident('x') },
+    ]);
+    assert.equal(result.type, 'Sum');
+    assert.equal(Object.is(result.terms[0].node.value, -0), true);
+  });
+
   test('mkSum: zero-valued Dim is KEPT (unit carries type info)', () => {
     const result = mkSum([
       { sign: 1, node: num(5) },

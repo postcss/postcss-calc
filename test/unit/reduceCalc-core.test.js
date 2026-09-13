@@ -81,6 +81,17 @@ describe('reduceCalc: basic pipeline', () => {
     );
   });
 
+  test('reduceCalc: preserves signed zero inside unresolved calculations', () => {
+    assert.equal(
+      reduceCalc('calc(-0 * var(--x))', { precision: false }),
+      'calc(-0 * var(--x))'
+    );
+    assert.equal(
+      reduceCalc('calc(-0 + var(--x))', { precision: false }),
+      'calc(-0 + var(--x))'
+    );
+  });
+
   test('reduceCalc: unwrapSingleNegativeNumber controls negative scalar serialization', () => {
     assert.equal(
       reduceCalc('a:nth-child(calc(1 - 2))', {
@@ -95,6 +106,10 @@ describe('reduceCalc: basic pipeline', () => {
     assert.equal(
       reduceCalc('calc(1 / 2)', { unwrapSingleNegativeNumber: true }),
       'calc(.5)'
+    );
+    assert.equal(
+      reduceCalc('calc(-1 / 2)', { unwrapSingleNegativeNumber: true }),
+      'calc(-.5)'
     );
   });
 
