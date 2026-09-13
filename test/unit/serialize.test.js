@@ -1,23 +1,24 @@
 import { describe, test } from 'node:test';
 import assert from 'node:assert/strict';
-import { serialize } from '../../src/lib/serialize.js';
+import { serialize as serializeSource } from '../../src/lib/serialize.js';
 import { num, dim, call, ident, mkSum, mkProduct } from '../../src/lib/node.js';
 import { tokenize } from '../../src/lib/tokenizer.js';
 import { parse } from '../../src/lib/parser.js';
 import { simplify } from '../../src/lib/simplify.js';
 
+const serialize = (node, opts = {}) => serializeSource(node, opts);
+
 // Direct serialize() tests — build canonical AST nodes by hand to pin
 // output shape without depending on the parser/simplify.
-// Signed-leaf canonical form: negatives live directly in the Num/Dim
-// value — no wrapper needed.
+// Signed-leaf canonical form: negatives live directly in the Num/Dim value.
 
 describe('serialize: numbers', () => {
-  test('serialize: single number — no calc() function', () => {
-    assert.equal(serialize(num(42)), '42');
+  test('serialize: single number uses standard calculation syntax', () => {
+    assert.equal(serialize(num(42)), 'calc(42)');
   });
 
-  test('serialize: single dimension — no calc() function', () => {
-    assert.equal(serialize(dim(10, 'px')), '10px');
+  test('serialize: single dimension uses standard calculation syntax', () => {
+    assert.equal(serialize(dim(10, 'px')), 'calc(10px)');
   });
 
   test('serialize: sum wrapped in calc(), spaces around +/-', () => {
@@ -89,38 +90,53 @@ describe('serialize: numbers', () => {
   });
 
   test('serialize: precision option applied to numbers and dimensions', () => {
-    assert.equal(serialize(dim(1.123456789, 'px'), { precision: 2 }), '1.12px');
-    assert.equal(serialize(num(1.123456789), { precision: 0 }), '1');
-    assert.equal(serialize(num(1.4), { precision: 0 }), '1');
+    assert.equal(
+      serialize(dim(1.123456789, 'px'), { precision: 2 }),
+      'calc(1.12px)'
+    );
+    assert.equal(serialize(num(1.123456789), { precision: 0 }), 'calc(1)');
+    assert.equal(serialize(num(1.4), { precision: 0 }), 'calc(1)');
     assert.equal(serialize(num(1.4), { precision: 1 }), 'calc(1.4)');
   });
 
   test('serialize: precision false keeps full value', () => {
     assert.equal(
       serialize(dim(1.123456789, 'px'), { precision: false }),
-      '1.123456789px'
+      'calc(1.123456789px)'
     );
   });
 
   test('serialize: omits the leading zero from fractional numbers', () => {
     assert.equal(serialize(num(0.5)), 'calc(.5)');
     assert.equal(serialize(num(-0.000001)), 'calc(-.000001)');
-    assert.equal(serialize(dim(0.25, 'px')), '.25px');
-    assert.equal(serialize(num(0)), '0');
+    assert.equal(serialize(dim(0.25, 'px')), 'calc(.25px)');
+    assert.equal(serialize(num(0)), 'calc(0)');
     assert.equal(serialize(num(1e-7)), 'calc(1e-7)');
   });
 
-  test('serialize: preserves signed zero inside a calculation', () => {
+  test('serialize: lowers a signed zero number inside a calculation', () => {
     const nested = call('min', [num(-0), num(1)]);
-    assert.equal(serialize(nested, { precision: false }), 'min(-0, 1)');
+    assert.equal(
+      serialize(nested, { precision: false }),
+      'min(calc(-1 * 0), 1)'
+    );
   });
 
-  test('serialize: preserves signed zero inside a top-level calculation', () => {
+  test('serialize: lowers signed zero leaves inside structural expressions', () => {
     const ast = mkProduct([
       { exponent: 1, node: num(-0) },
       { exponent: 1, node: call('var', [ident('--x')]) },
     ]);
-    assert.equal(serialize(ast, { precision: false }), 'calc(-0 * var(--x))');
+    assert.equal(
+      serialize(ast, { precision: false }),
+      'calc(calc(-1 * 0) * var(--x))'
+    );
+
+    const dimensional = call('min', [dim(-0, 'px'), dim(1, 'px')]);
+    assert.equal(
+      serialize(dimensional, { precision: false }),
+      'min(calc(-1 * 0px), 1px)'
+    );
   });
 
   test('serialize: custom calcName', () => {
@@ -137,78 +153,74 @@ describe('serialize: numbers', () => {
 
 describe('serialize: scalar context policy', () => {
   const policies = [
-    { name: 'preserve-sensitive', options: {} },
-    {
-      name: 'unwrap-negative',
-      options: { unwrapSingleNegativeNumber: true },
-    },
-    { name: 'unwrap-all', options: { unwrapSingleNumber: true } },
+    { name: 'standard', options: {} },
+    { name: 'unwrapped', options: { unwrapSingleValue: true } },
   ];
   const cases = [
     {
       name: 'negative integral Num',
       node: num(-2),
-      expected: ['calc(-2)', '-2', '-2'],
+      expected: ['calc(-2)', '-2'],
     },
     {
       name: 'negative fractional Num',
       node: num(-0.5),
-      expected: ['calc(-.5)', 'calc(-.5)', '-.5'],
+      expected: ['calc(-.5)', '-.5'],
     },
     {
       name: 'positive integral Num',
       node: num(2),
-      expected: ['2', '2', '2'],
+      expected: ['calc(2)', '2'],
     },
     {
       name: 'positive fractional Num',
       node: num(0.5),
-      expected: ['calc(.5)', 'calc(.5)', '.5'],
+      expected: ['calc(.5)', '.5'],
     },
     {
       name: 'positive zero Num',
       node: num(0),
-      expected: ['0', '0', '0'],
+      expected: ['calc(0)', '0'],
     },
     {
       name: 'negative zero Num',
       node: num(-0),
-      expected: ['0', '0', '0'],
+      expected: ['calc(0)', '0'],
     },
     {
       name: 'negative integral Dim',
       node: dim(-2, 'px'),
-      expected: ['calc(-2px)', '-2px', '-2px'],
+      expected: ['calc(-2px)', '-2px'],
     },
     {
       name: 'negative fractional Dim',
       node: dim(-0.5, 'px'),
-      expected: ['calc(-.5px)', '-.5px', '-.5px'],
+      expected: ['calc(-.5px)', '-.5px'],
     },
     {
       name: 'positive integral Dim',
       node: dim(2, 'px'),
-      expected: ['2px', '2px', '2px'],
+      expected: ['calc(2px)', '2px'],
     },
     {
       name: 'positive fractional Dim',
       node: dim(0.5, 'px'),
-      expected: ['.5px', '.5px', '.5px'],
+      expected: ['calc(.5px)', '.5px'],
     },
     {
       name: 'negative zero Dim',
       node: dim(-0, 'px'),
-      expected: ['0px', '0px', '0px'],
+      expected: ['calc(0px)', '0px'],
     },
     {
       name: 'Infinity Num',
       node: num(Infinity),
-      expected: ['calc(infinity)', 'calc(infinity)', 'calc(infinity)'],
+      expected: ['calc(infinity)', 'calc(infinity)'],
     },
     {
       name: 'NaN Dim',
       node: dim(Number.NaN, 'px'),
-      expected: ['calc(NaN * 1px)', 'calc(NaN * 1px)', 'calc(NaN * 1px)'],
+      expected: ['calc(NaN * 1px)', 'calc(NaN * 1px)'],
     },
   ];
 
@@ -233,31 +245,31 @@ describe('serialize: scalar context policy', () => {
       name: 'precision false keeps a fractional Num',
       node: num(0.5),
       options: { precision: false },
-      expected: ['calc(.5)', 'calc(.5)', '.5'],
+      expected: ['calc(.5)', '.5'],
     },
     {
       name: 'precision zero classifies a rounded Num as integral',
       node: num(1.4),
       options: { precision: 0 },
-      expected: ['1', '1', '1'],
+      expected: ['calc(1)', '1'],
     },
     {
       name: 'decimal precision classifies the formatted fraction',
       node: num(1.4),
       options: { precision: 1 },
-      expected: ['calc(1.4)', 'calc(1.4)', '1.4'],
+      expected: ['calc(1.4)', '1.4'],
     },
     {
       name: 'precision zero censors a tiny negative value to zero',
       node: num(-1e-13),
       options: { precision: 0 },
-      expected: ['0', '0', '0'],
+      expected: ['calc(0)', '0'],
     },
     {
       name: 'decimal precision applies to a dimensional fraction',
       node: dim(1.234, 'px'),
       options: { precision: 2 },
-      expected: ['1.23px', '1.23px', '1.23px'],
+      expected: ['calc(1.23px)', '1.23px'],
     },
   ];
 

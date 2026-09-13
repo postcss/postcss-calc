@@ -4,7 +4,7 @@ import { out } from '../../helpers/out.js';
 
 describe('exp()', () => {
   test('exp: 0 → 1', () => {
-    assert.equal(out('exp(0)'), '1');
+    assert.equal(out('exp(0)'), 'calc(1)');
   });
 
   test('exp: 1 → e (rounds to 2.71828 at precision 5)', () => {
@@ -12,7 +12,7 @@ describe('exp()', () => {
   });
 
   test('exp: -infinity → 0', () => {
-    assert.equal(out('exp(-infinity)'), '0');
+    assert.equal(out('exp(-infinity)'), 'calc(0)');
   });
 
   test('exp: infinity → infinity', () => {

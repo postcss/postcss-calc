@@ -4,7 +4,7 @@ import { out } from '../../helpers/out.js';
 
 describe('constant argument folding', () => {
   test('fold: single-arg min folds to its arg', () => {
-    assert.equal(out('min(5)'), '5');
+    assert.equal(out('min(5)'), 'calc(5)');
   });
 
   test('fold: empty-args min has zero args — returns null, preserve', () => {

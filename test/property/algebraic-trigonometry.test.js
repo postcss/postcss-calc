@@ -68,11 +68,12 @@ describe('trigonometric function laws', () => {
   });
 
   test('law: tan(0) ≡ 0; atan(0) ≡ 0deg; atan(1) ≡ 45deg', () => {
-    if (out(call('tan', [num(0)])) !== '0') throw new Error('tan(0) ≠ 0');
-    if (out(call('atan', [num(0)])) !== '0deg')
-      throw new Error('atan(0) ≠ 0deg');
-    if (out(call('atan', [num(1)])) !== '45deg')
-      throw new Error('atan(1) ≠ 45deg');
+    if (out(call('tan', [num(0)])) !== 'calc(0)')
+      throw new Error('tan(0) ≠ calc(0)');
+    if (out(call('atan', [num(0)])) !== 'calc(0deg)')
+      throw new Error('atan(0) ≠ calc(0deg)');
+    if (out(call('atan', [num(1)])) !== 'calc(45deg)')
+      throw new Error('atan(1) ≠ calc(45deg)');
   });
 
   test('law: sin² + cos² ≡ 1 over a finite range (away from asymptotes)', () => {

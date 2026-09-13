@@ -41,14 +41,12 @@ describe('Throw', () => {
 describe('Custom properties', () => {
   test(
     'should not strip calc with single CSS custom variable',
-    // single-value calc() unwrapped (§10.6).
-    testValue('calc(var(--foo))', 'var(--foo)')
+    testValue('calc(var(--foo))', 'calc(var(--foo))')
   );
 
   test(
     'should strip unnecessary calc with single CSS custom variable',
-    // nested calc() flattens, then single-value unwrap.
-    testValue('calc(calc(var(--foo)))', 'var(--foo)')
+    testValue('calc(calc(var(--foo)))', 'calc(var(--foo))')
   );
 
   test(
@@ -64,7 +62,7 @@ describe('Custom properties', () => {
 // unit case lowercased.
 test(
   'should reduce calc (uppercase)',
-  testValue('CALC(1PX + 1PX)', /* '2PX' */ '2px')
+  testValue('CALC(1PX + 1PX)', /* '2PX' */ 'CALC(2px)')
 );
 
 describe('Reduce', () => {
@@ -90,34 +88,43 @@ test(
 );
 
 describe('Whitespace', () => {
-  test('whitespace', testValue('calc( 100px + 100px )', '200px'));
+  test('whitespace', testValue('calc( 100px + 100px )', 'calc(200px)'));
 
-  test('whitespace (#1)', testValue('calc(\t100px\t+\t100px\t)', '200px'));
+  test(
+    'whitespace (#1)',
+    testValue('calc(\t100px\t+\t100px\t)', 'calc(200px)')
+  );
 
-  test('whitespace (#2)', testValue('calc(\n100px\n+\n100px\n)', '200px'));
+  test(
+    'whitespace (#2)',
+    testValue('calc(\n100px\n+\n100px\n)', 'calc(200px)')
+  );
 
   test(
     'whitespace (#4)',
-    testValue('calc(\r\n100px\r\n+\r\n100px\r\n)', '200px')
+    testValue('calc(\r\n100px\r\n+\r\n100px\r\n)', 'calc(200px)')
   );
 });
 
 describe('Comments', () => {
   test(
     'comments',
-    testValue('calc(/*test*/100px/*test*/ + /*test*/100px/*test*/)', '200px')
+    testValue(
+      'calc(/*test*/100px/*test*/ + /*test*/100px/*test*/)',
+      'calc(200px)'
+    )
   );
 
   test(
     'comments (#1)',
-    testValue('calc(/*test*/100px/*test*/*/*test*/2/*test*/)', '200px')
+    testValue('calc(/*test*/100px/*test*/*/*test*/2/*test*/)', 'calc(200px)')
   );
 
   test(
     'comments nested',
     testValue(
       'calc(/*test*/100px + calc(/*test*/100px/*test*/ + /*test*/100px/*test*/))',
-      '300px'
+      'calc(300px)'
     )
   );
 });

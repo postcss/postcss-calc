@@ -30,17 +30,17 @@ test('WPT calc-serialization: resolvable + opaque kept as a sum', () => {
 // https://github.com/web-platform-tests/wpt/blob/master/css/css-values/minmax-length-serialize.html
 describe('WPT min/max lengths', () => {
   test('WPT minmax-length: single-arg min folds', () => {
-    // WPT specified: `calc(1px)`; our output unwraps to `1px`.
-    assert.equal(out('min(1px)'), '1px');
+    // WPT specified: `calc(1px)`.
+    assert.equal(out('min(1px)'), 'calc(1px)');
   });
 
   test('WPT minmax-length: single-arg max folds', () => {
-    assert.equal(out('max(1px)'), '1px');
+    assert.equal(out('max(1px)'), 'calc(1px)');
   });
 
   test('WPT minmax-length: unit case normalized to lowercase', () => {
     // Spec §10.12: `1Q` serializes as `1q`, `1PX` as `1px`.
-    assert.equal(out('min(1PX)'), '1px');
+    assert.equal(out('min(1PX)'), 'calc(1px)');
   });
 
   test('WPT minmax-length: min() preserved when arg types mix', () => {
@@ -50,7 +50,7 @@ describe('WPT min/max lengths', () => {
 
   test('WPT minmax-length: max folds when all args share a unit', () => {
     // WPT (same unit): `max(1px, 2px, 3px)` → `3px`.
-    assert.equal(out('max(1px, 2px, 3px)'), '3px');
+    assert.equal(out('max(1px, 2px, 3px)'), 'calc(3px)');
   });
 });
 
@@ -69,19 +69,19 @@ test('WPT divide-by-zero: 100px / (2 - 2) → calc(infinity * 1px)', () => {
 // --- calc-typed-arithmetic-parsing (implied from spec §10.2) -------------
 describe('WPT typed arithmetic', () => {
   test('WPT typed-arith: <length> / <length> → <number>', () => {
-    assert.equal(out('calc(10px / 2px)'), '5');
+    assert.equal(out('calc(10px / 2px)'), 'calc(5)');
   });
 
   test('WPT typed-arith: <time> / <time> → <number>', () => {
-    assert.equal(out('calc(1s / 500ms)'), '2');
+    assert.equal(out('calc(1s / 500ms)'), 'calc(2)');
   });
 
   test('WPT typed-arith: <length> * <number>', () => {
-    assert.equal(out('calc(10px * 2)'), '20px');
+    assert.equal(out('calc(10px * 2)'), 'calc(20px)');
   });
 
   test('WPT typed-arith: <number> * <length>', () => {
-    assert.equal(out('calc(2 * 10px)'), '20px');
+    assert.equal(out('calc(2 * 10px)'), 'calc(20px)');
   });
 });
 
@@ -98,7 +98,7 @@ describe('WPT calc keywords', () => {
   });
 
   test('WPT calc-keyword: pi multiplied by a unit', () => {
-    assert.equal(out('calc(pi * 1rad)'), '3.14159rad');
+    assert.equal(out('calc(pi * 1rad)'), 'calc(3.14159rad)');
   });
 });
 
@@ -115,22 +115,22 @@ describe('WPT var()', () => {
   });
 
   test('WPT var: var with resolvable calc in the fallback', () => {
-    assert.equal(out('var(--x, calc(1px + 2px))'), 'var(--x, 3px)');
+    assert.equal(out('var(--x, calc(1px + 2px))'), 'var(--x, calc(3px))');
   });
 });
 
 // --- clamp (implied from spec §10.8) -------------------------------------
 describe('WPT clamp()', () => {
   test('WPT clamp: all args resolve — returns middle value', () => {
-    assert.equal(out('clamp(0px, 5px, 10px)'), '5px');
+    assert.equal(out('clamp(0px, 5px, 10px)'), 'calc(5px)');
   });
 
   test('WPT clamp: val below min — clamped to min', () => {
-    assert.equal(out('clamp(10px, 5px, 20px)'), '10px');
+    assert.equal(out('clamp(10px, 5px, 20px)'), 'calc(10px)');
   });
 
   test('WPT clamp: val above max — clamped to max', () => {
-    assert.equal(out('clamp(0px, 50px, 10px)'), '10px');
+    assert.equal(out('clamp(0px, 50px, 10px)'), 'calc(10px)');
   });
 
   test('WPT clamp: preserved when an arg is opaque', () => {
@@ -146,7 +146,7 @@ describe('WPT clamp()', () => {
 // CSS tokenization — idents may contain `-` and digits in the body).
 test('WPT tokenization: 1px-2 is a single unknown-unit dimension', () => {
   // Unknown unit → treated as opaque by simplify; passes through verbatim.
-  assert.equal(out('calc(1px-2)'), '1px-2');
+  assert.equal(out('calc(1px-2)'), 'calc(1px-2)');
 });
 
 // --- minmax-number-serialize.html ----------------------------------------
@@ -185,17 +185,17 @@ describe('WPT min/max numbers', () => {
 // Same-unit cases only — Chrome normalizes ms→s, we preserve source unit.
 describe('WPT min/max times', () => {
   test('WPT minmax-time: single-arg second', () => {
-    assert.equal(out('min(1s)'), '1s');
-    assert.equal(out('max(1s)'), '1s');
+    assert.equal(out('min(1s)'), 'calc(1s)');
+    assert.equal(out('max(1s)'), 'calc(1s)');
   });
 
   test('WPT minmax-time: min of three same-unit seconds', () => {
-    assert.equal(out('min(1s, 2s, 3s)'), '1s');
-    assert.equal(out('min(3s, 2s, 1s)'), '1s');
+    assert.equal(out('min(1s, 2s, 3s)'), 'calc(1s)');
+    assert.equal(out('min(3s, 2s, 1s)'), 'calc(1s)');
   });
 
   test('WPT minmax-time: max of three same-unit seconds', () => {
-    assert.equal(out('max(1s, 2s, 3s)'), '3s');
+    assert.equal(out('max(1s, 2s, 3s)'), 'calc(3s)');
   });
 });
 
@@ -205,17 +205,17 @@ describe('WPT min/max times', () => {
 // first arg's unit (turn/rad precision makes full cross-unit tests brittle).
 describe('WPT min/max angles', () => {
   test('WPT minmax-angle: single-arg degree', () => {
-    assert.equal(out('min(90deg)'), '90deg');
-    assert.equal(out('max(90deg)'), '90deg');
+    assert.equal(out('min(90deg)'), 'calc(90deg)');
+    assert.equal(out('max(90deg)'), 'calc(90deg)');
   });
 
   test('WPT minmax-angle: min of degrees', () => {
-    assert.equal(out('min(90deg, 92deg, 93deg)'), '90deg');
-    assert.equal(out('min(93deg, 92deg, 90deg)'), '90deg');
+    assert.equal(out('min(90deg, 92deg, 93deg)'), 'calc(90deg)');
+    assert.equal(out('min(93deg, 92deg, 90deg)'), 'calc(90deg)');
   });
 
   test('WPT minmax-angle: max of degrees', () => {
-    assert.equal(out('max(81deg, 82deg, 90deg)'), '90deg');
+    assert.equal(out('max(81deg, 82deg, 90deg)'), 'calc(90deg)');
   });
 });
 

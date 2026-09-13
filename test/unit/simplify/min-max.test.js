@@ -4,17 +4,17 @@ import { out } from '../../helpers/out.js';
 
 describe('min() and max() folding', () => {
   test('simplify: min folds when all args share a type', () => {
-    assert.equal(out('min(1px, 2px, 3px)'), '1px');
+    assert.equal(out('min(1px, 2px, 3px)'), 'calc(1px)');
   });
 
   test('simplify: max folds when all args share a type', () => {
-    assert.equal(out('max(1em, 2em, 3em)'), '3em');
+    assert.equal(out('max(1em, 2em, 3em)'), 'calc(3em)');
   });
 
   test('simplify: min converts units within a family before comparing', () => {
     // 1in = 96px, so min(1in, 10px) = min(1in, .10417in) = .10417in.
     // First arg's unit is canonical — consistent with the sum-bucket rule.
-    assert.equal(out('min(1in, 10px)'), '.10417in');
+    assert.equal(out('min(1in, 10px)'), 'calc(.10417in)');
   });
 
   test('simplify: min preserved when types mix', () => {
@@ -26,7 +26,7 @@ describe('min() and max() folding', () => {
   });
 
   test('simplify: nested min / max', () => {
-    assert.equal(out('max(1px, min(2px, 3px))'), '2px');
+    assert.equal(out('max(1px, min(2px, 3px))'), 'calc(2px)');
   });
 });
 

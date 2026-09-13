@@ -5,6 +5,10 @@
 import { simplifySum } from './simplify/sum.js';
 import { simplifyProduct } from './simplify/product.js';
 import { simplifyCall } from './simplify/call.js';
+import {
+  MAX_CALCULATION_DEPTH,
+  CalculationLimitError,
+} from './calculation-type.js';
 
 /**
  * @typedef {import('./node.js').Node} Node
@@ -16,20 +20,26 @@ import { simplifyCall } from './simplify/call.js';
 
 /**
  * @param {Node} node
+ * @param {number} [depth]
  * @return {Node}
  */
-function simplify(node) {
+function simplify(node, depth = 0) {
+  if (depth > MAX_CALCULATION_DEPTH) {
+    throw new CalculationLimitError(MAX_CALCULATION_DEPTH);
+  }
+  /** @param {Node} value */
+  const child = (value) => simplify(value, depth + 1);
   switch (node.type) {
     case 'Num':
     case 'Dim':
     case 'Ident':
       return node;
     case 'Call':
-      return simplifyCall(node, simplify);
+      return simplifyCall(node, child);
     case 'Sum':
-      return simplifySum(node, simplify);
+      return simplifySum(node, child);
     case 'Product':
-      return simplifyProduct(node, simplify);
+      return simplifyProduct(node, child);
   }
 }
 

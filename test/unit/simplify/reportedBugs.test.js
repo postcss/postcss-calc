@@ -37,7 +37,7 @@ test('handles negative values at the end', () => {
 
 describe('reported bug regressions', () => {
   test('can minimize float with unknown unit', () => {
-    assert.equal(out('calc(120rpx - 41.7rpx)'), '78.3rpx');
+    assert.equal(out('calc(120rpx - 41.7rpx)'), 'calc(78.3rpx)');
   });
 
   test('can minimize custom property and unknown unit', () => {
@@ -59,7 +59,7 @@ describe('reported bug regressions', () => {
           '        )\n' +
           '    )'
       ),
-      '1'
+      'calc(1)'
     );
   });
 

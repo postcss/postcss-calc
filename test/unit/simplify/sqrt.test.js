@@ -4,11 +4,11 @@ import { out } from '../../helpers/out.js';
 
 describe('sqrt()', () => {
   test('sqrt: positive number', () => {
-    assert.equal(out('sqrt(4)'), '2');
+    assert.equal(out('sqrt(4)'), 'calc(2)');
   });
 
   test('sqrt: zero', () => {
-    assert.equal(out('sqrt(0)'), '0');
+    assert.equal(out('sqrt(0)'), 'calc(0)');
   });
 
   test('sqrt: negative → NaN', () => {

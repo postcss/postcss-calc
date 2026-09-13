@@ -13,6 +13,7 @@ import { tokenize } from '../../src/lib/tokenizer.js';
 import { parse } from '../../src/lib/parser.js';
 import { simplify } from '../../src/lib/simplify.js';
 import { serialize } from '../../src/lib/serialize.js';
+import { checkCalculationType } from '../../src/lib/calculation-type.js';
 import {
   astArb,
   astArbWithDegenerate,
@@ -83,12 +84,18 @@ test('property: numeric x + 0 ≡ simplify(x)', () => {
 // --- Double negation -----------------------------------------------------
 test('property: -(-x) ≡ simplify(x)', () => {
   fc.assert(
-    fc.property(astArb(3), (ast) => {
-      const doubleNeg = negate(negate(ast));
-      const lhs = simplify(doubleNeg);
-      const rhs = simplify(ast);
-      return str(lhs) === str(rhs);
-    }),
+    // Double negation is a CSS identity only for a type-valid calculation.
+    // The structural generator intentionally combines arbitrary dimensions,
+    // which can otherwise produce invalid sums such as `-0 + 0px`.
+    fc.property(
+      astArb(3).filter((ast) => checkCalculationType(ast).kind !== 'failure'),
+      (ast) => {
+        const doubleNeg = negate(negate(ast));
+        const lhs = simplify(doubleNeg);
+        const rhs = simplify(ast);
+        return str(lhs) === str(rhs);
+      }
+    ),
     { numRuns: NUM_RUNS }
   );
 });

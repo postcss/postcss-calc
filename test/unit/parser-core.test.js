@@ -67,6 +67,15 @@ describe('parser: values', () => {
   test('parser: % is preserved as a unit', () => {
     assert.equal(ast('50%'), '50%');
   });
+
+  test('parser: signed textual zero forms normalize to positive zero', () => {
+    for (const source of ['-0', '-.0', '-0e10', '-0px', '-.0E-3%']) {
+      const leaf = parse(tokenize(source));
+      assert.ok(leaf.type === 'Num' || leaf.type === 'Dim');
+      assert.equal(leaf.value, 0, source);
+      assert.equal(Object.is(leaf.value, -0), false, source);
+    }
+  });
 });
 
 // --- Precedence and associativity ----------------------------------------
@@ -199,7 +208,7 @@ describe('parser: function calls', () => {
   test('parser: custom dimension preserves escaped unit spelling', () => {
     assert.equal(
       serialize(parse(tokenize(String.raw`10\foo`))),
-      String.raw`10\foo`
+      String.raw`calc(10\foo)`
     );
   });
 });

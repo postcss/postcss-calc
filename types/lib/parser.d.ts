@@ -1,6 +1,10 @@
 export type CSSToken = import('@csstools/css-tokenizer').CSSToken;
 export type Node = import('./node.js').Node;
 export type Component = string | Node | Component[];
+export type BlockIndex = {
+    ends: Map<number, number>;
+    maxDepth: number;
+};
 export type Token = {
     type: 'number' | 'dimension' | 'ident' | 'function' | 'punct' | 'eof';
     value: string | number;
@@ -11,7 +15,7 @@ export type Token = {
     pos: number;
     ws: boolean;
 };
-export type PrefixParselet = (p: Parser, token: Token) => Node;
+export type PrefixParselet = (p: Parser, token: Token, depth: number) => Node;
 /** Bounded cursor that skips trivia but records whether it preceded a token. */
 declare class Parser {
     #private;
@@ -47,9 +51,11 @@ declare class Parser {
     matchPunct(value: string): boolean;
     /** @param {string} value @return {Token} */
     expectPunct(value: string): Token;
-    /** @param {number} [minBp] @return {Node} */
-    parseExpr(minBp?: number): Node;
+    /** @param {number} [minBp] @param {number} [depth] @return {Node} */
+    parseExpr(minBp?: number, depth?: number): Node;
 }
-/** @param {CSSToken[]} tokens @param {number} [start] @param {number} [end] @return {Node} */
-declare function parse(tokens: CSSToken[], start?: number, end?: number): Node;
-export { parse };
+/** @param {CSSToken[]} tokens @param {number} [start] @param {number} [end] @return {BlockIndex} */
+declare function indexBlocks(tokens: CSSToken[], start?: number, end?: number): BlockIndex;
+/** @param {CSSToken[]} tokens @param {number} [start] @param {number} [end] @param {BlockIndex} [index] @return {Node} */
+declare function parse(tokens: CSSToken[], start?: number, end?: number, index?: BlockIndex): Node;
+export { indexBlocks, parse };

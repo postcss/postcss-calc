@@ -9,7 +9,8 @@ export type SimplifyFn = (node: Node) => Node;
  */
 /**
  * @param {Node} node
+ * @param {number} [depth]
  * @return {Node}
  */
-declare function simplify(node: Node): Node;
+declare function simplify(node: Node, depth?: number): Node;
 export { simplify };

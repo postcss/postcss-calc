@@ -28,7 +28,10 @@ function assertIdempotent(value, opts = {}) {
 // --- precision -----------------------------------------------------------
 describe('reduceCalc: precision', () => {
   test('reduceCalc: precision option applies to numeric output', () => {
-    assert.equal(reduceCalc('calc(1in + 10px)', { precision: 2 }), '1.1in');
+    assert.equal(
+      reduceCalc('calc(1in + 10px)', { precision: 2 }),
+      'calc(1.1in)'
+    );
   });
 
   test('reduceCalc: precision false keeps full float precision', () => {
@@ -39,7 +42,7 @@ describe('reduceCalc: precision', () => {
   });
 
   test('reduceCalc: precision 0 rounds to whole numbers', () => {
-    assert.equal(reduceCalc('calc(1in + 10px)', { precision: 0 }), '1in');
+    assert.equal(reduceCalc('calc(1in + 10px)', { precision: 0 }), 'calc(1in)');
   });
 });
 
@@ -54,11 +57,17 @@ describe('reduceCalc: option combinations', () => {
   });
 
   test('reduceCalc: reduces calc() in selector text', () => {
-    assert.match(reduceCalc('a:nth-child(calc(1 + 2))'), /:nth-child\(3\)/);
+    assert.match(
+      reduceCalc('a:nth-child(calc(1 + 2))'),
+      /:nth-child\(calc\(3\)\)/
+    );
   });
 
   test('reduceCalc: transforms selector text in place', () => {
-    assert.equal(reduceCalc('a:nth-child(calc(1 + 2))'), 'a:nth-child(3)');
+    assert.equal(
+      reduceCalc('a:nth-child(calc(1 + 2))'),
+      'a:nth-child(calc(3))'
+    );
   });
 
   test('reduceCalc: selector transformations are idempotent', () => {
@@ -93,34 +102,34 @@ describe('reduceCalc: bare math functions', () => {
   });
 
   test('reduceCalc: detects escaped math-function names', () => {
-    assert.equal(reduceCalc('c\\61 lc(1px + 2px)'), '3px');
-    assert.equal(reduceCalc('m\\69 n(1px, 2px)'), '1px');
+    assert.equal(reduceCalc('c\\61 lc(1px + 2px)'), 'c\\61 lc(3px)');
+    assert.equal(reduceCalc('m\\69 n(1px, 2px)'), 'calc(1px)');
   });
 
   test('reduceCalc: simplifies bare max() outside of calc()', () => {
-    assert.equal(reduceCalc('max(1px, 2px, 3px)'), '3px');
+    assert.equal(reduceCalc('max(1px, 2px, 3px)'), 'calc(3px)');
   });
 
   test('reduceCalc: simplifies bare clamp() outside of calc()', () => {
-    assert.equal(reduceCalc('clamp(0px, 5px, 10px)'), '5px');
+    assert.equal(reduceCalc('clamp(0px, 5px, 10px)'), 'calc(5px)');
   });
 
   test('reduceCalc: simplifies clamp() with none keyword', () => {
-    assert.equal(reduceCalc('clamp(none, 10px, 20px)'), '10px');
-    assert.equal(reduceCalc('clamp(10px, 20px, none)'), '20px');
-    assert.equal(reduceCalc('clamp(none, 10px, none)'), '10px');
+    assert.equal(reduceCalc('clamp(none, 10px, 20px)'), 'calc(10px)');
+    assert.equal(reduceCalc('clamp(10px, 20px, none)'), 'calc(20px)');
+    assert.equal(reduceCalc('clamp(none, 10px, none)'), 'calc(10px)');
     assert.equal(
       reduceCalc('clamp(none, var(--x), 20px)'),
-      'min(var(--x), 20px)'
+      'clamp(none, var(--x), 20px)'
     );
   });
 
   test('reduceCalc: simplifies bare math functions case-insensitively', () => {
-    assert.equal(reduceCalc('MIN(1px, 2px)'), '1px');
+    assert.equal(reduceCalc('MIN(1px, 2px)'), 'calc(1px)');
   });
 
   test('reduceCalc: simplifies a supported bare function from the dispatcher', () => {
-    assert.equal(reduceCalc('pow(2, 3)'), '8');
+    assert.equal(reduceCalc('pow(2, 3)'), 'calc(8)');
   });
 
   test('reduceCalc: leaves unsupported bare functions untouched', () => {
@@ -128,13 +137,13 @@ describe('reduceCalc: bare math functions', () => {
   });
 
   test('reduceCalc: supported math is found inside unsupported functions', () => {
-    assert.equal(reduceCalc('unknown(calc(1px + 2px))'), 'unknown(3px)');
+    assert.equal(reduceCalc('unknown(calc(1px + 2px))'), 'unknown(calc(3px))');
   });
 
   test('reduceCalc: supported math is found inside nested simple blocks', () => {
     assert.equal(
       reduceCalc('unknown([calc(1px + 2px)] {max(3px, 4px)})'),
-      'unknown([3px] {4px})'
+      'unknown([calc(3px)] {calc(4px)})'
     );
   });
 
@@ -145,15 +154,15 @@ describe('reduceCalc: bare math functions', () => {
       onParseError: (_, input) => inputs.push(input),
     });
     assert.equal(output, fixture);
-    assert.deepEqual(inputs, ['calc(1 /) + calc(1px + 2px)']);
+    assert.deepEqual(inputs, ['calc(calc(1 /) + calc(1px + 2px))']);
   });
 
   test('reduceCalc: stray malformed closers do not hide later calculations', () => {
-    assert.equal(reduceCalc('] calc(1px + 2px)'), '] 3px');
+    assert.equal(reduceCalc('] calc(1px + 2px)'), '] calc(3px)');
   });
 
-  test('reduceCalc: an unclosed function consumes through the end of a value', () => {
-    assert.equal(reduceCalc('calc(1px + 2px'), '3px');
+  test('reduceCalc: an unclosed function is preserved as invalid syntax', () => {
+    assert.equal(reduceCalc('calc(1px + 2px'), 'calc(1px + 2px');
   });
 
   test('reduceCalc: leaves opaque-arg bare min() preserved', () => {
@@ -163,7 +172,7 @@ describe('reduceCalc: bare math functions', () => {
 
 // --- Source-range preservation ------------------------------------------
 test('reduceCalc: IE backslash hack survives the outer walk untouched', () => {
-  assert.equal(reduceCalc('calc(1px + 2px)\\9'), '3px\\9');
+  assert.equal(reduceCalc('calc(1px + 2px)\\9'), 'calc(3px)\\9');
 });
 
 describe('reduceCalc: escaped and opaque content', () => {
@@ -182,7 +191,7 @@ describe('reduceCalc: escaped and opaque content', () => {
   test('reduceCalc: grid line names survive alongside a reduced calc() term', () => {
     assert.equal(
       reduceCalc('[full-start] calc(1px + 2px) [full-end]'),
-      '[full-start] 3px [full-end]'
+      '[full-start] calc(3px) [full-end]'
     );
   });
 });

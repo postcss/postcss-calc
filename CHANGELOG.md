@@ -3,6 +3,20 @@
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
 
+## Unreleased
+
+### Bug Fixes
+
+- Resolved calculation roots now default to standard serialization inside
+  `calc()`. Use `unwrapSingleValue: true` to emit fully resolved finite scalar
+  results as bare values, since unwrapping can discard browser-applied range clamping or integer
+  rounding.
+
+### Migration
+
+The published `unwrapSingleNegativeNumber` option remains available as a
+deprecated alias for `unwrapSingleValue`.
+
 ## 11.1.2 (2026-09-11)
 
 ### Bug fixes

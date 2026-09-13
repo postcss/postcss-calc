@@ -4,6 +4,10 @@ export type PostCssCalcOptions = {
     mediaQueries?: boolean;
     selectors?: boolean;
     /**
+     * Serialize fully resolved finite scalar results without calculation syntax. Defaults to `false`.
+     */
+    unwrapSingleValue?: boolean;
+    /**
      * Invoked when parse/simplify throws. Replaces the default `result.warn`.
      */
     onParseError?: (error: Error, input: string) => void;

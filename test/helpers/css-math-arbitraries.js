@@ -80,7 +80,7 @@ export const opaqueGroupedCalcArb = fc
       },
       {
         input: `calc(5px - (var(${a}, 1px) + var(${b}, calc(2px + 3px))))`,
-        expected: `calc(5px - (var(${a}, 1px) + var(${b}, 5px)))`,
+        expected: `calc(5px - (var(${a}, 1px) + var(${b}, calc(5px))))`,
       },
       {
         input: `calc(var(${a}) + (var(${b}) + 10px))`,

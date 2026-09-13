@@ -16,32 +16,32 @@ describe('Preserve incompatible units', () => {
 describe('cq* units', () => {
   test(
     'should add numbers with cqw units',
-    testValue('calc(1cqw + 8cqw)', '9cqw')
+    testValue('calc(1cqw + 8cqw)', 'calc(9cqw)')
   );
 
   test(
     'should add numbers with cqh units',
-    testValue('calc(1cqh + 3cqh)', '4cqh')
+    testValue('calc(1cqh + 3cqh)', 'calc(4cqh)')
   );
 
   test(
     'should add numbers with cqi units',
-    testValue('calc(1cqi + 3cqi)', '4cqi')
+    testValue('calc(1cqi + 3cqi)', 'calc(4cqi)')
   );
 
   test(
     'should add numbers with cqb units',
-    testValue('calc(1cqb + 3cqb)', '4cqb')
+    testValue('calc(1cqb + 3cqb)', 'calc(4cqb)')
   );
 
   test(
     'should add numbers with cqmin units',
-    testValue('calc(1cqmin + 3cqmin)', '4cqmin')
+    testValue('calc(1cqmin + 3cqmin)', 'calc(4cqmin)')
   );
 
   test(
     'should add numbers with cqmax units',
-    testValue('calc(1cqmax + 3cqmax)', '4cqmax')
+    testValue('calc(1cqmax + 3cqmax)', 'calc(4cqmax)')
   );
 
   test(
@@ -59,11 +59,14 @@ test(
 );
 
 describe('Add', () => {
-  test('should add numbers with lh units', testValue('calc(1lh + 4lh)', '5lh'));
+  test(
+    'should add numbers with lh units',
+    testValue('calc(1lh + 4lh)', 'calc(5lh)')
+  );
 
   test(
     'should add numbers with rlh units',
-    testValue('calc(1rlh + 4rlh)', '5rlh')
+    testValue('calc(1rlh + 4rlh)', 'calc(5rlh)')
   );
 });
 
@@ -80,44 +83,53 @@ describe('Combine units', () => {
 });
 
 describe('Convert units', () => {
-  test('convert units', testValue('calc(1cm + 1px)', '1.02646cm'));
+  test('convert units', testValue('calc(1cm + 1px)', 'calc(1.02646cm)'));
 
-  test('convert units (#1)', testValue('calc(1px + 1cm)', '38.79528px'));
+  test('convert units (#1)', testValue('calc(1px + 1cm)', 'calc(38.79528px)'));
 
   // unit case lowercased.
-  test('convert units (#2)', testValue('calc(10Q + 10Q)', /* '20Q' */ '20q'));
+  test(
+    'convert units (#2)',
+    testValue('calc(10Q + 10Q)', /* '20Q' */ 'calc(20q)')
+  );
 
-  test('convert units (#3)', testValue('calc(100.9q + 10px)', '111.48333q'));
+  test(
+    'convert units (#3)',
+    testValue('calc(100.9q + 10px)', 'calc(111.48333q)')
+  );
 
-  test('convert units (#4)', testValue('calc(10px + 100.9q)', '105.33858px'));
+  test(
+    'convert units (#4)',
+    testValue('calc(10px + 100.9q)', 'calc(105.33858px)')
+  );
 
-  test('convert units (#5)', testValue('calc(10cm + 1px)', '10.02646cm'));
+  test('convert units (#5)', testValue('calc(10cm + 1px)', 'calc(10.02646cm)'));
 
-  test('convert units (#6)', testValue('calc(10mm + 1px)', '10.26458mm'));
+  test('convert units (#6)', testValue('calc(10mm + 1px)', 'calc(10.26458mm)'));
 
-  test('convert units (#7)', testValue('calc(10px + 1q)', '10.94488px'));
+  test('convert units (#7)', testValue('calc(10px + 1q)', 'calc(10.94488px)'));
 
-  test('convert units (#8)', testValue('calc(10cm + 1q)', '10.025cm'));
+  test('convert units (#8)', testValue('calc(10cm + 1q)', 'calc(10.025cm)'));
 
-  test('convert units (#9)', testValue('calc(10mm + 1q)', '10.25mm'));
+  test('convert units (#9)', testValue('calc(10mm + 1q)', 'calc(10.25mm)'));
 
-  test('convert units (#10)', testValue('calc(10in + 1q)', '10.00984in'));
+  test('convert units (#10)', testValue('calc(10in + 1q)', 'calc(10.00984in)'));
 
-  test('convert units (#11)', testValue('calc(10pt + 1q)', '10.70866pt'));
+  test('convert units (#11)', testValue('calc(10pt + 1q)', 'calc(10.70866pt)'));
 
-  test('convert units (#12)', testValue('calc(10pc + 1q)', '10.05906pc'));
+  test('convert units (#12)', testValue('calc(10pc + 1q)', 'calc(10.05906pc)'));
 
-  test('convert units (#13)', testValue('calc(1q + 10px)', '11.58333q'));
+  test('convert units (#13)', testValue('calc(1q + 10px)', 'calc(11.58333q)'));
 
-  test('convert units (#14)', testValue('calc(1q + 10cm)', '401q'));
+  test('convert units (#14)', testValue('calc(1q + 10cm)', 'calc(401q)'));
 
-  test('convert units (#15)', testValue('calc(1q + 10mm)', '41q'));
+  test('convert units (#15)', testValue('calc(1q + 10mm)', 'calc(41q)'));
 
-  test('convert units (#16)', testValue('calc(1q + 10in)', '1017q'));
+  test('convert units (#16)', testValue('calc(1q + 10in)', 'calc(1017q)'));
 
-  test('convert units (#17)', testValue('calc(1q + 10pt)', '15.11111q'));
+  test('convert units (#17)', testValue('calc(1q + 10pt)', 'calc(15.11111q)'));
 
-  test('convert units (#18)', testValue('calc(1q + 10pc)', '170.33333q'));
+  test('convert units (#18)', testValue('calc(1q + 10pc)', 'calc(170.33333q)'));
 });
 
 describe('Unknown units', () => {
@@ -126,7 +138,7 @@ describe('Unknown units', () => {
     // same-unit arithmetic is purely numeric (§10.9; matches csstools).
     testValue(
       'calc(1unknown + 2unknown)',
-      /* 'calc(1unknown + 2unknown)' */ '3unknown'
+      /* 'calc(1unknown + 2unknown)' */ 'calc(3unknown)'
     )
   );
 
@@ -147,13 +159,13 @@ describe('Mixed units', () => {
     // zero bucket kept for type info.
     testValue(
       'calc(99.99% * 1/1 - 0rem)',
-      /* '99.99%' */ 'calc(99.99% + -0rem)'
+      /* '99.99%' */ 'calc(99.99% + calc(-1 * 0rem))'
     )
   );
 
   test(
     'should reduce mixed units of time (postcss-calc#33)',
-    testValue('calc(1s - 50ms)', '.95s')
+    testValue('calc(1s - 50ms)', 'calc(.95s)')
   );
 
   test(
@@ -165,5 +177,5 @@ describe('Mixed units', () => {
 test(
   'should not perform addition on unitless values (reduce-css-calc#3)',
   // canonical order: number before dim.
-  testValue('calc(1px + 1)', /* 'calc(1px + 1)' */ 'calc(1 + 1px)')
+  testValue('calc(1px + 1)', 'calc(1px + 1)')
 );

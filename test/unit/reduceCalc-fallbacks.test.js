@@ -31,7 +31,7 @@ describe('reduceCalc: nested fallbacks and prefixes', () => {
       reduceCalc(
         'calc(var(--x, "calc(1px + 2px)", /* calc */ {x: calc(2px + 3px)}) + 1px)'
       ),
-      'calc(1px + var(--x, "calc(1px + 2px)", /* calc */ {x: 5px}))'
+      'calc(1px + var(--x, "calc(1px + 2px)", /* calc */ {x: calc(5px)}))'
     );
     assert.equal(
       reduceCalc('calc(var(--, calc(1px + 2px)) + 1px)'),
@@ -48,29 +48,43 @@ describe('reduceCalc: nested fallbacks and prefixes', () => {
     const input =
       'calc(var(--step-1, /* comment */ calc(var(--step-2, [extra], calc(var(--step-3, calc(10px + 20px)))))))';
     const expected =
-      'var(--step-1, /* comment */ var(--step-2, [extra], var(--step-3, 30px)))';
+      'calc(var(--step-1, /* comment */ var(--step-2, [extra], var(--step-3, calc(30px)))))';
     assert.equal(reduceCalc(input), expected);
 
     const inputWithMath =
       'calc(var(--step-1, /* comment */ calc(var(--step-2, [extra], calc(var(--step-3, calc(10px + 20px)))))) + 1px)';
     const expectedWithMath =
-      'calc(1px + var(--step-1, /* comment */ var(--step-2, [extra], var(--step-3, 30px))))';
+      'calc(1px + var(--step-1, /* comment */ var(--step-2, [extra], var(--step-3, calc(30px)))))';
     assert.equal(reduceCalc(inputWithMath), expectedWithMath);
+  });
+
+  test('reduceCalc: opaque fallbacks keep signed zero and scalar wrappers', () => {
+    assert.equal(
+      reduceCalc('calc(var(--x, calc(2 / 4)))'),
+      'calc(var(--x, calc(.5)))'
+    );
+    assert.equal(
+      reduceCalc('calc(var(--x, calc(0 / -1)))'),
+      'calc(var(--x, calc(-1 * 0)))'
+    );
   });
 
   test('reduceCalc: nested block commas stay inside var fallbacks', () => {
     const input =
       'calc(var(--x, [calc(1px + 2px), {a: calc(3px + 4px), b: calc(5px + 6px)}], calc(7px + 8px)))';
-    assert.equal(reduceCalc(input), 'var(--x, [3px, {a: 7px, b: 11px}], 15px)');
+    assert.equal(
+      reduceCalc(input),
+      'calc(var(--x, [calc(3px), {a: calc(7px), b: calc(11px)}], calc(15px)))'
+    );
   });
 
   test('reduceCalc: mismatched blocks do not hide nested calculations', () => {
-    assert.equal(reduceCalc('[calc(1px + 2px)'), '[3px');
-    assert.equal(reduceCalc('{calc(3px + 4px)]'), '{7px]');
+    assert.equal(reduceCalc('[calc(1px + 2px)'), '[calc(3px)');
+    assert.equal(reduceCalc('{calc(3px + 4px)]'), '{calc(7px)]');
   });
 
   test('reduceCalc: vendor-prefix calcs get the same simplification', () => {
-    assert.equal(reduceCalc('-webkit-calc(1px + 2px)'), '3px');
+    assert.equal(reduceCalc('-webkit-calc(1px + 2px)'), '-webkit-calc(3px)');
   });
 
   test('reduceCalc: vendor-prefix wrapper preserved when expression cannot fully resolve', () => {
@@ -120,7 +134,7 @@ describe('reduceCalc: media query params', () => {
   test('reduceCalc: reduces calc in a media-query param string', () => {
     assert.equal(
       reduceCalc('(min-width: calc(100px + 100px))'),
-      '(min-width: 200px)'
+      '(min-width: calc(200px))'
     );
   });
 
@@ -135,7 +149,7 @@ describe('reduceCalc: parse error handling', () => {
     assert.equal(reduceCalc('calc(1 /)'), 'calc(1 /)');
   });
 
-  test('reduceCalc: onParseError receives the error and inner calc body', () => {
+  test('reduceCalc: onParseError receives the complete invalid root', () => {
     const captured = [];
     const output = reduceCalc('calc(1 /)', {
       onParseError: (err, input) =>
@@ -144,15 +158,15 @@ describe('reduceCalc: parse error handling', () => {
     assert.equal(output, 'calc(1 /)');
     assert.equal(captured.length, 1);
     assert.match(captured[0].message, /Unexpected token/);
-    assert.equal(captured[0].input, '1 /');
+    assert.equal(captured[0].input, 'calc(1 /)');
   });
 
-  test('reduceCalc: onParseError receives the inner calc body, not the full value', () => {
+  test('reduceCalc: onParseError receives each complete invalid root', () => {
     const inputs = [];
     reduceCalc('calc(1 /) calc(2 /)', {
       onParseError: (_, input) => inputs.push(input),
     });
-    assert.deepEqual(inputs, ['1 /', '2 /']);
+    assert.deepEqual(inputs, ['calc(1 /)', 'calc(2 /)']);
   });
 
   test('reduceCalc: division by zero now folds to infinity (no error)', () => {

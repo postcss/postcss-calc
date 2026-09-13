@@ -4,10 +4,15 @@ import { baseOf } from './convertUnits.js';
 import { mkSum, mkProduct, negate, num, dim, ident, call } from './node.js';
 import { setComponents } from './opaque.js';
 import { isSupportedMathFunction } from './simplify/call.js';
+import {
+  MAX_CALCULATION_DEPTH,
+  CalculationLimitError,
+} from './calculation-type.js';
 
 /** @typedef {import('@csstools/css-tokenizer').CSSToken} CSSToken */
 /** @typedef {import('./node.js').Node} Node */
 /** @typedef {string | Node | Component[]} Component */
+/** @typedef {{ends: Map<number, number>, maxDepth: number}} BlockIndex */
 /**
  * @typedef {object} Token
  * @property {'number' | 'dimension' | 'ident' | 'function' | 'punct' | 'eof'} type
@@ -19,7 +24,7 @@ import { isSupportedMathFunction } from './simplify/call.js';
  * @property {number} pos
  * @property {boolean} ws
  */
-/** @typedef {(p: Parser, token: Token) => Node} PrefixParselet */
+/** @typedef {(p: Parser, token: Token, depth: number) => Node} PrefixParselet */
 
 const NUMERIC_RAW = /^[+-]?(?:\d+(?:\.\d+)?|\.\d+)(?:[eE][+-]?\d+)?/;
 const PUNCT_DELIMS = new Set(['+', '-', '*', '/']);
@@ -29,6 +34,19 @@ const BLOCK_CLOSE = new Map([
   [CssType.OpenSquare, CssType.CloseSquare],
   [CssType.OpenCurly, CssType.CloseCurly],
 ]);
+
+/**
+ * CSS numeric tokens do not retain a signed-zero distinction.  Keep that
+ * normalization at the source boundary so a later IEEE-754 `-0` can only
+ * have been introduced by calculation evaluation.
+ *
+ * @param {number} value
+ * @return {number}
+ */
+function normalizeSourceZero(value) {
+  return value === 0 ? 0 : value;
+}
+
 /** @param {string} raw @param {string} decoded */
 function sourceSpelling(raw, decoded) {
   return raw === decoded ? undefined : raw;
@@ -55,7 +73,7 @@ class Parser {
    * @param {number} end
    * @param {Map<number, number>} [ends]
    */
-  constructor(tokens, start, end, ends = blockEnds(tokens, start, end)) {
+  constructor(tokens, start, end, ends = indexBlocks(tokens, start, end).ends) {
     this.#tokens = tokens;
     this.#end = end;
     this.#ends = ends;
@@ -165,14 +183,17 @@ class Parser {
     return t;
   }
 
-  /** @param {number} [minBp] @return {Node} */
-  parseExpr(minBp = 0) {
+  /** @param {number} [minBp] @param {number} [depth] @return {Node} */
+  parseExpr(minBp = 0, depth = 0) {
+    if (depth > MAX_CALCULATION_DEPTH) {
+      throw new CalculationLimitError(MAX_CALCULATION_DEPTH);
+    }
     const t = this.next();
     const key = t.type === 'punct' ? String(t.value) : t.type;
     const prefix = PREFIX[key];
     if (!prefix)
       throw new Error(`Unexpected token "${t.raw}" at position ${t.pos}`);
-    let left = prefix(this, t);
+    let left = prefix(this, t, depth);
 
     while (true) {
       const nxt = this.peek();
@@ -195,7 +216,7 @@ class Parser {
           requireSurroundingWs(this, token);
           terms.push({
             sign: /** @type {1 | -1} */ (token.value === '+' ? 1 : -1),
-            node: this.parseExpr(ADD_BP + 1),
+            node: this.parseExpr(ADD_BP + 1, depth),
           });
         } while (this.isPunct('+', '-'));
         left = mkSum(terms);
@@ -208,7 +229,7 @@ class Parser {
           const token = this.next();
           factors.push({
             exponent: /** @type {1 | -1} */ (token.value === '*' ? 1 : -1),
-            node: this.parseExpr(MUL_BP + 1),
+            node: this.parseExpr(MUL_BP + 1, depth),
           });
         } while (this.isPunct('*', '/'));
         left = mkProduct(factors);
@@ -317,8 +338,8 @@ function requireSurroundingWs(p, token) {
     );
 }
 
-/** @param {Parser} p @param {Token} t @return {Node} */
-function parseCall(p, t) {
+/** @param {Parser} p @param {Token} t @param {number} depth @return {Node} */
+function parseCall(p, t, depth) {
   const name = String(t.value);
   const rawName = t.raw.slice(0, -1);
   if (name.toLowerCase() === 'var') return parseVar(p, name, rawName);
@@ -326,8 +347,8 @@ function parseCall(p, t) {
     return parseOpaqueCall(p, name, rawName);
   /** @type {Node[]} */ const args = [];
   if (!p.isPunct(')')) {
-    args.push(p.parseExpr(0));
-    while (p.matchPunct(',')) args.push(p.parseExpr(0));
+    args.push(p.parseExpr(0, depth + 1));
+    while (p.matchPunct(',')) args.push(p.parseExpr(0, depth + 1));
   }
   p.expectPunct(')');
   return call(name, args, sourceSpelling(rawName, name));
@@ -351,15 +372,17 @@ function firstComma(tokens, start, end, ends) {
   }
   return -1;
 }
-/** @param {CSSToken[]} tokens @param {number} start @param {number} end */
-function blockEnds(tokens, start, end) {
+/** @param {CSSToken[]} tokens @param {number} [start] @param {number} [end] @return {BlockIndex} */
+function indexBlocks(tokens, start = 0, end = tokens.length) {
   /** @type {{index: number, close: import('@csstools/css-tokenizer').TokenType}[]} */
   const stack = [];
   /** @type {Map<number, number>} */ const ends = new Map();
+  let maxDepth = 0;
   for (let i = start; i < end; i++) {
     const close = BLOCK_CLOSE.get(tokens[i][0]);
     if (close !== undefined) {
       stack.push({ index: i, close });
+      maxDepth = Math.max(maxDepth, stack.length);
       continue;
     }
     const open = stack.at(-1);
@@ -368,7 +391,7 @@ function blockEnds(tokens, start, end) {
       ends.set(open.index, i);
     }
   }
-  return ends;
+  return { ends, maxDepth };
 }
 /** @param {CSSToken[]} tokens @param {number} start @param {number} end */
 function customProperty(tokens, start, end) {
@@ -389,7 +412,10 @@ function customProperty(tokens, start, end) {
     : null;
 }
 /** @param {CSSToken[]} tokens @param {number} start @param {number} end @param {Map<number, number>} ends @return {Component[]} */
-function componentTree(tokens, start, end, ends) {
+function componentTree(tokens, start, end, ends, depth = 0) {
+  if (depth > MAX_CALCULATION_DEPTH) {
+    throw new CalculationLimitError(MAX_CALCULATION_DEPTH);
+  }
   /** @type {Component[]} */ const tree = [];
   /** @param {Component} part */
   const push = (part) => {
@@ -416,7 +442,7 @@ function componentTree(tokens, start, end, ends) {
       }
     } else {
       push(token[1]);
-      push(componentTree(tokens, i + 1, close, ends));
+      push(componentTree(tokens, i + 1, close, ends, depth + 1));
       push(tokens[close][1]);
     }
     i = close;
@@ -447,11 +473,11 @@ function parseVar(p, name, rawName) {
 
 /** @type {Record<string, PrefixParselet>} */
 const PREFIX = {
-  number: (_p, t) => num(/** @type {number} */ (t.value)),
+  number: (_p, t) => num(normalizeSourceZero(/** @type {number} */ (t.value))),
   dimension: (_p, t) => {
     const unit = /** @type {string} */ (t.unit).toLowerCase();
     return dim(
-      /** @type {number} */ (t.value),
+      normalizeSourceZero(/** @type {number} */ (t.value)),
       unit,
       baseOf(unit) || t.rawUnit === unit ? undefined : t.rawUnit
     );
@@ -461,13 +487,13 @@ const PREFIX = {
     return foldCalcKeyword(name) ?? ident(name, sourceSpelling(t.raw, name));
   },
   function: parseCall,
-  '(': (p) => {
-    const e = p.parseExpr(0);
+  '(': (p, _t, depth) => {
+    const e = p.parseExpr(0, depth + 1);
     p.expectPunct(')');
     return e.type === 'Sum' ? { ...e, grouped: true } : e;
   },
-  '-': (p) => negate(p.parseExpr(7)),
-  '+': (p) => p.parseExpr(7),
+  '-': (p, _t, depth) => negate(p.parseExpr(7, depth + 1)),
+  '+': (p, _t, depth) => p.parseExpr(7, depth + 1),
 };
 
 /** @type {Record<string, {lbp: number}>} */
@@ -496,10 +522,10 @@ function parseRange(tokens, start, end, ends) {
   return ast;
 }
 
-/** @param {CSSToken[]} tokens @param {number} [start] @param {number} [end] @return {Node} */
-function parse(tokens, start = 0, end = tokens.length) {
-  const ends = blockEnds(tokens, start, end);
+/** @param {CSSToken[]} tokens @param {number} [start] @param {number} [end] @param {BlockIndex} [index] @return {Node} */
+function parse(tokens, start = 0, end = tokens.length, index) {
+  const ends = index?.ends ?? indexBlocks(tokens, start, end).ends;
   return parseRange(tokens, start, end, ends);
 }
 
-export { parse };
+export { indexBlocks, parse };

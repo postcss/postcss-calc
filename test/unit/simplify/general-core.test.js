@@ -6,14 +6,14 @@ import { out } from '../../helpers/out.js';
 test('simplify: sum of only numbers that cancel to zero → bare 0', () => {
   // Exercises `hasNum && numTotal !== 0` branch — when numTotal === 0
   // we must NOT emit a Num term. Output is mkSum([]) → Num(0) default.
-  assert.equal(out('calc(1 - 1)'), '0');
+  assert.equal(out('calc(1 - 1)'), 'calc(0)');
 });
 
 describe('simplify: sums, products, and zero values', () => {
   test('simplify: sum with dim terms only (hasNum stays false)', () => {
     // Drives processTerm into the Num branch zero times — hasNum should
     // remain false, preventing a stray numTotal=0 term in output.
-    assert.equal(out('calc(5px + 3px)'), '8px');
+    assert.equal(out('calc(5px + 3px)'), 'calc(8px)');
   });
 
   test('simplify: division by Dim(0, unit) flows through (no throw)', () => {
@@ -33,24 +33,24 @@ describe('simplify: sums, products, and zero values', () => {
 
   test('simplify: coeff=0 with ALL resolvable factors collapses to 0', () => {
     // The positive counterpart: no opaque → safe to collapse.
-    assert.equal(out('calc(0 * 5 * 3)'), '0');
+    assert.equal(out('calc(0 * 5 * 3)'), 'calc(0)');
   });
 
   test('simplify: coeff=0 with a single dim factor preserves the unit', () => {
     // §10.10 keeps unit-bearing zeroes so type info isn't lost. Matches
     // csstools (which is what the differential test compares against). The
     // coefficient absorbs into the dim via the standard single-dim branch.
-    assert.equal(out('calc(0px * 0)'), '0px');
-    assert.equal(out('calc(2px * 0)'), '0px');
-    assert.equal(out('calc(-15px * 0 * 0)'), '0px');
-    assert.equal(out('calc(0 * 5em)'), '0em');
+    assert.equal(out('calc(0px * 0)'), 'calc(0px)');
+    assert.equal(out('calc(2px * 0)'), 'calc(0px)');
+    assert.equal(out('calc(-15px * 0 * 0)'), 'calc(0px)');
+    assert.equal(out('calc(0 * 5em)'), 'calc(0em)');
   });
 
   test('simplify: coeff=0 distributing through a Sum keeps the resolved unit', () => {
     // `(2px + 3px)` simplifies to `5px` first, then `0 * 5px` → `0px` via
     // the single-dim absorption (not the distribution path, since the Sum
     // is gone by then).
-    assert.equal(out('calc(0 * (2px + 3px))'), '0px');
+    assert.equal(out('calc(0 * (2px + 3px))'), 'calc(0px)');
   });
 
   test('simplify: coeff=0 with multiple dim numerators preserves the Product', () => {
@@ -85,7 +85,7 @@ describe('cancel: incompatible units', () => {
 describe('fold: argument compatibility', () => {
   test('fold: first-arg establishes mode — pure-number min', () => {
     // Drives foldConstArgs' initial mode=null → mode='number' branch.
-    assert.equal(out('min(5, 10, 3)'), '3');
+    assert.equal(out('min(5, 10, 3)'), 'calc(3)');
   });
 
   test('fold: second-arg mismatches mode (num after dim)', () => {
@@ -104,8 +104,8 @@ describe('simplify: products and nested sums', () => {
   test('simplify: Dim(0) as product numerator does NOT throw', () => {
     // Kills `if (exponent === -1 && n.value === 0)` → `if (true && ...)`:
     // zero-valued numerator is fine, only zero denominators throw.
-    assert.equal(out('calc(0px * 2)'), '0px');
-    assert.equal(out('calc(3 * 0em)'), '0em');
+    assert.equal(out('calc(0px * 2)'), 'calc(0px)');
+    assert.equal(out('calc(3 * 0em)'), 'calc(0em)');
   });
 
   test('simplify: distributive result as a Sum term splices back into outer Sum', () => {
@@ -113,13 +113,13 @@ describe('simplify: products and nested sums', () => {
     // in processTerm. The inner distribution produces Sum([2px, -4px]);
     // the outer Sum must flatten that into its own terms so the px bucket
     // can combine with the trailing 3px to land at 1px.
-    assert.equal(out('calc((2 * (1px - 2px)) + 3px)'), '1px');
+    assert.equal(out('calc((2 * (1px - 2px)) + 3px)'), 'calc(1px)');
   });
 
   test('simplify: nested Sum splicing with sign composition', () => {
     // Variant: outer sign=-1 applied to a distributive result flips every
     // inner sign. `-(2 * (1px - 2px)) = -(-2px) = 2px`.
-    assert.equal(out('calc(4px - (2 * (1px - 2px)))'), '6px');
+    assert.equal(out('calc(4px - (2 * (1px - 2px)))'), 'calc(6px)');
   });
 });
 
@@ -177,7 +177,7 @@ describe('opaque: calls, units, and products', () => {
   });
 
   test('opaque: sub-calc inside var() fallback simplifies', () => {
-    assert.equal(out('calc(var(--x, calc(1px + 2px)))'), 'var(--x, 3px)');
+    assert.equal(out('calc(var(--x, calc(1px + 2px)))'), 'var(--x, calc(3px))');
   });
 
   test('opaque: min() preserved if any arg is opaque', () => {
