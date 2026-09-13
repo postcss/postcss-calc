@@ -118,6 +118,8 @@ describe('v12 output policy', () => {
       'exp(1px)',
       'atan2(1px, 1s)',
       'hypot(1px, 1s)',
+      'calc(1px * 2px * var(--x) * 3px)',
+      'calc(1px / var(--x) / 1s)',
     ];
     for (const { options } of policies) {
       for (const input of inputs) {

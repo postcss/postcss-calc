@@ -4,7 +4,7 @@
 
 import { num, dim } from './node.js';
 import { getComponents, serializeComponents } from './opaque.js';
-import { checkCalculationDepth } from './calculation-type.js';
+import { checkCalculationDepth } from './limits.js';
 
 /**
  * @typedef {import('./node.js').Node} Node

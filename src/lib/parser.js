@@ -3,11 +3,8 @@ import { TokenType as CssType } from '@csstools/css-tokenizer';
 import { baseOf } from './convertUnits.js';
 import { mkSum, mkProduct, negate, num, dim, ident, call } from './node.js';
 import { setComponents } from './opaque.js';
-import { isSupportedMathFunction } from './simplify/call.js';
-import {
-  MAX_CALCULATION_DEPTH,
-  CalculationLimitError,
-} from './calculation-type.js';
+import { isSupportedMathFunction, isCalculationFunction } from './functions.js';
+import { assertDepth } from './limits.js';
 
 /** @typedef {import('@csstools/css-tokenizer').CSSToken} CSSToken */
 /** @typedef {import('./node.js').Node} Node */
@@ -185,9 +182,7 @@ class Parser {
 
   /** @param {number} [minBp] @param {number} [depth] @return {Node} */
   parseExpr(minBp = 0, depth = 0) {
-    if (depth > MAX_CALCULATION_DEPTH) {
-      throw new CalculationLimitError(MAX_CALCULATION_DEPTH);
-    }
+    assertDepth(depth);
     const t = this.next();
     const key = t.type === 'punct' ? String(t.value) : t.type;
     const prefix = PREFIX[key];
@@ -316,8 +311,6 @@ function foldCalcKeyword(name) {
 
 const ADD_BP = 1;
 const MUL_BP = 3;
-const MATCH_CALC = /^(?:-(?:moz|webkit)-)?calc$/i;
-
 /** @param {Parser} p @param {string} name @param {string} rawName @return {Node} */
 function parseOpaqueCall(p, name, rawName) {
   const { start, close, tokens, ends } = p.functionRange();
@@ -343,7 +336,7 @@ function parseCall(p, t, depth) {
   const name = String(t.value);
   const rawName = t.raw.slice(0, -1);
   if (name.toLowerCase() === 'var') return parseVar(p, name, rawName);
-  if (!MATCH_CALC.test(name) && !isSupportedMathFunction(name))
+  if (!isCalculationFunction(name) && !isSupportedMathFunction(name))
     return parseOpaqueCall(p, name, rawName);
   /** @type {Node[]} */ const args = [];
   if (!p.isPunct(')')) {
@@ -413,9 +406,7 @@ function customProperty(tokens, start, end) {
 }
 /** @param {CSSToken[]} tokens @param {number} start @param {number} end @param {Map<number, number>} ends @return {Component[]} */
 function componentTree(tokens, start, end, ends, depth = 0) {
-  if (depth > MAX_CALCULATION_DEPTH) {
-    throw new CalculationLimitError(MAX_CALCULATION_DEPTH);
-  }
+  assertDepth(depth);
   /** @type {Component[]} */ const tree = [];
   /** @param {Component} part */
   const push = (part) => {
@@ -432,7 +423,7 @@ function componentTree(tokens, start, end, ends, depth = 0) {
     }
     const isMathFunction =
       token[0] === CssType.Function &&
-      (MATCH_CALC.test(token[4].value) ||
+      (isCalculationFunction(token[4].value) ||
         isSupportedMathFunction(token[4].value));
     if (isMathFunction) {
       try {

@@ -1,11 +1,6 @@
+import { analyze } from './analyze.js';
+import { MAX_CALCULATION_DEPTH, CalculationLimitError, checkCalculationDepth } from './limits.js';
 export type Node = import('./node.js').Node;
-/** @typedef {import('./node.js').Node} Node */
-declare const MAX_CALCULATION_DEPTH = 1024;
-declare class CalculationLimitError extends Error {
-    limit: number;
-    /** @param {number} limit */
-    constructor(limit: number);
-}
 export type CalculationType = {
     kind: 'number';
 } | {
@@ -16,8 +11,8 @@ export type CalculationType = {
 } | {
     kind: 'failure';
 };
+/** @typedef {import('./node.js').Node} Node */
+/** @typedef {{kind: 'number'} | {kind: 'dimension', base: string | null} | {kind: 'unknown'} | {kind: 'failure'}} CalculationType */
 /** @param {Node} node @return {CalculationType} */
 declare function checkCalculationType(node: Node): CalculationType;
-/** @param {Node} node @param {number} [depth] @return {void} */
-declare function checkCalculationDepth(node: Node, depth?: number): void;
-export { MAX_CALCULATION_DEPTH, CalculationLimitError, checkCalculationDepth, checkCalculationType, };
+export { MAX_CALCULATION_DEPTH, CalculationLimitError, checkCalculationDepth, checkCalculationType, analyze, };

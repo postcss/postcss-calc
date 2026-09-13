@@ -1,4 +1,4 @@
-import { hasPotentialMathFunction, QUICK_MATH_TEST } from './lib/simplify/call.js';
+import { hasPotentialMathFunction, QUICK_MATH_TEST } from './lib/functions.js';
 export type ReduceCalcOptions = {
     precision?: number | false;
     warnWhenCannotResolve?: boolean;
@@ -24,7 +24,6 @@ export type TransformContext = {
     options: ResolvedReduceCalcOptions;
     value: string;
     tokens: import('@csstools/css-tokenizer').CSSToken[];
-    replacements: Replacement[];
 };
 export type Replacement = {
     start: number;

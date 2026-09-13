@@ -5,10 +5,7 @@
 import { simplifySum } from './simplify/sum.js';
 import { simplifyProduct } from './simplify/product.js';
 import { simplifyCall } from './simplify/call.js';
-import {
-  MAX_CALCULATION_DEPTH,
-  CalculationLimitError,
-} from './calculation-type.js';
+import { assertDepth } from './limits.js';
 
 /**
  * @typedef {import('./node.js').Node} Node
@@ -24,9 +21,7 @@ import {
  * @return {Node}
  */
 function simplify(node, depth = 0) {
-  if (depth > MAX_CALCULATION_DEPTH) {
-    throw new CalculationLimitError(MAX_CALCULATION_DEPTH);
-  }
+  assertDepth(depth);
   /** @param {Node} value */
   const child = (value) => simplify(value, depth + 1);
   switch (node.type) {

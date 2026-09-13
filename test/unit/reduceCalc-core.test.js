@@ -35,6 +35,19 @@ describe('reduceCalc: basic pipeline', () => {
     assert.equal(reduceCalc('calc(1px + 2px)'), 'calc(3px)');
   });
 
+  test('reduceCalc: resolves named functions containing clamp none bounds', () => {
+    const warnings = [];
+    assert.equal(
+      reduceCalc('sqrt(clamp(none, 1, 2))', {
+        warnWhenCannotResolve: true,
+        onWarn: (warning) => warnings.push(warning),
+      }),
+      'calc(1)'
+    );
+    assert.equal(reduceCalc('pow(clamp(none, 2, 3), 2)'), 'calc(4)');
+    assert.deepEqual(warnings, []);
+  });
+
   test('reduceCalc: preserves non-calc values', () => {
     assert.equal(reduceCalc('red'), 'red');
   });
