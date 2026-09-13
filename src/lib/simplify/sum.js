@@ -34,6 +34,7 @@ function simplifySum(sum, simplify) {
   // encountered unit. `100vh - 5rem - 10rem - 100px` → `-15rem` in phase 1,
   // then vh/rem/px stay separate in phase 2 (none convert to each other).
   let numTotal = 0;
+  let hasNum = false;
   let numScale = 0;
   /** @type {Map<string, UnitBucket>} */
   const byUnit = new Map();
@@ -64,7 +65,11 @@ function simplifySum(sum, simplify) {
       return;
     }
     if (n.type === 'Num') {
-      numTotal += sign * n.value;
+      // Do not add an artificial +0 before the first value: `+0 + -0`
+      // becomes +0 in IEEE-754 and would discard a parsed/simplified -0.
+      const value = sign * n.value;
+      numTotal = hasNum ? numTotal + value : value;
+      hasNum = true;
       numScale = Math.max(numScale, Math.abs(n.value));
       return;
     }
@@ -92,9 +97,10 @@ function simplifySum(sum, simplify) {
     processTerm(t.sign, simplify(t.node));
   }
 
-  // mkSum drops zero-valued Nums, so pushing the numeric total
-  // unconditionally is harmless. Zero-valued unit buckets are kept for
-  // type info (WPT calc-serialization-002).
+  // mkSum drops positive zero-valued Nums, so pushing the numeric total
+  // unconditionally is harmless; a negative zero is deliberately retained.
+  // Zero-valued unit buckets are kept for type info
+  // (WPT calc-serialization-002).
   /** @type {SumTerm[]} */
   const terms = [{ sign: 1, node: num(denoise(numTotal, numScale)) }];
   for (const bucket of mergeConvertibleBuckets([...byUnit.values()])) {

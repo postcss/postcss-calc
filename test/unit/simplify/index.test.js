@@ -1,6 +1,9 @@
 import { describe, test } from 'node:test';
 import assert from 'node:assert/strict';
 import { out } from '../../helpers/out.js';
+import { tokenize } from '../../../src/lib/tokenizer.js';
+import { parse } from '../../../src/lib/parser.js';
+import { simplify } from '../../../src/lib/simplify.js';
 
 // --- calc() flattening (§10.10) -------------------------------------------
 test('simplify: bare calc() unwraps to its single value', () => {
@@ -44,10 +47,16 @@ describe('simplify: math constants and non-finite values', () => {
     assert.equal(out('calc(NaN)'), 'calc(NaN)');
   });
 
-  test('simplify: -0 collapses to 0 (mkSum drops zero-valued Num)', () => {
-    // `-0` parses as unary-minus applied to Num(0); negate(Num(0)) is Num(-0)
-    // which JavaScript prints as "0". The constructor's drop-zero rule
-    // treats both +0 and -0 the same.
+  test('simplify: preserves -0 until top-level serialization', () => {
+    const negativeZero = simplify(parse(tokenize('calc(-0)')));
+    assert.equal(negativeZero.type, 'Num');
+    assert.equal(Object.is(negativeZero.value, -0), true);
+
+    const positiveZero = simplify(parse(tokenize('calc(0 - 0)')));
+    assert.equal(positiveZero.type, 'Num');
+    assert.equal(Object.is(positiveZero.value, -0), false);
+
+    // Top-level scalar serialization may censor the sign.
     assert.equal(out('calc(-0)'), '0');
     assert.equal(out('calc(0 - 0)'), '0');
   });

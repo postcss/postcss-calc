@@ -1,6 +1,6 @@
 // Spec: https://www.w3.org/TR/css-values-4/#serialize-a-calculation-tree
 // Outer calc() is added when the top-level result contains an arithmetic
-// operator, or when a finite scalar is negative or a unitless fraction.
+// operator, or when a finite scalar needs context-sensitive CSS semantics.
 
 import { num, dim } from './node.js';
 import { getComponents, serializeComponents } from './opaque.js';
@@ -69,9 +69,13 @@ function degenerateKeyword(v) {
  * left untouched because it already has no leading zero to remove.
  *
  * @param {number} v
+ * @param {boolean} [censorNegativeZero]
  * @return {string}
  */
-function serializeNumber(v) {
+function serializeNumber(v, censorNegativeZero = true) {
+  if (Object.is(v, -0)) {
+    return censorNegativeZero ? '0' : '-0';
+  }
   const text = String(v);
   if (text.startsWith('0.')) {
     return text.slice(1);
@@ -83,55 +87,104 @@ function serializeNumber(v) {
 }
 
 /**
- * Round and serialize a finite scalar once so callers can use the same value
- * to decide its syntactic context and render its text.
+ * @param {SerializeOptions} opts
+ * @return {'preserve-sensitive' | 'unwrap-negative' | 'unwrap-all'}
+ */
+function normalizeScalarPolicy(opts) {
+  if (opts.unwrapSingleNumber) {
+    return 'unwrap-all';
+  }
+  if (opts.unwrapSingleNegativeNumber) {
+    return 'unwrap-negative';
+  }
+  return 'preserve-sensitive';
+}
+
+/**
+ * Round and serialize a scalar once so classification and rendering use the
+ * same precision-adjusted value and text.
  *
  * @param {import('./node.js').Num | import('./node.js').Dim} node
  * @param {number | false} prec
+ * @param {boolean} [censorNegativeZero]
  * @return {{value: number, text: string}}
  */
-function serializeScalar(node, prec) {
+function formatScalar(node, prec, censorNegativeZero = true) {
   const value = round(node.value, prec);
-  const text = `${serializeNumber(value)}${node.type === 'Dim' ? (node.rawUnit ?? node.unit) : ''}`;
+  const text = `${serializeNumber(value, censorNegativeZero)}${node.type === 'Dim' ? (node.rawUnit ?? node.unit) : ''}`;
   return { value, text };
 }
 
 /**
+ * Decide whether a top-level scalar must remain in calculation syntax.
+ *
+ * CSS Values 4 §10 defines math-function behavior, while §10.12 defers range
+ * checking until a top-level calculation. Keep those semantics available to
+ * the browser for sensitive scalar results. Add future context-sensitive
+ * serialization rules here rather than in render branches.
+ *
+ * @see https://www.w3.org/TR/css-values-4/#math
+ * @see https://www.w3.org/TR/css-values-4/#calc-range-checking
+ * @see https://www.w3.org/TR/css-values-4/#calc-serialize
+ *
+ * @param {import('./node.js').Num | import('./node.js').Dim} node
+ * @param {{value: number, text: string}} scalar
+ * @param {'preserve-sensitive' | 'unwrap-negative' | 'unwrap-all'} policy
+ * @return {'bare' | 'calc'}
+ */
+function classifyScalarResult(node, scalar, policy) {
+  // §10.13: Infinity/NaN always require calculation syntax. The specialized
+  // dimensional spelling is applied by serializeMathResult below.
+  if (isDegenerate(scalar.value)) {
+    return 'calc';
+  }
+
+  // Unitless fractions need calc() in integer-valued contexts so the browser
+  // can perform the required rounding. The legacy negative-only mode keeps
+  // that protection; unwrap-all is the explicit escape hatch for selectors.
+  if (node.type === 'Num' && !Number.isInteger(scalar.value)) {
+    return policy === 'unwrap-all' ? 'bare' : 'calc';
+  }
+
+  // Negative dimensions and integral numbers retain the default range-safe
+  // behavior. The compatibility modes only change negative scalar output.
+  if (scalar.value < 0) {
+    return policy === 'preserve-sensitive' ? 'calc' : 'bare';
+  }
+
+  return 'bare';
+}
+
+/**
+ * Render the top-level result after scalar formatting and classification.
+ *
  * @param {Node} node
- * @param {SerializeOptions} [opts]
+ * @param {{precision: number | false, calcName: string, scalarPolicy: 'preserve-sensitive' | 'unwrap-negative' | 'unwrap-all', censorNegativeZero?: boolean}} context
  * @return {string}
  */
-function serialize(node, opts = {}) {
-  const prec = opts.precision ?? 5;
-  const calcName = opts.calcName ?? 'calc';
-
-  // §10.13: top-level Infinity/NaN wrap in calc(); dim degenerates carry
-  // the unit as `<keyword> * 1<unit>` so the result keeps its type.
-  if (node.type === 'Num' && isDegenerate(node.value)) {
-    return `${calcName}(${degenerateKeyword(node.value)})`;
-  }
-  if (node.type === 'Dim' && isDegenerate(node.value)) {
-    return `${calcName}(${degenerateKeyword(node.value)} * 1${node.rawUnit ?? node.unit})`;
-  }
+function serializeMathResult(node, context) {
+  const {
+    precision: prec,
+    calcName,
+    scalarPolicy,
+    censorNegativeZero = true,
+  } = context;
 
   if (node.type === 'Num' || node.type === 'Dim') {
-    const scalar = serializeScalar(node, prec);
+    const scalar = formatScalar(node, prec, censorNegativeZero);
+    const syntax = classifyScalarResult(node, scalar, scalarPolicy);
 
-    // A finite negative scalar or unitless fraction must stay inside calc() so
-    // CSS parses it as a calculation result (and can apply range clamping)
-    // rather than as an invalid bare value. Base this on the serialized value
-    // so precision-adjusted values decide the syntactic context.
-    const unwrapScalar =
-      opts.unwrapSingleNumber ||
-      (opts.unwrapSingleNegativeNumber && scalar.value < 0);
-    if (
-      scalar.value < 0 ||
-      (node.type === 'Num' && !Number.isInteger(scalar.value))
-    ) {
-      return unwrapScalar ? scalar.text : `${calcName}(${scalar.text})`;
+    // §10.13: dimensional Infinity/NaN carry the unit as
+    // `<keyword> * 1<unit>` so the result keeps its type.
+    if (isDegenerate(scalar.value)) {
+      const body =
+        node.type === 'Dim'
+          ? `${degenerateKeyword(scalar.value)} * 1${node.rawUnit ?? node.unit}`
+          : degenerateKeyword(scalar.value);
+      return `${calcName}(${body})`;
     }
 
-    return scalar.text;
+    return syntax === 'bare' ? scalar.text : `${calcName}(${scalar.text})`;
   }
 
   // A grouped sum with a leading negative term is the canonical result of
@@ -147,20 +200,52 @@ function serialize(node, opts = {}) {
       sign: /** @type {1 | -1} */ (-t.sign),
       node: t.node,
     }));
-    return `${calcName}(-(${serializeSumTerms(invertedTerms, prec)}))`;
+    return `${calcName}(-(${serializeSumTerms(invertedTerms, prec, false)}))`;
   }
 
   if (node.type === 'Ident' || node.type === 'Call') {
-    return serializeExpr(node, prec);
+    return serializeExpr(node, prec, false);
   }
 
   // Single-term Sum is the canonical form for `-var(--x)` / `-(a*b)` —
   // sign=-1 around an opaque node. Signed leaves live in Num/Dim directly.
   if (node.type === 'Sum' && node.terms.length === 1) {
-    return `${calcName}(${serializeLeadingNeg(node.terms[0].node, prec)})`;
+    return `${calcName}(${serializeLeadingNeg(node.terms[0].node, prec, false)})`;
   }
 
-  return `${calcName}(${serializeExpr(node, prec)})`;
+  return `${calcName}(${serializeExpr(node, prec, false)})`;
+}
+
+/**
+ * @param {Node} node
+ * @param {SerializeOptions} [opts]
+ * @return {string}
+ */
+function serialize(node, opts = {}) {
+  return serializeMathResult(node, {
+    precision: opts.precision ?? 5,
+    calcName: opts.calcName ?? 'calc',
+    scalarPolicy: normalizeScalarPolicy(opts),
+    censorNegativeZero: true,
+  });
+}
+
+/**
+ * Nested calculations keep IEEE-754 signed zero until their enclosing
+ * calculation has finished evaluating. Their other scalar context remains
+ * the default preserve-sensitive policy.
+ *
+ * @param {Node} node
+ * @param {number | false} prec
+ * @return {string}
+ */
+function serializeNestedMathResult(node, prec) {
+  return serializeMathResult(node, {
+    precision: prec,
+    calcName: 'calc',
+    scalarPolicy: 'preserve-sensitive',
+    censorNegativeZero: false,
+  });
 }
 
 // --- Inside calc() expression --------------------------------------------
@@ -168,15 +253,16 @@ function serialize(node, opts = {}) {
 /**
  * @param {Node} node
  * @param {number | false} prec
+ * @param {boolean} [censorNegativeZero]
  * @return {string}
  */
-function serializeExpr(node, prec) {
+function serializeExpr(node, prec, censorNegativeZero = true) {
   switch (node.type) {
     case 'Num':
       if (isDegenerate(node.value)) {
         return degenerateKeyword(node.value);
       }
-      return serializeScalar(node, prec).text;
+      return formatScalar(node, prec, censorNegativeZero).text;
     case 'Dim':
       if (isDegenerate(node.value)) {
         // Nested degenerate Dim wraps in calc() so the `<kw> * 1<unit>` form
@@ -184,24 +270,26 @@ function serializeExpr(node, prec) {
         // inside a Product — `0 * Dim(Infinity, px)` would re-fold as NaN.
         return `calc(${degenerateKeyword(node.value)} * 1${node.rawUnit ?? node.unit})`;
       }
-      return serializeScalar(node, prec).text;
+      return formatScalar(node, prec, censorNegativeZero).text;
     case 'Ident':
       return node.rawName ?? node.name;
     case 'Call': {
       const components = getComponents(node);
       if (components) {
         const args = node.args
-          .map((arg) => serializeExpr(arg, prec))
+          .map((arg) => serializeExpr(arg, prec, false))
           .join(', ');
-        return `${node.rawName ?? node.name}(${args}${serializeComponents(components, (child) => serialize(child, { precision: prec }))})`;
+        return `${node.rawName ?? node.name}(${args}${serializeComponents(components, (child) => serializeNestedMathResult(child, prec))})`;
       }
-      const args = node.args.map((a) => serializeExpr(a, prec)).join(', ');
+      const args = node.args
+        .map((a) => serializeExpr(a, prec, false))
+        .join(', ');
       return `${node.rawName ?? node.name}(${args})`;
     }
     case 'Sum':
-      return serializeSum(node, prec);
+      return serializeSum(node, prec, censorNegativeZero);
     case 'Product':
-      return serializeProduct(node, prec);
+      return serializeProduct(node, prec, censorNegativeZero);
   }
 }
 
@@ -234,25 +322,26 @@ function displaySign(term) {
 /**
  * @param {import('./node.js').SumTerm[]} terms
  * @param {number | false} prec
+ * @param {boolean} [censorNegativeZero]
  * @return {string}
  */
-function serializeSumTerms(terms, prec) {
+function serializeSumTerms(terms, prec, censorNegativeZero = true) {
   let out = '';
   for (let i = 0; i < terms.length; i++) {
     const { sign, magnitude } = displaySign(terms[i]);
     if (i === 0) {
       if (magnitude.type === 'Sum' && magnitude.grouped) {
-        const body = `(${serializeExpr(magnitude, prec)})`;
+        const body = `(${serializeExpr(magnitude, prec, censorNegativeZero)})`;
         out = sign === 1 ? body : `-${body}`;
         continue;
       }
       out =
         sign === 1
-          ? serializeExpr(magnitude, prec)
-          : serializeLeadingNeg(magnitude, prec);
+          ? serializeExpr(magnitude, prec, censorNegativeZero)
+          : serializeLeadingNeg(magnitude, prec, censorNegativeZero);
     } else {
       // `-` binds looser than `*`/`/` so the right side never needs parens.
-      let body = serializeExpr(magnitude, prec);
+      let body = serializeExpr(magnitude, prec, censorNegativeZero);
       if (magnitude.type === 'Sum' && magnitude.grouped) {
         body = `(${body})`;
       }
@@ -265,10 +354,11 @@ function serializeSumTerms(terms, prec) {
 /**
  * @param {Sum} sum
  * @param {number | false} prec
+ * @param {boolean} [censorNegativeZero]
  * @return {string}
  */
-function serializeSum(sum, prec) {
-  return serializeSumTerms(sum.terms, prec);
+function serializeSum(sum, prec, censorNegativeZero = true) {
+  return serializeSumTerms(sum.terms, prec, censorNegativeZero);
 }
 
 /**
@@ -276,9 +366,10 @@ function serializeSum(sum, prec) {
  * (`-(0.5 * x)` → `-0.5 * x`); else use `-(…)` for Sum/Product or `-x`.
  * @param {Node} node
  * @param {number | false} prec
+ * @param {boolean} [censorNegativeZero]
  * @return {string}
  */
-function serializeLeadingNeg(node, prec) {
+function serializeLeadingNeg(node, prec, censorNegativeZero = true) {
   if (
     node.type === 'Product' &&
     node.factors.length > 0 &&
@@ -296,9 +387,9 @@ function serializeLeadingNeg(node, prec) {
       negatedValue === 1
         ? rest
         : [{ exponent: 1, node: num(negatedValue) }, ...rest];
-    return serializeFactors(negatedFactors, prec);
+    return serializeFactors(negatedFactors, prec, censorNegativeZero);
   }
-  const body = serializeExpr(node, prec);
+  const body = serializeExpr(node, prec, censorNegativeZero);
   return node.type === 'Sum' || node.type === 'Product'
     ? `-(${body})`
     : `-${body}`;
@@ -307,13 +398,14 @@ function serializeLeadingNeg(node, prec) {
 /**
  * @param {ProductFactor[]} factors
  * @param {number | false} prec
+ * @param {boolean} [censorNegativeZero]
  * @return {string}
  */
-function serializeFactors(factors, prec) {
+function serializeFactors(factors, prec, censorNegativeZero = true) {
   let out = '';
   for (let i = 0; i < factors.length; i++) {
     const f = factors[i];
-    let body = serializeExpr(f.node, prec);
+    let body = serializeExpr(f.node, prec, censorNegativeZero);
     // A Sum factor needs parens: `a * (b + c)`. Flat canonical form means
     // this is the only place parens are required.
     if (f.node.type === 'Sum') {
@@ -332,10 +424,11 @@ function serializeFactors(factors, prec) {
 /**
  * @param {Product} product
  * @param {number | false} prec
+ * @param {boolean} [censorNegativeZero]
  * @return {string}
  */
-function serializeProduct(product, prec) {
-  return serializeFactors(product.factors, prec);
+function serializeProduct(product, prec, censorNegativeZero = true) {
+  return serializeFactors(product.factors, prec, censorNegativeZero);
 }
 
 export { serialize };
