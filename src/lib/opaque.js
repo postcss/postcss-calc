@@ -9,15 +9,12 @@ function simplifyComponents(components, simplify) {
     return simplify(part);
   });
 }
-/** @param {OpaqueComponent[]} components @param {(node: Node) => string} serialize @return {string} */
-function serializeComponents(components, serialize) {
-  let result = '';
+/** @param {OpaqueComponent[]} components @param {string[]} buffer @param {(node: Node, buffer: string[]) => void} serialize @return {void} */
+function serializeComponents(components, buffer, serialize) {
   for (const part of components) {
-    if (typeof part === 'string') result += part;
-    else if (Array.isArray(part))
-      result += serializeComponents(part, serialize);
-    else result += serialize(part);
+    if (typeof part === 'string') buffer.push(part);
+    else if (Array.isArray(part)) serializeComponents(part, buffer, serialize);
+    else serialize(part, buffer);
   }
-  return result;
 }
 export { simplifyComponents, serializeComponents };
