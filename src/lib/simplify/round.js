@@ -116,4 +116,4 @@ function applyRound(strategy, a, b) {
   }
 }
 
-export { simplifyRound };
+export { ROUND_STRATEGIES, simplifyRound };
