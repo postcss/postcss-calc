@@ -5,7 +5,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { tokenize } from '../src/lib/tokenizer.js';
+import { tokenize } from '@csstools/css-tokenizer';
 import { parse } from '../src/lib/parser.js';
 import { simplify } from '../src/lib/simplify.js';
 import { serialize } from '../src/lib/serialize.js';
@@ -18,7 +18,7 @@ const INVALID = join(ROOT, 'test/corpus/github/invalid.txt');
 const PREPROC_RE = /#\{|\$[A-Za-z_]|@[A-Za-z_]|~["']/;
 function ourParserAccepts(s) {
   try {
-    serialize(simplify(parse(tokenize(s))), { precision: 10 });
+    serialize(simplify(parse(tokenize({ css: s }))), { precision: 10 });
     return true;
   } catch {
     return false;
