@@ -1,0 +1,166 @@
+import { baseOf } from './convertUnits.js';
+import { addTypes, isFailure, mathFunctions } from './functions.js';
+import { assertDepth } from './limits.js';
+
+/** @typedef {import('./node.js').Node} Node */
+/** @typedef {import('./functions.js').CalculationType} CalculationType */
+
+/** @typedef {'number' | 'unknown' | {dimension: string | null}} AnalysisType */
+/** @typedef {{type: AnalysisType, valid: boolean, unresolved: boolean}} Analysis */
+
+/** @type {CalculationType} */ const numberType = { kind: 'number' };
+/** @type {CalculationType} */ const unknownType = { kind: 'unknown' };
+/** @type {CalculationType} */ const failureType = { kind: 'failure' };
+
+/** @param {Node} node @return {Analysis} */
+function analyze(node) {
+  const result = analyzeType(node);
+  return {
+    type: publicType(result.type),
+    valid: result.valid,
+    unresolved: result.unresolved,
+  };
+}
+
+/** @param {Node} node @param {number} [depth] @return {{type: CalculationType, valid: boolean, unresolved: boolean}} */
+function analyzeType(node, depth = 0) {
+  assertDepth(depth);
+  switch (node.type) {
+    case 'Num':
+      return resolved(numberType);
+    case 'Dim':
+      // Percentages are contextual. Unknown units are opaque, while known
+      // families can still reject px + seconds.
+      return node.unit === '%'
+        ? finish(unknownType, true, true)
+        : resolved({ kind: 'dimension', base: baseOf(node.unit) });
+    case 'Ident':
+      return markUnresolved(unknownType);
+    case 'Sum':
+      return analyzeSum(node, depth);
+    case 'Product':
+      return analyzeProduct(node, depth);
+    case 'Call':
+      return analyzeCall(node, depth);
+    case 'OpaqueCall':
+      return finish(unknownType, true, true);
+  }
+}
+
+/** @param {Extract<Node, {type: 'Sum'}>} node @param {number} depth @return {{type: CalculationType, valid: boolean, unresolved: boolean}} */
+function analyzeSum(node, depth) {
+  let type = numberType;
+  let valid = true;
+  let hasTerm = false;
+  let hasUnresolved = false;
+  for (const term of node.terms) {
+    const child = analyzeType(term.node, depth + 1);
+    type = hasTerm ? addTypes(type, child.type) : child.type;
+    hasTerm = true;
+    valid = valid && child.valid;
+    hasUnresolved = hasUnresolved || child.unresolved;
+  }
+  return finish(type, valid, hasUnresolved);
+}
+
+/** @param {Extract<Node, {type: 'Product'}>} node @param {number} depth @return {{type: CalculationType, valid: boolean, unresolved: boolean}} */
+function analyzeProduct(node, depth) {
+  let numerator = null;
+  let denominator = null;
+  let valid = true;
+  let structurallyValid = true;
+  let hasUnknown = false;
+  let hasUnresolved = false;
+  for (const factor of node.factors) {
+    const child = analyzeType(factor.node, depth + 1);
+    valid = valid && child.valid;
+    hasUnresolved = hasUnresolved || child.unresolved;
+    if (isFailure(child.type)) {
+      continue;
+    }
+    if (child.type.kind === 'unknown') {
+      hasUnknown = true;
+      continue;
+    }
+    if (child.type.kind !== 'dimension') continue;
+    if (factor.exponent === 1) {
+      if (numerator !== null) structurallyValid = false;
+      else numerator = child.type;
+    } else {
+      if (denominator !== null) structurallyValid = false;
+      else denominator = child.type;
+    }
+  }
+  if (!valid) return finish(failureType, false, hasUnresolved);
+  // Opaque factors can supply missing type information, but they cannot make
+  // an already-invalid combination of known dimensions valid.
+  if (!structurallyValid) return finish(failureType, false, hasUnresolved);
+  if (
+    numerator !== null &&
+    denominator !== null &&
+    numerator.base !== denominator.base
+  ) {
+    return finish(failureType, false, hasUnresolved);
+  }
+  // An opaque factor may supply type information that changes how the known
+  // dimensions combine once the known factors are structurally valid.
+  if (hasUnknown) return finish(unknownType, true, hasUnresolved);
+  if (numerator !== null && denominator !== null) {
+    return finish(
+      numerator.base === denominator.base ? numberType : failureType,
+      valid && numerator.base === denominator.base,
+      hasUnresolved
+    );
+  }
+  if (denominator !== null) return finish(failureType, false, hasUnresolved);
+  return finish(numerator ?? numberType, valid, hasUnresolved);
+}
+
+/** @param {Extract<Node, {type: 'Call'}>} node @param {number} depth @return {{type: CalculationType, valid: boolean, unresolved: boolean}} */
+function analyzeCall(node, depth) {
+  const name = node.name.toLowerCase();
+  const childResults = node.args.map((arg) => analyzeType(arg, depth + 1));
+  const childTypes = childResults.map((child) => child.type);
+  const valid = childResults.every((child) => child.valid);
+  const definition = mathFunctions.get(name);
+  const unresolvedArgs = childResults.some(
+    (child, index) =>
+      !definition?.isKeyword?.(node.args[index], index) && child.unresolved
+  );
+  if (!definition) return finish(unknownType, valid, true);
+  const type = definition.analyze(childTypes, node.args);
+  const unresolvedType = type.kind === 'unknown';
+  return finish(
+    type,
+    valid && !isFailure(type),
+    unresolvedArgs || unresolvedType
+  );
+}
+
+/** @param {CalculationType} type @param {boolean} valid @param {boolean} unresolved @return {{type: CalculationType, valid: boolean, unresolved: boolean}} */
+function finish(type, valid, unresolved) {
+  return {
+    type,
+    valid: valid && !isFailure(type),
+    unresolved,
+  };
+}
+
+/** @param {CalculationType} type @return {{type: CalculationType, valid: boolean, unresolved: boolean}} */
+function resolved(type) {
+  return finish(type, true, false);
+}
+
+/** @param {CalculationType} type @return {{type: CalculationType, valid: boolean, unresolved: boolean}} */
+function markUnresolved(type) {
+  return finish(type, true, true);
+}
+
+/** @param {CalculationType} type @return {AnalysisType} */
+function publicType(type) {
+  if (type.kind === 'number') return 'number';
+  if (type.kind === 'unknown' || type.kind === 'failure') return 'unknown';
+  return { dimension: type.base };
+}
+
+export { analyze };
