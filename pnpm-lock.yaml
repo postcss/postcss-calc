@@ -173,9 +173,6 @@ importers:
       '@csstools/css-calc':
         specifier: ^3.3.0
         version: 3.3.0(@csstools/css-parser-algorithms@4.0.0(@csstools/css-tokenizer@4.0.0))(@csstools/css-tokenizer@4.0.0)
-      '@rmenke/css-tokenizer-tests':
-        specifier: ^1.2.0
-        version: 1.2.0
       '@types/node':
         specifier: ^26.5.0
         version: 26.5.0
@@ -457,9 +454,6 @@ packages:
     engines: {node: ^20.19.0 || >=22.12.0}
     cpu: [x64]
     os: [win32]
-
-  '@rmenke/css-tokenizer-tests@1.2.0':
-    resolution: {integrity: sha512-XfdeXzW5QGc3inl69eid2FTLGY/514xs+VXQWlEzdUVm1QdU6MicU5S2hcEbHoC9WMzIMALTzxiZb49w+xJk0Q==}
 
   '@types/node@26.5.0':
     resolution: {integrity: sha512-dVSGpriSoCgz8WnDNTuSSuSv1PC/ALXihO4ulRZt7Md8k9mlbdin3lGOcDE8SnWOgf513ByWlXd7BK4azmyg/A==}
@@ -771,8 +765,6 @@ snapshots:
 
   '@oxlint/binding-win32-x64-msvc@1.82.0':
     optional: true
-
-  '@rmenke/css-tokenizer-tests@1.2.0': {}
 
   '@types/node@26.5.0':
     dependencies:

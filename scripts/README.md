@@ -14,10 +14,6 @@ None of these run in `pnpm test` or CI — run directly with `node scripts/<name
   the pure corpus.
 - **`show-divergences.js`** — buckets where our output disagrees with
   `@csstools/css-calc` over the pure corpus, for manual triage.
-- **`tokenizer-compat.js`** — shared helpers for diffing token streams
-  (not runnable on its own); used by `tokenizer-suite.js`.
-- **`tokenizer-suite.js`** — runs the official `@rmenke/css-tokenizer-tests`
-  corpus through our tokenizer and reports pass/fail per category.
 - **`randomizer.js`** — long-running fuzzer: generates `calc()` inputs at
   increasing depth, compares against `@csstools/css-calc`, logs finds to
   `reports/randomizer-finds.jsonl`.

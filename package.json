@@ -52,7 +52,6 @@
   },
   "devDependencies": {
     "@csstools/css-calc": "^3.3.0",
-    "@rmenke/css-tokenizer-tests": "^1.2.0",
     "@types/node": "^26.5.0",
     "fast-check": "^4.9.0",
     "oxfmt": "^0.67.0",

@@ -1,7 +1,7 @@
 // Benchmark parser scaling for nested var() fallbacks.
 // Tokenization is performed once per depth so timings isolate parsing cost.
 import { parse } from '../src/lib/parser.js';
-import { tokenize } from '../src/lib/tokenizer.js';
+import { tokenize } from '@csstools/css-tokenizer';
 
 const DEPTHS = [50, 100, 200, 400];
 const WARMUP_RUNS = 5;
@@ -30,7 +30,7 @@ function buildNestedFallbacks(depth) {
 /** @param {number} depth */
 function benchmark(depth) {
   const input = buildNestedFallbacks(depth);
-  const tokens = tokenize(input);
+  const tokens = tokenize({ css: input });
 
   for (let i = 0; i < WARMUP_RUNS; i++) {
     parse(tokens);
