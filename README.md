@@ -43,10 +43,10 @@ you will get:
 
 ```css
 h1 {
-  font-size: 32px;
+  font-size: calc(32px);
   height: calc(100px - 2em);
   width: calc(2 * var(--base-width));
-  margin-bottom: 24px;
+  margin-bottom: calc(24px);
 }
 ```
 
@@ -62,13 +62,14 @@ leaving all other text untouched.
 import reduceCalc from 'postcss-calc/reduce';
 
 reduceCalc('calc(1in + 10px)');
-// => '1.10417in'
+// => 'calc(1.10417in)'
 
 reduceCalc('min(50px, calc(2 * 40px))');
-// => '50px'
+// => 'calc(50px)'
 ```
 
-It accepts `precision`, `unwrapSingleNegativeNumber`, `unwrapSingleNumber`,
+It accepts `precision`, `unwrapSingleValue`, the deprecated
+`unwrapSingleNegativeNumber` alias,
 `warnWhenCannotResolve`, `onParseError`, and `onWarn`:
 
 ```js
@@ -87,31 +88,26 @@ by default; provide `onParseError` and/or `onWarn` if you want diagnostics.
 
 ### Standalone reducer options
 
-#### `unwrapSingleNegativeNumber` (default: `false`)
+#### `unwrapSingleValue` (default: `false`)
 
-Controls whether a finite negative result is serialized as a bare value or
-wrapped in `calc()`. Keep the default when reducing declaration values, media
-queries, or standalone values so CSS can perform range checking. Set it to
-`true` for a context that requires bare negative values, such as a selector:
+Serializes a fully resolved finite scalar result without calculation syntax.
+Keep the default for standard CSS so the browser can perform range clamping
+and integer rounding. Set it to `true` for a non-standard context that requires
+a bare value, such as a selector:
 
 ```js
 reduceCalc('calc(5px - 10px)');
 // => 'calc(-5px)'
 
-reduceCalc('calc(5px - 10px)', { unwrapSingleNegativeNumber: true });
+reduceCalc('calc(5px - 10px)', { unwrapSingleValue: true });
 // => '-5px'
-```
 
-This compatibility option unwraps negative dimensions and integral unitless
-results. Fractional unitless results remain wrapped because the browser may
-need to round them in an integer-valued property. Use `unwrapSingleNumber` when
-the surrounding context cannot contain either negative results or fractional
-unitless results:
-
-```js
-reduceCalc('calc(1 / 2)', { unwrapSingleNumber: true });
+reduceCalc('calc(1 / 2)', { unwrapSingleValue: true });
 // => '.5'
 ```
+
+The published `unwrapSingleNegativeNumber` option is retained as a deprecated
+alias for `unwrapSingleValue`.
 
 ### PostCSS plugin options
 
@@ -131,6 +127,12 @@ var out = postcss()
   .use(calc({ precision: 10 }))
   .process(css).css;
 ```
+
+#### `unwrapSingleValue` (default: `false`)
+
+Serializes fully resolved finite scalar results without calculation syntax.
+This can discard browser-applied range clamping or integer rounding. Selectors
+enable it automatically because selectors cannot contain `calc()`.
 
 #### `warnWhenCannotResolve` (default: `false`)
 
@@ -178,7 +180,7 @@ Reduces `calc()` functions found in selectors. Selectors do not accept
 `calc()` functions, so the plugin replaces them with their reduced values.
 Finite negative and fractional unitless results are serialized as bare values
 because a selector cannot contain a `calc()` function; the plugin enables the
-broader `unwrapSingleNumber` mode automatically for selectors.
+`unwrapSingleValue` automatically for selectors.
 
 ```js
 var out = postcss()
