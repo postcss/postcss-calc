@@ -33,6 +33,11 @@ describe('reduceCalc: basic pipeline', () => {
     assert.equal(reduceCalc('red'), 'red');
   });
 
+  test('reduceCalc: does not partially rewrite a nested calc in an unclosed calc', () => {
+    const value = 'calc(1px + calc(1px + 1px)';
+    assert.equal(reduceCalc(value), value);
+  });
+
   test('reduceCalc: ordinary values remain byte-for-byte unchanged', () => {
     assert.equal(reduceCalc('"calc(1px + 2px)"'), '"calc(1px + 2px)"');
     assert.equal(reduceCalc('url(x)'), 'url(x)');

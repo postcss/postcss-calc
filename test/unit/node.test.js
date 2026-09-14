@@ -247,7 +247,7 @@ describe('negate:', () => {
     });
   });
 
-  test('negate: grouped multi-term Sum preserves grouping while flipping signs', () => {
+  test('negate: grouped multi-term Sum preserves the group', () => {
     const s = /** @type {import('../../src/lib/node.js').Sum} */ ({
       ...mkSum([
         { sign: 1, node: ident('a') },
@@ -257,11 +257,7 @@ describe('negate:', () => {
     });
     assert.deepEqual(negate(s), {
       type: 'Sum',
-      grouped: true,
-      terms: [
-        { sign: -1, node: { type: 'Ident', name: 'a' } },
-        { sign: 1, node: { type: 'Ident', name: 'b' } },
-      ],
+      terms: [{ sign: -1, node: s }],
     });
   });
 

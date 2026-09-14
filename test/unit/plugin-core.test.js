@@ -2,6 +2,7 @@
 // PostCSS adapter, option wiring, and error reporting behavior.
 import { describe, test } from 'node:test';
 import assert from 'node:assert/strict';
+import postcss from 'postcss';
 import plugin from '../../src/index.js';
 import { createPluginTestHarness } from '../helpers/plugin.js';
 
@@ -23,6 +24,16 @@ describe('plugin: basic pipeline', () => {
   test('plugin: preserves non-calc values', async () => {
     const { css } = await process('a{b:red}');
     assert.equal(css, 'a{b:red}');
+  });
+
+  test('plugin: does not partially rewrite a nested calc in an unclosed calc', async () => {
+    const value = 'calc(1px + calc(1px + 1px)';
+    // PostCSS rejects this malformed value while parsing source text, so put
+    // it into an already-parsed declaration to exercise the adapter.
+    const root = postcss.parse('a{b:0}');
+    root.first.first.value = value;
+    const result = await postcss(plugin()).process(root, { from: undefined });
+    assert.equal(result.root.first.first.value, value);
   });
 
   test('plugin: ordinary values remain byte-for-byte unchanged', async () => {

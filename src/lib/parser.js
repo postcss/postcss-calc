@@ -13,11 +13,12 @@ import {
 } from './node.js';
 import { isSupportedMathFunction, isCalculationFunction } from './functions.js';
 import { assertDepth } from './limits.js';
+import { indexBlocks } from './block-index.js';
 
 /** @typedef {import('@csstools/css-tokenizer').CSSToken} CSSToken */
 /** @typedef {import('./node.js').Node} Node */
 /** @typedef {import('./node.js').OpaqueComponent} OpaqueComponent */
-/** @typedef {{ends: Map<number, number>, maxDepth: number}} BlockIndex */
+/** @typedef {import('./block-index.js').BlockIndex} BlockIndex */
 /**
  * @typedef {object} Token
  * @property {'number' | 'dimension' | 'ident' | 'function' | 'punct' | 'eof'} type
@@ -32,18 +33,12 @@ import { assertDepth } from './limits.js';
  */
 /**
  * Immutable bounds and shared block index for one parse range.
- * @typedef {Readonly<{tokens: CSSToken[], end: number, ends: Map<number, number>}>} ParseInput
+ * @typedef {Readonly<{tokens: CSSToken[], end: number, index: BlockIndex}>} ParseInput
  */
 /** @typedef {(input: ParseInput, cursor: Cursor, token: Token, depth: number) => Node} PrefixParselet */
 
 const NUMERIC_RAW = /^[+-]?(?:\d+(?:\.\d+)?|\.\d+)(?:[eE][+-]?\d+)?/;
 const PUNCT_DELIMS = new Set(['+', '-', '*', '/']);
-const BLOCK_CLOSE = new Map([
-  [CssType.Function, CssType.CloseParen],
-  [CssType.OpenParen, CssType.CloseParen],
-  [CssType.OpenSquare, CssType.CloseSquare],
-  [CssType.OpenCurly, CssType.CloseCurly],
-]);
 
 /**
  * CSS numeric tokens do not retain a signed-zero distinction.  Keep that
@@ -78,6 +73,21 @@ class Cursor {
     /** @type {number} */
     this.lookaheadNextIndex = start;
   }
+
+  /** @param {number} index @return {void} */
+  skipTo(index) {
+    this.index = index;
+    this.lookaheadNextIndex = index;
+    this.firstToken = false;
+    this.lookahead = null;
+  }
+}
+
+/** @param {OpaqueComponent[]} target @param {OpaqueComponent} part */
+function pushComponent(target, part) {
+  if (typeof part === 'string' && typeof target.at(-1) === 'string')
+    target[target.length - 1] += part;
+  else target.push(part);
 }
 
 /**
@@ -224,19 +234,6 @@ function takeToken(input, cursor) {
   return /** @type {Token} */ (token);
 }
 
-/**
- * Skip a complete native block and invalidate any lookahead based on the old
- * position. This is the other operation allowed to advance `cursor.index`.
- * @param {Cursor} cursor
- * @param {number} index
- */
-function skipTo(cursor, index) {
-  cursor.index = index;
-  cursor.lookaheadNextIndex = index;
-  cursor.firstToken = false;
-  cursor.lookahead = null;
-}
-
 /** @param {ParseInput} input @param {Cursor} cursor @param {string} value @param {string} [value2] @return {boolean} */
 function isPunct(input, cursor, value, value2) {
   const t = peekToken(input, cursor);
@@ -338,12 +335,12 @@ const MUL_BP = 3;
 /** @param {ParseInput} input @param {Cursor} cursor @param {Token} token @param {string} name @param {string} rawName @return {Node} */
 function parseOpaqueCall(input, cursor, token, name, rawName) {
   const start = token.index + 1;
-  const close = input.ends.get(token.index) ?? -1;
+  const close = input.index.closeOf(token.index, input.end);
   if (close === -1)
     throw new Error(
       `Unclosed ${name}( at position ${eofPosition(input, cursor)}`
     );
-  skipTo(cursor, close + 1);
+  cursor.skipTo(close + 1);
   return opaqueCall(
     name,
     componentTree(input, start, close),
@@ -383,39 +380,6 @@ function rawTokens(tokens, start, end) {
   for (let i = start; i < end; i++) raw += tokens[i][1];
   return raw;
 }
-/** @param {CSSToken[]} tokens @param {number} start @param {number} end @param {Map<number, number>} ends @return {number} */
-function firstComma(tokens, start, end, ends) {
-  for (let i = start; i < end; i++) {
-    const close = ends.get(i);
-    if (close !== undefined) {
-      i = close;
-      continue;
-    }
-    if (tokens[i][0] === CssType.Comma) return i;
-  }
-  return -1;
-}
-/** @param {CSSToken[]} tokens @param {number} [start] @param {number} [end] @return {BlockIndex} */
-function indexBlocks(tokens, start = 0, end = tokens.length) {
-  /** @type {{index: number, close: import('@csstools/css-tokenizer').TokenType}[]} */
-  const stack = [];
-  /** @type {Map<number, number>} */ const ends = new Map();
-  let maxDepth = 0;
-  for (let i = start; i < end; i++) {
-    const close = BLOCK_CLOSE.get(tokens[i][0]);
-    if (close !== undefined) {
-      stack.push({ index: i, close });
-      maxDepth = Math.max(maxDepth, stack.length);
-      continue;
-    }
-    const open = stack.at(-1);
-    if (open !== undefined && tokens[i][0] === open.close) {
-      stack.pop();
-      ends.set(open.index, i);
-    }
-  }
-  return { ends, maxDepth };
-}
 /** @param {CSSToken[]} tokens @param {number} start @param {number} end */
 function customProperty(tokens, start, end) {
   /** @type {CSSToken | null} */
@@ -437,56 +401,76 @@ function customProperty(tokens, start, end) {
 /** @param {ParseInput} input @param {number} start @param {number} end @param {number} [depth] @return {OpaqueComponent[]} */
 function componentTree(input, start, end, depth = 0) {
   assertDepth(depth);
-  /** @type {OpaqueComponent[]} */ const tree = [];
-  const { tokens, ends } = input;
-  /** @param {OpaqueComponent} part */
-  const push = (part) => {
-    if (typeof part === 'string' && typeof tree.at(-1) === 'string')
-      tree[tree.length - 1] += part;
-    else tree.push(part);
-  };
-  for (let i = start; i < end; i++) {
-    const token = tokens[i];
-    const close = ends.get(i) ?? -1;
-    if (close === -1) {
-      push(token[1]);
+  /** @type {OpaqueComponent[]} */ const root = [];
+  /** @type {OpaqueComponent[]} */ let tree = root;
+  /** @type {{parent: OpaqueComponent[], tree: OpaqueComponent[], close: number, end: number}[]} */
+  const frames = [];
+  const { tokens } = input;
+  let i = start;
+  while (true) {
+    if (i >= end) {
+      if (frames.length === 0) break;
+      const frame =
+        /** @type {{parent: OpaqueComponent[], tree: OpaqueComponent[], close: number, end: number}} */ (
+          frames.pop()
+        );
+      tree = frame.parent;
+      pushComponent(tree, frame.tree);
+      pushComponent(tree, tokens[frame.close][1]);
+      end = frame.end;
+      i = frame.close + 1;
       continue;
     }
+
+    const token = tokens[i];
+    const close = input.index.closeOf(i, end);
+    if (close === -1) {
+      pushComponent(tree, token[1]);
+      i++;
+      continue;
+    }
+
     const isMathFunction =
       token[0] === CssType.Function &&
       (isCalculationFunction(token[4].value) ||
         isSupportedMathFunction(token[4].value));
     if (isMathFunction) {
       try {
-        push(parseRange(input, i, close + 1));
+        pushComponent(tree, parseRange(input, i, close + 1));
       } catch {
-        push(rawTokens(tokens, i, close + 1));
+        pushComponent(tree, rawTokens(tokens, i, close + 1));
       }
-    } else {
-      push(token[1]);
-      push(componentTree(input, i + 1, close, depth + 1));
-      push(tokens[close][1]);
+      i = close + 1;
+      continue;
     }
-    i = close;
+
+    pushComponent(tree, token[1]);
+    assertDepth(depth + frames.length + 1);
+    /** @type {OpaqueComponent[]} */
+    const child = [];
+    frames.push({ parent: tree, tree: child, close, end });
+    tree = child;
+    end = close;
+    i++;
   }
-  return tree;
+  return root;
 }
 /** @param {ParseInput} input @param {Cursor} cursor @param {Token} token @param {string} name @param {string} rawName @return {Node} */
 function parseVar(input, cursor, token, name, rawName) {
-  const { tokens, ends } = input;
+  const { tokens } = input;
   const start = token.index + 1;
-  const close = ends.get(token.index) ?? -1;
+  const close = input.index.closeOf(token.index, input.end);
   if (close === -1)
     throw new Error(
       `Unclosed ${name}( at position ${eofPosition(input, cursor)}`
     );
-  const comma = firstComma(tokens, start, close, ends);
+  const comma = input.index.firstTopLevelComma(start, close);
   const property = customProperty(tokens, start, comma === -1 ? close : comma);
   if (!property)
     throw new Error(
       `Invalid custom property in ${name}() at position ${tokens[start]?.[2] ?? eofPosition(input, cursor)}`
     );
-  skipTo(cursor, close + 1);
+  cursor.skipTo(close + 1);
   /** @type {OpaqueComponent[]} */
   const components = [
     ident(property.decoded, sourceSpelling(property.raw, property.decoded)),
@@ -544,7 +528,7 @@ function parseRange(input, start, end) {
       : /** @type {ParseInput} */ ({
           tokens: input.tokens,
           end,
-          ends: input.ends,
+          index: input.index,
         });
   const cursor = new Cursor(start);
   const ast = parseExpr(bounded, cursor, 0, 0);
@@ -558,8 +542,8 @@ function parseRange(input, start, end) {
 
 /** @param {CSSToken[]} tokens @param {number} [start] @param {number} [end] @param {BlockIndex} [index] @return {Node} */
 function parse(tokens, start = 0, end = tokens.length, index) {
-  const ends = index?.ends ?? indexBlocks(tokens, start, end).ends;
-  return parseRange({ tokens, end, ends }, start, end);
+  const blockIndex = index ?? indexBlocks(tokens, start, end);
+  return parseRange({ tokens, end, index: blockIndex }, start, end);
 }
 
 export { indexBlocks, parse };
