@@ -10,7 +10,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import fc from 'fast-check';
 import { calc as csstoolsCalc } from '@csstools/css-calc';
-import { tokenize } from '../src/lib/tokenizer.js';
+import { tokenize } from '@csstools/css-tokenizer';
 import { parse } from '../src/lib/parser.js';
 import { simplify } from '../src/lib/simplify.js';
 import { serialize } from '../src/lib/serialize.js';
@@ -30,7 +30,7 @@ const MODE = process.env.RANDOMIZER_MODE ?? 'complex';
 const COMPARE_PRECISION = 9;
 function ourOut(input) {
   try {
-    return serialize(simplify(parse(tokenize(input))), {
+    return serialize(simplify(parse(tokenize({ css: input }))), {
       precision: COMPARE_PRECISION,
     });
   } catch {
@@ -72,7 +72,7 @@ function bucketOf(tokenCount) {
 function countTokens(input) {
   try {
     // -1 drops the trailing 'eof' token.
-    return Math.max(0, tokenize(input).length - 1);
+    return Math.max(0, tokenize({ css: input }).length - 1);
   } catch {
     return 0;
   }

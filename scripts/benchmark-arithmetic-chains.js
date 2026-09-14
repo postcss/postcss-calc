@@ -2,7 +2,7 @@
 // path. This intentionally excludes tokenization so the timings isolate AST
 // construction and flattening.
 import { parse } from '../src/lib/parser.js';
-import { tokenize } from '../src/lib/tokenizer.js';
+import { tokenize } from '@csstools/css-tokenizer';
 
 const SIZES = [1_000, 2_000, 4_000, 8_000];
 const WARMUP_RUNS = 5;
@@ -24,7 +24,7 @@ function benchmark(kind, size) {
   // Factors of one collapse by design, so use two for the multiplicative
   // case and keep the parsed Product representative of the full chain.
   const term = kind === 'additive' ? '1' : '2';
-  const tokens = tokenize(Array(size).fill(term).join(operator));
+  const tokens = tokenize({ css: Array(size).fill(term).join(operator) });
 
   for (let i = 0; i < WARMUP_RUNS; i++) {
     parse(tokens);
