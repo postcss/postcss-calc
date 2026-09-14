@@ -33,12 +33,7 @@ function simplifyCall(node, simplify) {
 
   const simplifier = mathFunctions.get(name)?.simplify;
   if (simplifier) {
-    // min/max preserve the call's original casing in their opaque-args
-    // fallback; the rest normalize to lowercase internally.
-    return simplifier(
-      name === 'min' || name === 'max' ? node.name : name,
-      args
-    );
+    return simplifier(name, args);
   }
 
   return call(node.name, args, node.rawName);
