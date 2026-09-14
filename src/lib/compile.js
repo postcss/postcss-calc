@@ -7,7 +7,7 @@ import { MAX_CALCULATION_DEPTH, CalculationLimitError } from './limits.js';
 /** @typedef {import('../reduce.js').ResolvedReduceCalcOptions} ResolvedReduceCalcOptions */
 /** @typedef {import('../reduce.js').Replacement} Replacement */
 /** @typedef {import('@csstools/css-tokenizer').CSSToken} CSSToken */
-/** @typedef {{ends: Map<number, number>, maxDepth: number}} BlockIndex */
+/** @typedef {import('./block-index.js').BlockIndex} BlockIndex */
 /** @typedef {{options: ResolvedReduceCalcOptions, value: string, tokens: CSSToken[], index: BlockIndex}} CompileContext */
 
 class CalculationTypeError extends Error {

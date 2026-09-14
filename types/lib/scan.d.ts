@@ -24,10 +24,8 @@ export type Candidate = {
  *
  * @param {string} value
  * @param {import('@csstools/css-tokenizer').CSSToken[]} tokens
- * @param {{ends: Map<number, number>}} index
+ * @param {import('./block-index.js').BlockIndex} index
  * @return {Candidate[]}
  */
-declare function findCalculations(value: string, tokens: import('@csstools/css-tokenizer').CSSToken[], index: {
-    ends: Map<number, number>;
-}): Candidate[];
+declare function findCalculations(value: string, tokens: import('@csstools/css-tokenizer').CSSToken[], index: import('./block-index.js').BlockIndex): Candidate[];
 export { findCalculations };

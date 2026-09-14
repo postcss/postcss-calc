@@ -1,6 +1,7 @@
-// Benchmark parser scaling for nested var() fallbacks.
-// Tokenization is performed once per depth so timings isolate parsing cost.
-import { parse } from '../src/lib/parser.js';
+// Benchmark parser scaling for nested var() fallbacks. Tokenization is
+// outside the timed region. The cold-index case builds a BlockIndex for each
+// parse; the hot-shared-index case reuses one index.
+import { indexBlocks, parse } from '../src/lib/parser.js';
 import { tokenize } from '@csstools/css-tokenizer';
 
 const DEPTHS = [50, 100, 200, 400];
@@ -27,39 +28,60 @@ function buildNestedFallbacks(depth) {
   return expr;
 }
 
-/** @param {number} depth */
-function benchmark(depth) {
+/** @param {number} depth @param {boolean} hot */
+function benchmark(depth, hot) {
   const input = buildNestedFallbacks(depth);
   const tokens = tokenize({ css: input });
+  const index = hot ? indexBlocks(tokens) : undefined;
+  const run = () =>
+    hot ? parse(tokens, 0, tokens.length, index) : parse(tokens);
 
   for (let i = 0; i < WARMUP_RUNS; i++) {
-    parse(tokens);
+    run();
   }
 
   const samples = [];
   for (let sample = 0; sample < SAMPLES; sample++) {
     const start = performance.now();
     for (let iteration = 0; iteration < PARSES_PER_SAMPLE; iteration++) {
-      parse(tokens);
+      run();
     }
     samples.push((performance.now() - start) / PARSES_PER_SAMPLE);
   }
   return median(samples);
 }
 
+/** @type {{depth: number, mode: string, medianMs: number, growth: number | null}[]} */
+const measurements = [];
+
 console.log(
-  `Nested var() fallback parser timing: ${WARMUP_RUNS} warmups, ${SAMPLES} median samples, ` +
+  `Nested var() fallback parser timing (cold builds the BlockIndex; hot shares one): ` +
+    `${WARMUP_RUNS} warmups, ${SAMPLES} median samples, ` +
     `${PARSES_PER_SAMPLE} parses/sample\n`
 );
 
-let previous = null;
-for (const depth of DEPTHS) {
-  const elapsedMs = benchmark(depth);
-  const growth =
-    previous === null ? '—' : `${(elapsedMs / previous).toFixed(2)}×`;
-  console.log(
-    `  ${depth.toString().padStart(5)} depth  ` +
-      `${elapsedMs.toFixed(3).padStart(8)} ms  growth ${growth}`
-  );
-  previous = elapsedMs;
+for (const hot of [false, true]) {
+  const mode = hot ? 'hot-shared-index' : 'cold-index';
+  const label = hot ? 'hot/shared-index ' : 'cold/index       ';
+  let previous = null;
+  for (const depth of DEPTHS) {
+    const elapsedMs = benchmark(depth, hot);
+    const growth = previous === null ? null : elapsedMs / previous;
+    console.log(
+      `  ${label}${depth.toString().padStart(5)} depth  ` +
+        `${elapsedMs.toFixed(3).padStart(8)} ms  growth ${
+          growth === null ? '—' : `${growth.toFixed(2)}×`
+        }`
+    );
+    measurements.push({ depth, mode, medianMs: elapsedMs, growth });
+    previous = elapsedMs;
+  }
 }
+
+console.log(
+  `BENCHMARK_RESULT ${JSON.stringify({
+    schema: 1,
+    benchmark: 'nested-fallbacks',
+    measurements,
+  })}`
+);

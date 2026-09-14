@@ -1,10 +1,8 @@
+import { indexBlocks } from './block-index.js';
 export type CSSToken = import('@csstools/css-tokenizer').CSSToken;
 export type Node = import('./node.js').Node;
 export type OpaqueComponent = import('./node.js').OpaqueComponent;
-export type BlockIndex = {
-    ends: Map<number, number>;
-    maxDepth: number;
-};
+export type BlockIndex = import('./block-index.js').BlockIndex;
 export type Token = {
     type: 'number' | 'dimension' | 'ident' | 'function' | 'punct' | 'eof';
     value: string | number;
@@ -19,7 +17,7 @@ export type Token = {
 export type ParseInput = Readonly<{
     tokens: CSSToken[];
     end: number;
-    ends: Map<number, number>;
+    index: BlockIndex;
 }>;
 export type PrefixParselet = (input: ParseInput, cursor: Cursor, token: Token, depth: number) => Node;
 /**
@@ -37,9 +35,9 @@ declare class Cursor {
     lookaheadNextIndex: number;
     /** @param {number} start */
     constructor(start: number);
+    /** @param {number} index @return {void} */
+    skipTo(index: number): void;
 }
-/** @param {CSSToken[]} tokens @param {number} [start] @param {number} [end] @return {BlockIndex} */
-declare function indexBlocks(tokens: CSSToken[], start?: number, end?: number): BlockIndex;
 /** @param {CSSToken[]} tokens @param {number} [start] @param {number} [end] @param {BlockIndex} [index] @return {Node} */
 declare function parse(tokens: CSSToken[], start?: number, end?: number, index?: BlockIndex): Node;
 export { indexBlocks, parse };

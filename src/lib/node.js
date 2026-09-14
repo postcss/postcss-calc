@@ -197,15 +197,19 @@ function negate(node) {
     return dim(-node.value, node.unit, node.rawUnit);
   }
   if (node.type === 'Sum') {
+    // A grouped sum may contain opaque terms whose meaning depends on the
+    // surrounding context. Keep the group intact so `-(a + b)` cannot turn
+    // into `-a - b` while it is still unresolved.
+    if (node.grouped) {
+      return mkSum([{ sign: -1, node }]);
+    }
     const result = mkSum(
       node.terms.map((t) => ({
         sign: /** @type {1 | -1} */ (-t.sign),
         node: t.node,
       }))
     );
-    return node.grouped && result.type === 'Sum'
-      ? { ...result, grouped: true }
-      : result;
+    return result;
   }
   // Opaque (Ident, Call, OpaqueCall, Product): wrap as a single negative-sign term —
   // the only case where sign=-1 remains on a SumTerm.

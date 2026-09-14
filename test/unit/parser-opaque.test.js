@@ -101,6 +101,77 @@ describe('parser: opaque expressions and invalid syntax', () => {
     }
   });
 
+  test('parser: opaque trees preserve raw and nested component structure', () => {
+    const input = String.raw`f( /*lead*/ \66 oo\20 bar, raw([x, y], {z: q}), c\61 lc(1px + var(--x)), calc(1PX+2PX), calc(-(var(--x) + 1px)) )`;
+    const node = parse(tokenize({ css: input }));
+
+    assert.deepEqual(node, {
+      type: 'OpaqueCall',
+      name: 'f',
+      components: [
+        String.raw` /*lead*/ \66 oo\20 bar, raw(`,
+        ['[', ['x, y'], '], {', ['z: q'], '}'],
+        '), ',
+        {
+          type: 'Call',
+          name: 'calc',
+          rawName: String.raw`c\61 lc`,
+          args: [
+            {
+              type: 'Sum',
+              terms: [
+                { sign: 1, node: { type: 'Dim', value: 1, unit: 'px' } },
+                {
+                  sign: 1,
+                  node: {
+                    type: 'OpaqueCall',
+                    name: 'var',
+                    components: [{ type: 'Ident', name: '--x' }],
+                  },
+                },
+              ],
+            },
+          ],
+        },
+        ', calc(1PX+2PX), ',
+        {
+          type: 'Call',
+          name: 'calc',
+          args: [
+            {
+              type: 'Sum',
+              terms: [
+                {
+                  sign: -1,
+                  node: {
+                    type: 'Sum',
+                    terms: [
+                      {
+                        sign: 1,
+                        node: {
+                          type: 'OpaqueCall',
+                          name: 'var',
+                          components: [{ type: 'Ident', name: '--x' }],
+                        },
+                      },
+                      {
+                        sign: 1,
+                        node: { type: 'Dim', value: 1, unit: 'px' },
+                      },
+                    ],
+                    grouped: true,
+                  },
+                },
+              ],
+            },
+          ],
+        },
+        ' ',
+      ],
+    });
+    assert.equal(serialize(node), input);
+  });
+
   test('parser: unclosed anchor() throws', () => {
     assert.throws(
       () => parse(tokenize({ css: 'anchor(--foo top' })),
@@ -130,6 +201,17 @@ describe('parser: opaque expressions and invalid syntax', () => {
   test('parser: `1px + 2px` is valid', () => {
     assert.doesNotThrow(() => parse(tokenize({ css: '1px + 2px' })));
   });
+  test('parser: a signed token after whitespace still fails at its position', () => {
+    assert.throws(() => parse(tokenize({ css: '1 +2' })), {
+      message: '"+" must be surrounded by whitespace at position 2',
+    });
+  });
+  test('parser: a unary plus after multiplication has the canonical AST', () => {
+    assert.deepEqual(parse(tokenize({ css: '1 * +2' })), {
+      type: 'Num',
+      value: 2,
+    });
+  });
   // §10.1: `+` and `-` must be surrounded by whitespace. All three asymmetric
   // cases (no/before-only/after-only) must throw the same way.
   for (const input of ['1px+2px', '1px +2px', '1px+ 2px']) {
@@ -140,6 +222,17 @@ describe('parser: opaque expressions and invalid syntax', () => {
       );
     });
   }
+  test('parser: asymmetric additive whitespace reports the operator position', () => {
+    for (const [input, position] of [
+      ['1px+2px', 3],
+      ['1px +2px', 4],
+      ['1px+ 2px', 3],
+    ]) {
+      assert.throws(() => parse(tokenize({ css: input })), {
+        message: `"+" must be surrounded by whitespace at position ${position}`,
+      });
+    }
+  });
   test('parser: * / do not require whitespace (spec allows both)', () => {
     assert.doesNotThrow(() => parse(tokenize({ css: '1px*2' })));
     assert.doesNotThrow(() => parse(tokenize({ css: '1px/2' })));

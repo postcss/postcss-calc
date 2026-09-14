@@ -81,7 +81,7 @@ function reduceCalc(value, opts) {
   };
   /** @type {import('@csstools/css-tokenizer').CSSToken[]} */
   let tokens;
-  /** @type {{ends: Map<number, number>, maxDepth: number}} */
+  /** @type {import('./lib/block-index.js').BlockIndex} */
   let index;
   try {
     tokens = cssTokenize({ css: value });

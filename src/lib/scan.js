@@ -19,7 +19,7 @@ import { isCalculationFunction, isSupportedMathFunction } from './functions.js';
  *
  * @param {string} value
  * @param {import('@csstools/css-tokenizer').CSSToken[]} tokens
- * @param {{ends: Map<number, number>}} index
+ * @param {import('./block-index.js').BlockIndex} index
  * @return {Candidate[]}
  */
 function findCalculations(value, tokens, index) {
@@ -34,8 +34,8 @@ function findCalculations(value, tokens, index) {
     const isMath = !isCalc && isSupportedMathFunction(name);
     if (!isCalc && !isMath) continue;
 
-    const close = index.ends.get(i);
-    const closed = close !== undefined;
+    const close = index.closeOf(i, tokens.length);
+    const closed = close !== -1;
     const end = closed ? tokens[close][3] + 1 : value.length;
     const sliceStart = isCalc ? i + 1 : i;
     const sliceEnd = closed ? close + (isCalc ? 0 : 1) : tokens.length - 1;
