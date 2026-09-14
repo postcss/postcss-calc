@@ -4,47 +4,47 @@ import { out } from '../../helpers/out.js';
 
 describe('round()', () => {
   test('round: default strategy = nearest, A and B numbers', () => {
-    assert.equal(out('round(15, 10)'), '20');
-    assert.equal(out('round(14, 10)'), '10');
+    assert.equal(out('round(15, 10)'), 'calc(20)');
+    assert.equal(out('round(14, 10)'), 'calc(10)');
   });
 
   test('round: default strategy with dim args', () => {
-    assert.equal(out('round(15px, 10px)'), '20px');
+    assert.equal(out('round(15px, 10px)'), 'calc(20px)');
   });
 
   test('round: explicit nearest strategy', () => {
-    assert.equal(out('round(nearest, 14, 10)'), '10');
-    assert.equal(out('round(nearest, 15, 10)'), '20');
+    assert.equal(out('round(nearest, 14, 10)'), 'calc(10)');
+    assert.equal(out('round(nearest, 15, 10)'), 'calc(20)');
   });
 
   test('round: tie breaks to upper B (§10.3 line 978)', () => {
-    assert.equal(out('round(15, 10)'), '20');
+    assert.equal(out('round(15, 10)'), 'calc(20)');
     assert.equal(out('round(-15, 10)'), 'calc(-10)'); // upper of {-20, -10} is -10
   });
 
   test('round: up strategy → ceiling step', () => {
-    assert.equal(out('round(up, 11, 10)'), '20');
-    assert.equal(out('round(up, 10, 10)'), '10'); // exact multiple
+    assert.equal(out('round(up, 11, 10)'), 'calc(20)');
+    assert.equal(out('round(up, 10, 10)'), 'calc(10)'); // exact multiple
     assert.equal(out('round(up, -11, 10)'), 'calc(-10)');
   });
 
   test('round: down strategy → floor step', () => {
-    assert.equal(out('round(down, 19, 10)'), '10');
+    assert.equal(out('round(down, 19, 10)'), 'calc(10)');
     assert.equal(out('round(down, -11, 10)'), 'calc(-20)');
   });
 
   test('round: to-zero strategy', () => {
-    assert.equal(out('round(to-zero, 19, 10)'), '10');
+    assert.equal(out('round(to-zero, 19, 10)'), 'calc(10)');
     assert.equal(out('round(to-zero, -19, 10)'), 'calc(-10)');
-    assert.equal(out('round(to-zero, 1, 10)'), '0');
-    assert.equal(out('round(to-zero, -1, 10)'), '0');
+    assert.equal(out('round(to-zero, 1, 10)'), 'calc(0)');
+    assert.equal(out('round(to-zero, -1, 10)'), 'calc(0)');
   });
 
   test('round: B omitted with <number> A defaults to 1', () => {
-    assert.equal(out('round(3.7)'), '4');
-    assert.equal(out('round(3.2)'), '3');
-    assert.equal(out('round(down, 3.7)'), '3');
-    assert.equal(out('round(up, 3.2)'), '4');
+    assert.equal(out('round(3.7)'), 'calc(4)');
+    assert.equal(out('round(3.2)'), 'calc(3)');
+    assert.equal(out('round(down, 3.7)'), 'calc(3)');
+    assert.equal(out('round(up, 3.2)'), 'calc(4)');
   });
 
   test('round: B omitted with dimensional A → opaque (function invalid)', () => {
@@ -80,7 +80,7 @@ describe('round()', () => {
 
   test('round: cross-unit conversion (1in, 24px) — unit of A wins', () => {
     // 1in = 96px; round(96px, 24px) = 96px = 1in.
-    assert.equal(out('round(1in, 24px)'), '1in');
+    assert.equal(out('round(1in, 24px)'), 'calc(1in)');
   });
 
   test('round: negative A with each strategy', () => {
@@ -95,7 +95,7 @@ describe('round()', () => {
     // = +∞-ward, regardless of sign(B). For round(15, -10) the candidates
     // are 10 and 20 (multiples of -10 bracketing 15); tie breaks to upper
     // (= closer to +∞) → 20.
-    assert.equal(out('round(15, -10)'), '20');
+    assert.equal(out('round(15, -10)'), 'calc(20)');
   });
 
   test('round: wrong arity (zero args) → opaque', () => {
@@ -119,10 +119,10 @@ describe('round()', () => {
     // negative A; every other case folds to ±0 carrying A's sign.
     assert.equal(out('round(up, 5, infinity)'), 'calc(infinity)');
     assert.equal(out('round(down, calc(0 - 5), infinity)'), 'calc(-infinity)');
-    assert.equal(out('round(down, 5, infinity)'), '0');
-    assert.equal(out('round(up, calc(0 - 5), infinity)'), '0');
-    assert.equal(out('round(nearest, 5, infinity)'), '0');
-    assert.equal(out('round(to-zero, 5, infinity)'), '0');
+    assert.equal(out('round(down, 5, infinity)'), 'calc(0)');
+    assert.equal(out('round(up, calc(0 - 5), infinity)'), 'calc(0)');
+    assert.equal(out('round(nearest, 5, infinity)'), 'calc(0)');
+    assert.equal(out('round(to-zero, 5, infinity)'), 'calc(0)');
     // Dimensional A with an infinite dim step keeps the unit.
     assert.equal(
       out('round(up, 5px, calc(infinity * 1px))'),
@@ -139,17 +139,17 @@ describe('round()', () => {
   });
 
   test('round: zero A → 0 (exact multiple)', () => {
-    assert.equal(out('round(0, 5)'), '0');
-    assert.equal(out('round(up, 0, 5)'), '0');
-    assert.equal(out('round(0px, 5px)'), '0px');
+    assert.equal(out('round(0, 5)'), 'calc(0)');
+    assert.equal(out('round(up, 0, 5)'), 'calc(0)');
+    assert.equal(out('round(0px, 5px)'), 'calc(0px)');
   });
 
   test('round: negative B with non-nearest strategies', () => {
     // round(to-zero, 7, -5): candidates {5, 10}; |5| smaller → 5.
-    assert.equal(out('round(to-zero, 7, -5)'), '5');
+    assert.equal(out('round(to-zero, 7, -5)'), 'calc(5)');
     // round(up, 7, -5): upper (closer to +∞) of {5, 10} → 10.
-    assert.equal(out('round(up, 7, -5)'), '10');
+    assert.equal(out('round(up, 7, -5)'), 'calc(10)');
     // round(down, 7, -5): lower → 5.
-    assert.equal(out('round(down, 7, -5)'), '5');
+    assert.equal(out('round(down, 7, -5)'), 'calc(5)');
   });
 });

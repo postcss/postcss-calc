@@ -26,7 +26,7 @@ describe('Discard zero values', () => {
 
   test(
     'should discard zero values (reduce-css-calc#2) (2)',
-    testValue('calc(500px - 0px)', '500px')
+    testValue('calc(500px - 0px)', 'calc(500px)')
   );
 });
 

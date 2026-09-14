@@ -21,7 +21,7 @@ import fc from 'fast-check';
 import { readdirSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { tokenize } from '../../src/lib/tokenizer.js';
+import { tokenize } from '@csstools/css-tokenizer';
 import { parse } from '../../src/lib/parser.js';
 import { simplify } from '../../src/lib/simplify.js';
 import { serialize } from '../../src/lib/serialize.js';
@@ -52,7 +52,7 @@ function isPlannedError(error) {
 }
 function tryPipeline(input) {
   try {
-    parse(tokenize(input));
+    parse(tokenize({ css: input }));
     return { ok: true, planned: true };
   } catch (error) {
     return { ok: false, planned: isPlannedError(error) };

@@ -4,16 +4,16 @@ import { out } from '../../helpers/out.js';
 
 describe('sum simplification and grouping', () => {
   test('simplify: adds same-unit lengths', () => {
-    assert.equal(out('calc(1px + 2px + 3px)'), '6px');
+    assert.equal(out('calc(1px + 2px + 3px)'), 'calc(6px)');
   });
 
   test('simplify: subtracts same-unit lengths', () => {
-    assert.equal(out('calc(10px - 3px - 2px)'), '5px');
+    assert.equal(out('calc(10px - 3px - 2px)'), 'calc(5px)');
   });
 
   test('simplify: converts across the same length family', () => {
-    assert.equal(out('calc(1in + 10px)'), '1.10417in');
-    assert.equal(out('calc(1cm + 10mm)'), '2cm');
+    assert.equal(out('calc(1in + 10px)'), 'calc(1.10417in)');
+    assert.equal(out('calc(1cm + 10mm)'), 'calc(2cm)');
   });
 
   test('simplify: relative units stay in their own bucket (em not foldable with px)', () => {
@@ -25,12 +25,12 @@ describe('sum simplification and grouping', () => {
   });
 
   test('simplify: cancellation yields 0', () => {
-    assert.equal(out('calc(1px - 1px)'), '0px');
-    assert.equal(out('calc(5 - 5)'), '0');
+    assert.equal(out('calc(1px - 1px)'), 'calc(0px)');
+    assert.equal(out('calc(5 - 5)'), 'calc(0)');
   });
 
   test('simplify: like terms across parentheses', () => {
-    assert.equal(out('calc(50px - (20px - 30px))'), '60px');
+    assert.equal(out('calc(50px - (20px - 30px))'), 'calc(60px)');
   });
 
   test('simplify: preserves grouping through unary negation', () => {
@@ -86,13 +86,13 @@ test('bucket: same-unit merges even when a different base-sibling took first', (
 describe('unit buckets', () => {
   test('bucket: cross-family conversion merges (in + px)', () => {
     // 1in = 96px; result in first-encountered unit (in).
-    assert.equal(out('calc(1in + 96px)'), '2in');
+    assert.equal(out('calc(1in + 96px)'), 'calc(2in)');
   });
 
   test('bucket: chained cross-family conversion (1in + 10px + 1in)', () => {
     // Both in buckets merge; px folded into in.
     // 1 + 1 + 10/96 = 2.10417in (rounded to 5 decimals).
-    assert.equal(out('calc(1in + 10px + 1in)'), '2.10417in');
+    assert.equal(out('calc(1in + 10px + 1in)'), 'calc(2.10417in)');
   });
 
   test('bucket: non-convertible same-base units stay separate', () => {

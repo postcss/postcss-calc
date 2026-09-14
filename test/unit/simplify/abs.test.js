@@ -4,27 +4,27 @@ import { out } from '../../helpers/out.js';
 
 describe('abs()', () => {
   test('abs: positive number → unchanged', () => {
-    assert.equal(out('abs(5)'), '5');
+    assert.equal(out('abs(5)'), 'calc(5)');
   });
 
   test('abs: negative number → magnitude', () => {
-    assert.equal(out('abs(-5)'), '5');
+    assert.equal(out('abs(-5)'), 'calc(5)');
   });
 
   test('abs: zero → 0', () => {
-    assert.equal(out('abs(0)'), '0');
+    assert.equal(out('abs(0)'), 'calc(0)');
   });
 
   test('abs: positive dimension → unchanged', () => {
-    assert.equal(out('abs(10px)'), '10px');
+    assert.equal(out('abs(10px)'), 'calc(10px)');
   });
 
   test('abs: negative dimension → magnitude with unit', () => {
-    assert.equal(out('abs(-10px)'), '10px');
+    assert.equal(out('abs(-10px)'), 'calc(10px)');
   });
 
   test('abs: negative em → magnitude (relative units fold)', () => {
-    assert.equal(out('abs(-5em)'), '5em');
+    assert.equal(out('abs(-5em)'), 'calc(5em)');
   });
 
   test('abs: var() → opaque', () => {
@@ -36,7 +36,7 @@ describe('abs()', () => {
   });
 
   test('abs: inner sum folds first then abs', () => {
-    assert.equal(out('abs(calc(1px - 3px))'), '2px');
+    assert.equal(out('abs(calc(1px - 3px))'), 'calc(2px)');
   });
 
   test('abs: NaN passes through', () => {

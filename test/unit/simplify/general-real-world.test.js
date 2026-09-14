@@ -13,11 +13,14 @@ test('round-trip: var(--φ) inside arithmetic', () => {
 
 // --- Real-world: /* */ comments inside calc -----------------------------
 test('comments: are skipped inside calc and constants still fold', () => {
-  assert.equal(out('calc(10px /* gap */ + 5px)'), '15px');
+  assert.equal(out('calc(10px /* gap */ + 5px)'), 'calc(15px)');
 });
 
 test('comments: leading and trailing comments do not affect output', () => {
-  assert.equal(out('calc(/* a */ 10px /* b */ + /* c */ 5px /* d */)'), '15px');
+  assert.equal(
+    out('calc(/* a */ 10px /* b */ + /* c */ 5px /* d */)'),
+    'calc(15px)'
+  );
 });
 
 // --- Real-world: anchor() / anchor-size() opaque round-trip -----------

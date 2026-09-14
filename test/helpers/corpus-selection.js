@@ -6,9 +6,8 @@
 // real parser rather than from source spelling so whitespace and literal
 // churn do not crowd out distinct calculation forms.
 import { parse } from '../../src/lib/parser.js';
-import { tokenize } from '../../src/lib/tokenizer.js';
+import { tokenize } from '@csstools/css-tokenizer';
 import { baseOf, convert } from '../../src/lib/convertUnits.js';
-import { isSupportedMathFunction } from '../../src/lib/simplify/call.js';
 
 export const ROUTINE_CORPUS_TARGET = 6000;
 
@@ -65,11 +64,10 @@ function describe(node, literals) {
     case 'Ident':
       return 'Ident(opaque)';
     case 'Call': {
-      const opaque =
-        node.name.toLowerCase() === 'var' ||
-        !isSupportedMathFunction(node.name);
-      return `Call(${node.name.toLowerCase()}:${node.args.length}:${opaque ? 'opaque' : 'foldable'}:[${node.args.map((arg) => describe(arg, literals)).join(',')}])`;
+      return `Call(${node.name.toLowerCase()}:${node.args.length}:[${node.args.map((arg) => describe(arg, literals)).join(',')}])`;
     }
+    case 'OpaqueCall':
+      return `OpaqueCall(${node.name.toLowerCase()})`;
     case 'Sum':
       return `Sum(${node.grouped ? 'grouped' : 'flat'}:[${node.terms.map((term) => `${term.sign}:${describe(term.node, literals)}`).join(',')}])`;
     case 'Product':
@@ -86,7 +84,7 @@ function describe(node, literals) {
 export function classifyCorpusExpression(input) {
   try {
     const literals = [];
-    const ast = parse(tokenize(input));
+    const ast = parse(tokenize({ css: input }));
     // A calc() function accepts exactly one expression. The harvested GitHub
     // pool also contains malformed calc-like calls; those remain covered by
     // invalid-corpus resilience tests instead of becoming differential noise.

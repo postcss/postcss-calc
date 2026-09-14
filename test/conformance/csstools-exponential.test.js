@@ -19,45 +19,47 @@ const out = (input) => pipeline(input, { precision: false });
 // --- §10.5 exponential family fixtures -------------------------------
 describe('csstools exponential functions', () => {
   test('csstools pow: pow(2, 3) → 8', () => {
-    assert.equal(out('pow(2, 3)'), '8');
+    assert.equal(out('pow(2, 3)'), 'calc(8)');
   });
 
   test('csstools pow: pow(8, 1 / 3) ≈ 2', () => {
     // csstools agrees on the cube-root identity within FP precision.
-    const got = Number.parseFloat(out('pow(8, 1 / 3)'));
+    const got = Number.parseFloat(
+      out('pow(8, 1 / 3)').replace(/^calc\(|\)$/g, '')
+    );
     assert.ok(Math.abs(got - 2) < 1e-9, `got ${got}`);
   });
 
   test('csstools sqrt: sqrt(16) → 4', () => {
-    assert.equal(out('sqrt(16)'), '4');
+    assert.equal(out('sqrt(16)'), 'calc(4)');
   });
 
   test('csstools sqrt: sqrt(0) → 0', () => {
-    assert.equal(out('sqrt(0)'), '0');
+    assert.equal(out('sqrt(0)'), 'calc(0)');
   });
 
   test('csstools exp: exp(0) → 1', () => {
-    assert.equal(out('exp(0)'), '1');
+    assert.equal(out('exp(0)'), 'calc(1)');
   });
 
   test('csstools log: log(8, 2) → 3', () => {
-    assert.equal(out('log(8, 2)'), '3');
+    assert.equal(out('log(8, 2)'), 'calc(3)');
   });
 
   test('csstools log: natural log of e → 1', () => {
-    assert.equal(out('log(e)'), '1');
+    assert.equal(out('log(e)'), 'calc(1)');
   });
 
   test('csstools hypot: hypot(3, 4) → 5', () => {
-    assert.equal(out('hypot(3, 4)'), '5');
+    assert.equal(out('hypot(3, 4)'), 'calc(5)');
   });
 
   test('csstools hypot: hypot(3px, 4px) → 5px', () => {
-    assert.equal(out('hypot(3px, 4px)'), '5px');
+    assert.equal(out('hypot(3px, 4px)'), 'calc(5px)');
   });
 
   test('csstools hypot: single arg passes through as abs', () => {
-    assert.equal(out('hypot(-2em)'), '2em');
+    assert.equal(out('hypot(-2em)'), 'calc(2em)');
   });
 });
 

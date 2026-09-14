@@ -3,17 +3,16 @@
 // before simplify runs. Uses sexpr for compact structural assertions.
 import { describe, test } from 'node:test';
 import assert from 'node:assert/strict';
-import { TokenType } from '@csstools/css-tokenizer';
-import { tokenize } from '../../src/lib/tokenizer.js';
+import { TokenType, tokenize } from '@csstools/css-tokenizer';
 import { parse } from '../../src/lib/parser.js';
 import { serialize } from '../../src/lib/serialize.js';
 import { sexpr } from '../helpers/sexpr.js';
 
 /** Parse input, return its S-expression. */
-const ast = (input) => sexpr(parse(tokenize(input)));
+const ast = (input) => sexpr(parse(tokenize({ css: input })));
 
 test('parser: accepts a bounded range of a shared native token stream', () => {
-  const tokens = tokenize('prefix calc(/* gap */-2px + 3px) suffix');
+  const tokens = tokenize({ css: 'prefix calc(/* gap */-2px + 3px) suffix' });
   const start = tokens.findIndex((token) => token[1] === '/* gap */');
   const end = tokens.findIndex((token) => token[1] === ')');
 
@@ -21,17 +20,33 @@ test('parser: accepts a bounded range of a shared native token stream', () => {
 });
 
 test('parser: bounded virtual EOF keeps its source-relative position', () => {
-  const tokens = tokenize('prefix calc(1 *) suffix');
+  const tokens = tokenize({ css: 'prefix calc(1 *) suffix' });
   const start = tokens.findIndex((token) => token[1] === '1');
   const end = tokens.findIndex((token) => token[1] === ')');
 
   assert.throws(() => parse(tokens, start, end), /position 15/);
 });
 
+test('parser: bounded virtual EOF scans trailing trivia before reporting its position', () => {
+  const tokens = tokenize({ css: 'prefix calc(1 +   ) suffix' });
+  const start = tokens.findIndex((token) => token[1] === '1');
+  const end = tokens.findIndex((token) => token[1] === ')');
+
+  assert.throws(() => parse(tokens, start, end), {
+    message: `Unexpected token "" at position ${tokens[end][2]}`,
+  });
+});
+
+test('parser: native EOF scans trailing trivia and keeps its exact position', () => {
+  assert.throws(() => parse(tokenize({ css: '1 +   ' })), {
+    message: 'Unexpected token "" at position 6',
+  });
+});
+
 test('parser: bounded range shares block boundaries through var fallbacks', () => {
   const input =
     'prefix calc(var(--x, [calc(1px + 2px), {a: calc(3px + 4px)}], calc(5px + 6px))) suffix';
-  const tokens = tokenize(input);
+  const tokens = tokenize({ css: input });
   const start = tokens.findIndex(
     (token) => token[0] === TokenType.Function && token[4].value === 'calc'
   );
@@ -66,6 +81,15 @@ describe('parser: values', () => {
 
   test('parser: % is preserved as a unit', () => {
     assert.equal(ast('50%'), '50%');
+  });
+
+  test('parser: signed textual zero forms normalize to positive zero', () => {
+    for (const source of ['-0', '-.0', '-0e10', '-0px', '-.0E-3%']) {
+      const leaf = parse(tokenize({ css: source }));
+      assert.ok(leaf.type === 'Num' || leaf.type === 'Dim');
+      assert.equal(leaf.value, 0, source);
+      assert.equal(Object.is(leaf.value, -0), false, source);
+    }
   });
 });
 
@@ -104,7 +128,7 @@ describe('parser: long arithmetic chains', () => {
 
   test('parser: long additive chain has one canonical Sum', () => {
     const input = Array(termCount).fill('1').join(' + ');
-    const tree = parse(tokenize(input));
+    const tree = parse(tokenize({ css: input }));
 
     assert.equal(tree.type, 'Sum');
     assert.equal(tree.terms.length, termCount);
@@ -114,7 +138,7 @@ describe('parser: long arithmetic chains', () => {
   test('parser: long multiplicative chain has one canonical Product', () => {
     // Use 2 rather than 1: `mkProduct` correctly removes factors of one.
     const input = Array(termCount).fill('2').join(' * ');
-    const tree = parse(tokenize(input));
+    const tree = parse(tokenize({ css: input }));
 
     assert.equal(tree.type, 'Product');
     assert.equal(tree.factors.length, termCount);
@@ -161,8 +185,8 @@ test('parser: nested parens collapse to a single value', () => {
 
 // --- Function calls -------------------------------------------------------
 describe('parser: function calls', () => {
-  test('parser: zero-arg call', () => {
-    assert.equal(ast('pi()'), '(pi)');
+  test('parser: zero-arg opaque call', () => {
+    assert.equal(ast('pi()'), 'OpaqueCall(pi [])');
   });
 
   test('parser: multi-arg call', () => {
@@ -174,7 +198,7 @@ describe('parser: function calls', () => {
   });
 
   test('parser: var() preserves custom-property idents', () => {
-    assert.equal(ast('var(--x)'), '(var --x)');
+    assert.equal(ast('var(--x)'), 'OpaqueCall(var [--x])');
   });
 
   test('parser: calc() wraps its single argument as a Call', () => {
@@ -182,7 +206,7 @@ describe('parser: function calls', () => {
   });
 
   test('parser: native function tokens preserve escaped opaque names', () => {
-    const tree = parse(tokenize(String.raw`f\,n(1px)`));
+    const tree = parse(tokenize({ css: String.raw`f\,n(1px)` }));
     assert.equal(serialize(tree), String.raw`f\,n(1px)`);
   });
 
@@ -192,14 +216,14 @@ describe('parser: function calls', () => {
       String.raw`var(--x\,fallback)`,
       String.raw`var(--x\ fallback)`,
     ]) {
-      assert.equal(serialize(parse(tokenize(input))), input);
+      assert.equal(serialize(parse(tokenize({ css: input }))), input);
     }
   });
 
   test('parser: custom dimension preserves escaped unit spelling', () => {
     assert.equal(
-      serialize(parse(tokenize(String.raw`10\foo`))),
-      String.raw`10\foo`
+      serialize(parse(tokenize({ css: String.raw`10\foo` }))),
+      String.raw`calc(10\foo)`
     );
   });
 });
