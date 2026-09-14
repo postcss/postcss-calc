@@ -5,7 +5,8 @@ import postcss from 'postcss';
 import plugin from '../src/index.js';
 
 const WARMUP_RUNS = 3;
-const SAMPLES = 7;
+// Keep an even count; the common harness migration uses these as paired blocks.
+const SAMPLES = 20;
 const ITEMS_PER_WORKLOAD = 2_000;
 const includeSelectors = process.argv.includes('--selectors');
 const includeMedia = process.argv.includes('--media');

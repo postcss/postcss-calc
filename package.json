@@ -35,7 +35,11 @@
     "fmt": "oxfmt",
     "benchmark:arithmetic-chains": "node scripts/benchmark-arithmetic-chains.js",
     "benchmark:nested-fallbacks": "node scripts/benchmark-nested-fallbacks.js",
+    "benchmark:corpus": "node scripts/benchmark.js",
     "benchmark:serialization": "node scripts/benchmark-serialization.js",
+    "test:benchmark": "node --test 'test/unit/benchmark-*.test.js' test/unit/compare-parser-benchmarks.test.js test/unit/corpus-benchmark.test.js",
+    "test:benchmark:simulation": "node test/benchmark/statistical-simulation.js",
+    "benchmark:reanalyze": "node scripts/compare-parser-benchmarks.js",
     "test": "node --test --test-reporter=dot 'test/**/*.test.js' 'test/**/*.test.cjs'",
     "test:mutation:corpus": "node test/mutation/corpus-selection.js",
     "test:corpus:full": "POSTCSS_CALC_FULL_CORPUS=1 node --test test/conformance/corpus.test.js"

@@ -1,14 +1,31 @@
-// Compare three baseline and three candidate parser benchmark transcripts.
-// Each transcript must contain the BENCHMARK_RESULT line emitted by one of
-// benchmark-arithmetic-chains.js or benchmark-nested-fallbacks.js.
+// Reanalyze one schema-v2 parser benchmark artifact.  The six-transcript
+// function below remains as a small compatibility API for older local tests;
+// the command-line interface is intentionally artifact-based now.
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { resolve } from 'node:path';
+import { analyzeParser } from './lib/parser-benchmark.js';
+import { analyzeCorpus } from './lib/corpus-benchmark.js';
+import { validateSchemaV2Artifact } from './lib/benchmark.js';
 
 const usage =
-  'Usage: node scripts/compare-parser-benchmarks.js ' +
-  '<baseline-1> <baseline-2> <baseline-3> ' +
-  '<candidate-1> <candidate-2> <candidate-3>';
+  'Usage: node scripts/compare-parser-benchmarks.js <schema-v2-artifact>\n' +
+  '       (legacy six-transcript arguments are accepted by the JS API only)';
+
+function readArtifact(path) {
+  const artifact = JSON.parse(readFileSync(path, 'utf8'));
+  validateSchemaV2Artifact(artifact);
+  return artifact;
+}
+
+export function reanalyzeParserBenchmark(path) {
+  const artifact = readArtifact(path);
+  const analysis =
+    artifact.benchmark === 'corpus'
+      ? analyzeCorpus(artifact)
+      : analyzeParser(artifact);
+  return { ...artifact, analysis };
+}
 
 /** @param {string} path @return {object} */
 function readResult(path) {
@@ -26,10 +43,12 @@ function median(values) {
 }
 
 /**
- * @param {string[]} files
- * @return {{benchmark: string, summaries: object[], failures: string[]}}
+ * @param {string[] | string} files
+ * @return {{benchmark: string, summaries: object[], failures: string[]} | object}
  */
 function compareParserBenchmarks(files) {
+  if (typeof files === 'string')
+    return reanalyzeParserBenchmark(files).analysis;
   if (files.length !== 6) throw new Error(usage);
 
   const results = files.map(readResult);
@@ -219,9 +238,29 @@ const isMain =
   resolve(process.argv[1]) === fileURLToPath(import.meta.url);
 if (isMain) {
   const files = process.argv.slice(2);
-  if (files.length !== 6) {
+  if (files.length === 1) {
+    try {
+      const result = reanalyzeParserBenchmark(files[0]);
+      console.log(`Parser benchmark: ${result.analysis.status}`);
+      if (result.benchmark === 'corpus') {
+        console.log(
+          `Practical verdict: ${result.analysis.practical?.status ?? 'unknown'}`
+        );
+        process.exitCode = exitCodeFor(result.analysis.status);
+      }
+      for (const endpoint of result.analysis.endpoints ?? []) {
+        console.log(
+          `${endpoint.key} ${endpoint.geometricMeanPairedRuntimeRatio?.toFixed(4) ?? endpoint.deltaSlope.toFixed(4)}`
+        );
+      }
+      process.exitCode = exitCodeFor(result.analysis.status);
+    } catch (error) {
+      console.error(error instanceof Error ? error.message : error);
+      process.exitCode = 64;
+    }
+  } else if (files.length !== 6) {
     console.error(usage);
-    process.exitCode = 2;
+    process.exitCode = 64;
   } else {
     try {
       printComparison(compareParserBenchmarks(files));
@@ -232,4 +271,13 @@ if (isMain) {
   }
 }
 
-export { compareParserBenchmarks };
+function exitCodeFor(status) {
+  if (status === 'pass') return 0;
+  if (status === 'regression') return 1;
+  if (status === 'postcss-calc faster' || status === 'postcss-calc slower')
+    return 0;
+  if (status === 'correctness-failure') return 3;
+  return 2;
+}
+
+export { compareParserBenchmarks, exitCodeFor };

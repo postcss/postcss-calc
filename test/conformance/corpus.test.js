@@ -14,101 +14,46 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { calc as csstoolsCalc } from '@csstools/css-calc';
-import { out } from '../helpers/out.js';
+import {
+  classifyCorpusExpression,
+  NEUTRAL_CORPUS_CATEGORIES,
+  referenceOutput,
+} from '../../scripts/lib/corpus-policy.js';
 import {
   ROUTINE_CORPUS_TARGET,
   selectCorpusExpressions,
   stableHash,
 } from '../helpers/corpus-selection.js';
 const CORPUS_DIR = fileURLToPath(new URL('../corpus/', import.meta.url));
-const COMPARE_PRECISION = 10;
-function ourOut(input) {
-  try {
-    return out(input, { precision: COMPARE_PRECISION });
-  } catch {
-    return null;
-  }
-}
-function theirOut(input) {
-  try {
-    const r = csstoolsCalc(input);
-    return typeof r === 'string' ? r : null;
-  } catch {
-    return null;
-  }
-}
-/**
- * Documented divergences from csstools that we accept. Each entry is an
- * INPUT string; the comment explains the chosen behavior. Adding a case
- * here means the design choice is deliberate — not a workaround.
- */
-const KNOWN_DIVERGENCES = new Set([
-  // css-calc censors a signed zero before an unresolved product can be
-  // evaluated. Keep the IEEE-754 sign for the browser's final evaluation.
-  'calc(sin(360deg) * var(--radius))',
-  'calc(cos(270deg) * var(--radius))',
-  'calc(sin(360deg) * var(--amplitude))',
-  // Mixed-unit angle sum: when an inverse trig function output (radians)
-  // is summed with degrees, we fold to a single deg-unit constant
-  // (`atan(.5) + 90deg` → `116.5650511771deg`); csstools keeps the rad+deg
-  // sum un-folded. Both outputs represent the same angle. Our choice
-  // matches the rest of our angle-serialization (degrees), and once the
-  // numeric folding is done the sum can't be expressed without a unit
-  // choice anyway.
-  'calc(atan(.5) + 90deg - (var(--dir)*90deg))',
-  // Emoji/math-symbol custom properties: the current CSS Syntax draft
-  // excludes these code points from idents, so `--➕` splits and we warn +
-  // preserve; css-calc silently passes through. Same output either way.
-  'calc(1 / var(--√𝟤))',
-  'calc(var(--➕) * -1)',
-  'calc(var(--➕) * var(--✖️))',
-  'calc(var(--➖) * var(--✖️))',
-]);
 function runLibrary(lib, calcs) {
   const result = {
     lib,
     total: calcs.length,
     agree: 0,
     bothFailed: 0,
+    referenceRejected: 0,
     divergences: [],
   };
   for (const input of calcs) {
-    const ours = ourOut(input);
-    const theirs = theirOut(input);
-    if (ours === null && theirs === null) {
+    const comparison = classifyCorpusExpression(input);
+    if (comparison.category === 'both-failed') {
       result.bothFailed++;
       continue;
     }
-    if (ours === null || theirs === null) {
-      if (!KNOWN_DIVERGENCES.has(input)) {
-        result.divergences.push({
-          input,
-          ours: ours ?? '<threw>',
-          theirs: theirs ?? '<threw>',
-        });
-      }
-      continue;
-    }
-    if (ours === theirs) {
+    if (comparison.category === 'accepted') {
       result.agree++;
       continue;
     }
-    const canonicalTheirs = ourOut(theirs);
-    if (canonicalTheirs === null) {
-      // csstools produced something our parser couldn't read — rare.
-      if (!KNOWN_DIVERGENCES.has(input)) {
-        result.divergences.push({ input, ours, theirs });
-      }
+    if (NEUTRAL_CORPUS_CATEGORIES.has(comparison.category)) {
+      if (comparison.category === 'reference-rejected')
+        result.referenceRejected++;
       continue;
     }
-    if (ours === canonicalTheirs) {
-      result.agree++;
-      continue;
-    }
-    if (!KNOWN_DIVERGENCES.has(input)) {
-      result.divergences.push({ input, ours, theirs });
-    }
+    result.divergences.push({
+      input,
+      ours: comparison.ours ?? '<threw>',
+      theirs: comparison.theirs ?? '<threw>',
+    });
   }
   return result;
 }
@@ -136,7 +81,7 @@ const inputs = fullCorpus ? selection.allInputs : selection.routineInputs;
 const result = runLibrary(fullCorpus ? 'full' : 'sample', inputs);
 const parserRejectedHash = stableHash(selection.parserRejected.join('\n'));
 const parserRejectedAcceptedByCsstools = selection.parserRejected.filter(
-  (input) => theirOut(input) !== null
+  (input) => referenceOutput(input) !== null
 );
 
 // These are Sass/preprocessor and malformed inputs harvested from GitHub.

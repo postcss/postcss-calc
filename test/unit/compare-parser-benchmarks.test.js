@@ -3,7 +3,10 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { compareParserBenchmarks } from '../../scripts/compare-parser-benchmarks.js';
+import {
+  compareParserBenchmarks,
+  exitCodeFor,
+} from '../../scripts/compare-parser-benchmarks.js';
 
 const arithmeticKeys = ['additive', 'multiplicative'].flatMap((kind) =>
   ['cold-index', 'hot-shared-index'].flatMap((mode) =>
@@ -55,6 +58,13 @@ test('benchmark comparator rejects a run with a missing key', () => {
       }),
     /missing measurement keys/
   );
+});
+
+test('schema-v2 correctness failures use the correctness exit code', () => {
+  assert.equal(exitCodeFor('pass'), 0);
+  assert.equal(exitCodeFor('regression'), 1);
+  assert.equal(exitCodeFor('inconclusive'), 2);
+  assert.equal(exitCodeFor('correctness-failure'), 3);
 });
 
 test('benchmark comparator rejects an empty measurement run', () => {

@@ -21,7 +21,8 @@ import {
 const WIDE_SIZES = [1_024, 16_384, 65_536];
 const OTHER_SIZES = [128, 256, 512];
 const WARMUP_RUNS = 3;
-const SAMPLES = 7;
+// Keep an even, independently timed sample count so process order is balanced.
+const SAMPLES = 20;
 const TARGET_SAMPLE_MS = 150;
 const MAX_REPETITIONS = 1_000_000;
 let consumedBytes = 0;
