@@ -1,33 +1,24 @@
 // CSS component-value reducer. This module deliberately has no PostCSS
 // dependency so it can also be used for individual declaration values,
 // at-rule parameters, or selector text.
+import { tokenize as cssTokenize } from '@csstools/css-tokenizer';
+import { indexBlocks } from './lib/parser.js';
+import { hasPotentialMathFunction, QUICK_MATH_TEST } from './lib/functions.js';
 import {
-  tokenize as cssTokenize,
-  TokenType as CssType,
-} from '@csstools/css-tokenizer';
-import { parse } from './lib/parser.js';
-import { simplify } from './lib/simplify.js';
-import {
-  isSupportedMathFunction,
-  hasPotentialMathFunction,
-  QUICK_MATH_TEST,
-} from './lib/simplify/call.js';
-import { serialize } from './lib/serialize.js';
-
-const MATCH_CALC = /^(?:-(?:moz|webkit)-)?calc$/i;
-
-const BLOCK_CLOSE = new Map([
-  [CssType.OpenParen, CssType.CloseParen],
-  [CssType.OpenSquare, CssType.CloseSquare],
-  [CssType.OpenCurly, CssType.CloseCurly],
-]);
+  MAX_CALCULATION_DEPTH,
+  CalculationLimitError,
+  assertDepth,
+} from './lib/limits.js';
+import { findCalculations } from './lib/scan.js';
+import { compileCandidates } from './lib/compile.js';
+import { applyReplacements } from './lib/print.js';
 
 /**
  * @typedef {object} ReduceCalcOptions
  * @property {number | false} [precision]
  * @property {boolean} [warnWhenCannotResolve]
- * @property {boolean} [unwrapSingleNegativeNumber] Serialize finite negative results without a `calc()` wrapper. Defaults to `false`.
- * @property {boolean} [unwrapSingleNumber] Serialize finite negative results and unitless fractions without a `calc()` wrapper. Defaults to `false`.
+ * @property {boolean} [unwrapSingleNegativeNumber] Deprecated alias for `unwrapSingleValue`.
+ * @property {boolean} [unwrapSingleValue] Serialize fully resolved finite scalar results without calculation syntax. Defaults to `false`.
  * @property {(error: Error, input: string) => void} [onParseError] Invoked when parse/simplify throws.
  * @property {(message: string) => void} [onWarn] Invoked when `warnWhenCannotResolve` is set and an expression cannot be reduced to a single value.
  */
@@ -41,86 +32,30 @@ const BLOCK_CLOSE = new Map([
  * @property {ResolvedReduceCalcOptions} options
  * @property {string} value
  * @property {import('@csstools/css-tokenizer').CSSToken[]} tokens
- * @property {Replacement[]} replacements
  */
 
 /**
  * @typedef {object} Replacement
  * @property {number} start
  * @property {number} end
- * @property {import('./lib/node.js').Node} node
- * @property {string} calcName
+ * @property {CalculationResult} result
  */
-
 /**
- * Walk one component-value level. Unsupported functions and simple blocks are
- * traversed, while a supported function is treated as one opaque calculation
- * even when parsing it fails. A missing closer consumes through EOF, matching
- * CSS component-value parsing's error recovery.
- *
- * @param {number} start
- * @param {import('@csstools/css-tokenizer').TokenType | undefined} expectedClose
- * @param {TransformContext} ctx
- * @param {boolean} transform
- * @return {number} Index of the matching closer, or the EOF token.
+ * @typedef {object} CalculationResult
+ * @property {import('./lib/node.js').Node} tree
+ * @property {'resolved' | 'unresolved'} status
+ * @property {string} rootName
+ * @property {string} rootSpelling
+ * @property {string} original
  */
-function walkTokens(start, expectedClose, ctx, transform) {
-  for (let i = start; i < ctx.tokens.length; i++) {
-    const token = ctx.tokens[i];
-    if (token[0] === CssType.EOF || token[0] === expectedClose) return i;
 
-    const blockClose = BLOCK_CLOSE.get(token[0]);
-    if (blockClose) {
-      i = walkTokens(i + 1, blockClose, ctx, transform);
-      continue;
-    }
-
-    if (token[0] !== CssType.Function) continue;
-
-    const name = token[4].value;
-    const isCalc = MATCH_CALC.test(name);
-    const isMath = !isCalc && isSupportedMathFunction(name);
-    if (!transform || (!isCalc && !isMath)) {
-      i = walkTokens(i + 1, CssType.CloseParen, ctx, transform);
-      continue;
-    }
-
-    // Locate the complete outer function without transforming its children.
-    const close = walkTokens(i + 1, CssType.CloseParen, ctx, false);
-    const closed = ctx.tokens[close][0] === CssType.CloseParen;
-    const end = closed ? ctx.tokens[close][3] + 1 : ctx.value.length;
-    const sliceStart = isCalc ? i + 1 : i;
-    const sliceEnd = closed ? close + (isCalc ? 0 : 1) : close;
-    const inputStart = isCalc ? token[3] + 1 : token[2];
-    const inputEnd = closed && isCalc ? ctx.tokens[close][2] : end;
-    const contents = ctx.value.slice(inputStart, inputEnd);
-    try {
-      const node = simplify(parse(ctx.tokens, sliceStart, sliceEnd));
-      ctx.replacements.push({
-        start: token[2],
-        end,
-        node,
-        calcName: isCalc ? name : 'calc',
-      });
-    } catch (error) {
-      const err = error instanceof Error ? error : new Error('Error');
-      ctx.options.onParseError?.(err, contents);
-    }
-    i = close;
+/** @param {unknown} error @return {Error} */
+function normalizeTopLevelError(error) {
+  if (error instanceof RangeError) {
+    return new CalculationLimitError(MAX_CALCULATION_DEPTH);
   }
-
-  return ctx.tokens.length - 1;
-}
-
-/**
- * @param {import('./lib/node.js').Node} node
- * @return {boolean}
- */
-function isUnresolvedResult(node) {
-  if (node.type === 'Sum' || node.type === 'Product') {
-    return true;
-  }
-  return node.type === 'Call' && isSupportedMathFunction(node.name);
+  if (error instanceof Error) return error;
+  return new Error('Error');
 }
 
 /**
@@ -141,35 +76,34 @@ function reduceCalc(value, opts) {
     precision: 5,
     warnWhenCannotResolve: false,
     unwrapSingleNegativeNumber: false,
-    unwrapSingleNumber: false,
+    unwrapSingleValue: false,
     ...opts,
   };
-  const tokens = cssTokenize({ css: value });
-  /** @type {Replacement[]} */
-  const replacements = [];
-  walkTokens(0, undefined, { options, value, tokens, replacements }, true);
-
-  if (replacements.length === 0) {
+  /** @type {import('@csstools/css-tokenizer').CSSToken[]} */
+  let tokens;
+  /** @type {{ends: Map<number, number>, maxDepth: number}} */
+  let index;
+  try {
+    tokens = cssTokenize({ css: value });
+    index = indexBlocks(tokens);
+    assertDepth(index.maxDepth);
+  } catch (error) {
+    const err = normalizeTopLevelError(error);
+    options.onParseError?.(err, value);
     return value;
   }
 
-  let output = '';
-  let lastIndex = 0;
-  for (const replacement of replacements) {
-    const text = serialize(replacement.node, {
-      precision: options.precision,
-      calcName: replacement.calcName,
-      unwrapSingleNegativeNumber: options.unwrapSingleNegativeNumber,
-      unwrapSingleNumber: options.unwrapSingleNumber,
-    });
-    if (options.warnWhenCannotResolve && isUnresolvedResult(replacement.node)) {
-      options.onWarn?.('Could not reduce expression: ' + value);
-    }
-    output += value.slice(lastIndex, replacement.start) + text;
-    lastIndex = replacement.end;
+  const candidates = findCalculations(value, tokens, index);
+  const replacements = compileCandidates(candidates, {
+    options,
+    value,
+    tokens,
+    index,
+  });
+  if (replacements.length === 0) {
+    return value;
   }
-  output += value.slice(lastIndex);
-  return output;
+  return applyReplacements(value, replacements, options);
 }
 
 export { QUICK_MATH_TEST, hasPotentialMathFunction };

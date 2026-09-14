@@ -1,15 +1,15 @@
-import { hasPotentialMathFunction, QUICK_MATH_TEST } from './lib/simplify/call.js';
+import { hasPotentialMathFunction, QUICK_MATH_TEST } from './lib/functions.js';
 export type ReduceCalcOptions = {
     precision?: number | false;
     warnWhenCannotResolve?: boolean;
     /**
-     * Serialize finite negative results without a `calc()` wrapper. Defaults to `false`.
+     * Deprecated alias for `unwrapSingleValue`.
      */
     unwrapSingleNegativeNumber?: boolean;
     /**
-     * Serialize finite negative results and unitless fractions without a `calc()` wrapper. Defaults to `false`.
+     * Serialize fully resolved finite scalar results without calculation syntax. Defaults to `false`.
      */
-    unwrapSingleNumber?: boolean;
+    unwrapSingleValue?: boolean;
     /**
      * Invoked when parse/simplify throws.
      */
@@ -24,13 +24,18 @@ export type TransformContext = {
     options: ResolvedReduceCalcOptions;
     value: string;
     tokens: import('@csstools/css-tokenizer').CSSToken[];
-    replacements: Replacement[];
 };
 export type Replacement = {
     start: number;
     end: number;
-    node: import('./lib/node.js').Node;
-    calcName: string;
+    result: CalculationResult;
+};
+export type CalculationResult = {
+    tree: import('./lib/node.js').Node;
+    status: 'resolved' | 'unresolved';
+    rootName: string;
+    rootSpelling: string;
+    original: string;
 };
 /**
  * Simplify every supported CSS math function in a component-value string.
