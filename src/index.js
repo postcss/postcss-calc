@@ -7,6 +7,7 @@ import reduceCalc, { hasPotentialMathFunction } from './reduce.js';
  * @property {boolean} [warnWhenCannotResolve]
  * @property {boolean} [mediaQueries]
  * @property {boolean} [selectors]
+ * @property {boolean} [unwrapSingleValue] Serialize fully resolved finite scalar results without calculation syntax. Defaults to `false`.
  * @property {(error: Error, input: string) => void} [onParseError] Invoked when parse/simplify throws. Replaces the default `result.warn`.
  */
 
@@ -24,7 +25,7 @@ import reduceCalc, { hasPotentialMathFunction } from './reduce.js';
  * @param {(target: import('postcss').ChildNode, value: string) => void} setProp
  * @param {ResolvedOptions} options
  * @param {import('postcss').Result} result
- * @param {boolean} unwrapSingleNumber
+ * @param {boolean} selectorContext
  * @return {void}
  */
 function applyTransform(
@@ -33,7 +34,7 @@ function applyTransform(
   setProp,
   options,
   result,
-  unwrapSingleNumber
+  selectorContext
 ) {
   if (!hasPotentialMathFunction(current)) {
     return;
@@ -49,7 +50,8 @@ function applyTransform(
     onWarn: (message) => {
       result.warn(message, { plugin: 'postcss-calc', node });
     },
-    unwrapSingleNumber,
+    // Selectors cannot contain calc(), so they always unwrap resolved values.
+    unwrapSingleValue: selectorContext || options.unwrapSingleValue,
   });
   if (transformed !== current) {
     setProp(node, transformed);
@@ -67,6 +69,7 @@ function pluginCreator(opts) {
     warnWhenCannotResolve: false,
     mediaQueries: false,
     selectors: false,
+    unwrapSingleValue: false,
     ...opts,
   };
 
