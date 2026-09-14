@@ -1,13 +1,23 @@
 // Pratt parser over native @csstools/css-tokenizer tokens.
 import { TokenType as CssType } from '@csstools/css-tokenizer';
 import { baseOf } from './convertUnits.js';
-import { mkSum, mkProduct, negate, num, dim, ident, call } from './node.js';
-import { setComponents } from './opaque.js';
-import { isSupportedMathFunction } from './simplify/call.js';
+import {
+  mkSum,
+  mkProduct,
+  negate,
+  num,
+  dim,
+  ident,
+  call,
+  opaqueCall,
+} from './node.js';
+import { isSupportedMathFunction, isCalculationFunction } from './functions.js';
+import { assertDepth } from './limits.js';
 
 /** @typedef {import('@csstools/css-tokenizer').CSSToken} CSSToken */
 /** @typedef {import('./node.js').Node} Node */
-/** @typedef {string | Node | Component[]} Component */
+/** @typedef {import('./node.js').OpaqueComponent} OpaqueComponent */
+/** @typedef {{ends: Map<number, number>, maxDepth: number}} BlockIndex */
 /**
  * @typedef {object} Token
  * @property {'number' | 'dimension' | 'ident' | 'function' | 'punct' | 'eof'} type
@@ -18,8 +28,13 @@ import { isSupportedMathFunction } from './simplify/call.js';
  * @property {'+' | '-'} [signCharacter]
  * @property {number} pos
  * @property {boolean} ws
+ * @property {number} index
  */
-/** @typedef {(p: Parser, token: Token) => Node} PrefixParselet */
+/**
+ * Immutable bounds and shared block index for one parse range.
+ * @typedef {Readonly<{tokens: CSSToken[], end: number, ends: Map<number, number>}>} ParseInput
+ */
+/** @typedef {(input: ParseInput, cursor: Cursor, token: Token, depth: number) => Node} PrefixParselet */
 
 const NUMERIC_RAW = /^[+-]?(?:\d+(?:\.\d+)?|\.\d+)(?:[eE][+-]?\d+)?/;
 const PUNCT_DELIMS = new Set(['+', '-', '*', '/']);
@@ -29,199 +44,82 @@ const BLOCK_CLOSE = new Map([
   [CssType.OpenSquare, CssType.CloseSquare],
   [CssType.OpenCurly, CssType.CloseCurly],
 ]);
+
+/**
+ * CSS numeric tokens do not retain a signed-zero distinction.  Keep that
+ * normalization at the source boundary so a later IEEE-754 `-0` can only
+ * have been introduced by calculation evaluation.
+ *
+ * @param {number} value
+ * @return {number}
+ */
+function normalizeSourceZero(value) {
+  return value === 0 ? 0 : value;
+}
+
 /** @param {string} raw @param {string} decoded */
 function sourceSpelling(raw, decoded) {
   return raw === decoded ? undefined : raw;
 }
 
-/** Bounded cursor that skips trivia but records whether it preceded a token. */
-class Parser {
-  /** @type {CSSToken[]} */
-  #tokens;
-  /** @type {number} */
-  #end;
-  /** @type {Map<number, number>} */
-  #ends;
-  /** @type {number} */
-  #i;
-  /** @type {boolean} */
-  #precededByWhitespace = true;
-  /** @type {Token | null} */
-  #lookahead = null;
-
-  /**
-   * @param {CSSToken[]} tokens
-   * @param {number} start
-   * @param {number} end
-   * @param {Map<number, number>} [ends]
-   */
-  constructor(tokens, start, end, ends = blockEnds(tokens, start, end)) {
-    this.#tokens = tokens;
-    this.#end = end;
-    this.#ends = ends;
-    this.#i = start;
-    this.#precededByWhitespace = true;
-    this.#lookahead = null;
-  }
-
-  /** @return {Map<number, number>} */
-  get ends() {
-    return this.#ends;
-  }
-
-  /** @return {number} */
-  eofPosition() {
-    if (this.#i < this.#end && this.#tokens[this.#i][0] !== CssType.EOF) {
-      return this.#tokens[this.#i][2];
-    }
-    if (
-      this.#end < this.#tokens.length &&
-      this.#tokens[this.#end][0] !== CssType.EOF
-    ) {
-      return this.#tokens[this.#end][2];
-    }
-    for (let i = Math.min(this.#end, this.#tokens.length) - 1; i >= 0; i--) {
-      const token = this.#tokens[i];
-      if (token[0] !== CssType.EOF) return token[3] + 1;
-    }
-    return 0;
-  }
-
-  /** @return {Token} */
-  read() {
-    while (this.#i < this.#end) {
-      const native = this.#tokens[this.#i++];
-      if (native[0] === CssType.Whitespace || native[0] === CssType.Comment) {
-        this.#precededByWhitespace = true;
-        continue;
-      }
-      if (native[0] === CssType.EOF) break;
-      const ws = this.#precededByWhitespace;
-      this.#precededByWhitespace = false;
-      return normalizeToken(native, ws);
-    }
-    return {
-      type: 'eof',
-      value: '',
-      raw: '',
-      pos: this.eofPosition(),
-      ws: this.#precededByWhitespace,
-    };
-  }
-
-  /** @return {Token} */
-  peek() {
-    if (this.#lookahead === null) this.#lookahead = this.read();
-    return this.#lookahead;
-  }
-
-  /** @return {Token} */
-  next() {
-    const token = this.peek();
-    this.#lookahead = null;
-    return token;
-  }
-
-  /** @return {{start: number, close: number, tokens: CSSToken[], ends: Map<number, number>}} */
-  functionRange() {
-    return {
-      start: this.#i,
-      close: this.#ends.get(this.#i - 1) ?? -1,
-      tokens: this.#tokens,
-      ends: this.#ends,
-    };
-  }
-
-  /** @param {number} index */
-  consumeThrough(index) {
-    this.#i = index;
-    this.#lookahead = null;
-  }
-
-  /** @param {string} value @param {string} [value2] @return {boolean} */
-  isPunct(value, value2) {
-    const t = this.peek();
-    return (
-      t.type === 'punct' &&
-      (t.value === value || (value2 !== undefined && t.value === value2))
-    );
-  }
-
-  /** @param {string} value @return {boolean} */
-  matchPunct(value) {
-    if (!this.isPunct(value)) return false;
-    this.next();
-    return true;
-  }
-
-  /** @param {string} value @return {Token} */
-  expectPunct(value) {
-    const t = this.next();
-    if (t.type !== 'punct' || t.value !== value) {
-      throw new Error(
-        `Expected ${value} at position ${t.pos}, got "${t.value}"`
-      );
-    }
-    return t;
-  }
-
-  /** @param {number} [minBp] @return {Node} */
-  parseExpr(minBp = 0) {
-    const t = this.next();
-    const key = t.type === 'punct' ? String(t.value) : t.type;
-    const prefix = PREFIX[key];
-    if (!prefix)
-      throw new Error(`Unexpected token "${t.raw}" at position ${t.pos}`);
-    let left = prefix(this, t);
-
-    while (true) {
-      const nxt = this.peek();
-      if (
-        (nxt.type === 'number' || nxt.type === 'dimension') &&
-        nxt.signCharacter !== undefined
-      ) {
-        throw new Error(
-          `"${nxt.signCharacter}" must be surrounded by whitespace at position ${nxt.pos}`
-        );
-      }
-      const infixKey = nxt.type === 'punct' ? String(nxt.value) : nxt.type;
-      const rule = INFIX[infixKey];
-      if (!rule || rule.lbp < minBp) break;
-      if (infixKey === '+' || infixKey === '-') {
-        /** @type {import('./node.js').SumTerm[]} */
-        const terms = [{ sign: /** @type {1} */ (1), node: left }];
-        do {
-          const token = this.next();
-          requireSurroundingWs(this, token);
-          terms.push({
-            sign: /** @type {1 | -1} */ (token.value === '+' ? 1 : -1),
-            node: this.parseExpr(ADD_BP + 1),
-          });
-        } while (this.isPunct('+', '-'));
-        left = mkSum(terms);
-        continue;
-      }
-      if (infixKey === '*' || infixKey === '/') {
-        /** @type {import('./node.js').ProductFactor[]} */
-        const factors = [{ exponent: /** @type {1} */ (1), node: left }];
-        do {
-          const token = this.next();
-          factors.push({
-            exponent: /** @type {1 | -1} */ (token.value === '*' ? 1 : -1),
-            node: this.parseExpr(MUL_BP + 1),
-          });
-        } while (this.isPunct('*', '/'));
-        left = mkProduct(factors);
-        continue;
-      }
-      break;
-    }
-    return left;
+/**
+ * Mutable navigation state only. `index` is always the next native token
+ * position; trivia is intentionally left visible to `scanToken`.
+ */
+class Cursor {
+  /** @param {number} start */
+  constructor(start) {
+    /** @type {number} */
+    this.index = start;
+    /** @type {boolean} */
+    this.firstToken = true;
+    /** @type {Token | null} */
+    this.lookahead = null;
+    /** @type {number} */
+    this.lookaheadNextIndex = start;
   }
 }
 
-/** @param {CSSToken} t @param {boolean} ws @return {Token} */
-function normalizeToken(t, ws) {
+/**
+ * Scan one token without consuming it. `firstToken` supplies the virtual
+ * leading trivia at a bounded parse boundary; all later whitespace state is
+ * derived from the native tokens encountered in this scan.
+ *
+ * @param {ParseInput} input
+ * @param {Cursor} cursor
+ */
+function scanToken(input, cursor) {
+  let i = cursor.index;
+  let ws = cursor.firstToken;
+  while (i < input.end) {
+    const native = input.tokens[i];
+    if (native[0] === CssType.Whitespace || native[0] === CssType.Comment) {
+      ws = true;
+      i++;
+      continue;
+    }
+    if (native[0] === CssType.EOF) break;
+    cursor.lookahead = normalizeToken(native, i, ws);
+    cursor.lookaheadNextIndex = i + 1;
+    return;
+  }
+  cursor.lookahead = {
+    type: 'eof',
+    value: '',
+    raw: '',
+    pos: eofPositionAt(input, i),
+    ws,
+    index: i,
+  };
+  // Native EOF is a real token and is consumed past its array index. When
+  // the bounded range ends before native EOF, this is a virtual EOF and must
+  // remain at the range boundary.
+  cursor.lookaheadNextIndex =
+    i < input.end && input.tokens[i][0] === CssType.EOF ? i + 1 : input.end;
+}
+
+/** @param {CSSToken} t @param {number} index @param {boolean} ws @return {Token} */
+function normalizeToken(t, index, ws) {
   const [type, raw, pos, , detail] = t;
   switch (type) {
     case CssType.Number:
@@ -231,6 +129,7 @@ function normalizeToken(t, ws) {
         raw,
         pos,
         ws,
+        index,
         signCharacter: detail.signCharacter,
       };
     case CssType.Dimension: {
@@ -241,6 +140,7 @@ function normalizeToken(t, ws) {
         raw,
         pos,
         ws,
+        index,
         unit: detail.unit,
         rawUnit: match ? raw.slice(match[0].length) : detail.unit,
         signCharacter: detail.signCharacter,
@@ -253,6 +153,7 @@ function normalizeToken(t, ws) {
         raw,
         pos,
         ws,
+        index,
         unit: '%',
         rawUnit: '%',
         signCharacter: detail.signCharacter,
@@ -265,16 +166,155 @@ function normalizeToken(t, ws) {
         raw,
         pos,
         ws,
+        index,
       };
     case CssType.OpenParen:
     case CssType.CloseParen:
     case CssType.Comma:
-      return { type: 'punct', value: raw, raw, pos, ws };
+      return { type: 'punct', value: raw, raw, pos, ws, index };
     case CssType.Delim:
       if (PUNCT_DELIMS.has(detail.value))
-        return { type: 'punct', value: detail.value, raw, pos, ws };
+        return { type: 'punct', value: detail.value, raw, pos, ws, index };
   }
   throw new Error(`Unexpected character "${raw[0] ?? ''}" at position ${pos}`);
+}
+
+/** @param {ParseInput} input @param {Cursor} cursor @return {number} */
+function eofPosition(input, cursor) {
+  return eofPositionAt(input, cursor.index);
+}
+
+/** @param {ParseInput} input @param {number} index @return {number} */
+function eofPositionAt(input, index) {
+  if (index < input.end && input.tokens[index][0] !== CssType.EOF) {
+    return input.tokens[index][2];
+  }
+  if (
+    input.end < input.tokens.length &&
+    input.tokens[input.end][0] !== CssType.EOF
+  ) {
+    return input.tokens[input.end][2];
+  }
+  for (let i = Math.min(input.end, input.tokens.length) - 1; i >= 0; i--) {
+    const token = input.tokens[i];
+    if (token[0] !== CssType.EOF) return token[3] + 1;
+  }
+  return 0;
+}
+
+/** @param {ParseInput} input @param {Cursor} cursor @return {Token} */
+function peekToken(input, cursor) {
+  if (cursor.lookahead === null) scanToken(input, cursor);
+  return /** @type {Token} */ (cursor.lookahead);
+}
+
+/**
+ * Consume the cached token and advance to its native next index. This is one
+ * of the only two operations allowed to advance `cursor.index`.
+ * @param {ParseInput} input
+ * @param {Cursor} cursor
+ * @return {Token}
+ */
+function takeToken(input, cursor) {
+  if (cursor.lookahead === null) scanToken(input, cursor);
+  const token = cursor.lookahead;
+  cursor.index = cursor.lookaheadNextIndex;
+  cursor.firstToken = false;
+  cursor.lookahead = null;
+  return /** @type {Token} */ (token);
+}
+
+/**
+ * Skip a complete native block and invalidate any lookahead based on the old
+ * position. This is the other operation allowed to advance `cursor.index`.
+ * @param {Cursor} cursor
+ * @param {number} index
+ */
+function skipTo(cursor, index) {
+  cursor.index = index;
+  cursor.lookaheadNextIndex = index;
+  cursor.firstToken = false;
+  cursor.lookahead = null;
+}
+
+/** @param {ParseInput} input @param {Cursor} cursor @param {string} value @param {string} [value2] @return {boolean} */
+function isPunct(input, cursor, value, value2) {
+  const t = peekToken(input, cursor);
+  return (
+    t.type === 'punct' &&
+    (t.value === value || (value2 !== undefined && t.value === value2))
+  );
+}
+
+/** @param {ParseInput} input @param {Cursor} cursor @param {string} value @return {boolean} */
+function matchPunct(input, cursor, value) {
+  if (!isPunct(input, cursor, value)) return false;
+  takeToken(input, cursor);
+  return true;
+}
+
+/** @param {ParseInput} input @param {Cursor} cursor @param {string} value @return {Token} */
+function expectPunct(input, cursor, value) {
+  const t = takeToken(input, cursor);
+  if (t.type !== 'punct' || t.value !== value) {
+    throw new Error(`Expected ${value} at position ${t.pos}, got "${t.value}"`);
+  }
+  return t;
+}
+
+/** @param {ParseInput} input @param {Cursor} cursor @param {number} minBp @param {number} depth @return {Node} */
+function parseExpr(input, cursor, minBp = 0, depth = 0) {
+  assertDepth(depth);
+  const t = takeToken(input, cursor);
+  const key = t.type === 'punct' ? String(t.value) : t.type;
+  const prefix = PREFIX[key];
+  if (!prefix)
+    throw new Error(`Unexpected token "${t.raw}" at position ${t.pos}`);
+  let left = prefix(input, cursor, t, depth);
+
+  while (true) {
+    const nxt = peekToken(input, cursor);
+    if (
+      (nxt.type === 'number' || nxt.type === 'dimension') &&
+      nxt.signCharacter !== undefined
+    ) {
+      throw new Error(
+        `"${nxt.signCharacter}" must be surrounded by whitespace at position ${nxt.pos}`
+      );
+    }
+    const infixKey = nxt.type === 'punct' ? String(nxt.value) : nxt.type;
+    const rule = INFIX[infixKey];
+    if (!rule || rule.lbp < minBp) break;
+    if (infixKey === '+' || infixKey === '-') {
+      /** @type {import('./node.js').SumTerm[]} */
+      const terms = [{ sign: /** @type {1} */ (1), node: left }];
+      do {
+        const token = takeToken(input, cursor);
+        requireSurroundingWs(input, cursor, token);
+        terms.push({
+          sign: /** @type {1 | -1} */ (token.value === '+' ? 1 : -1),
+          node: parseExpr(input, cursor, ADD_BP + 1, depth),
+        });
+      } while (isPunct(input, cursor, '+', '-'));
+      left = mkSum(terms);
+      continue;
+    }
+    if (infixKey === '*' || infixKey === '/') {
+      /** @type {import('./node.js').ProductFactor[]} */
+      const factors = [{ exponent: /** @type {1} */ (1), node: left }];
+      do {
+        const token = takeToken(input, cursor);
+        factors.push({
+          exponent: /** @type {1 | -1} */ (token.value === '*' ? 1 : -1),
+          node: parseExpr(input, cursor, MUL_BP + 1, depth),
+        });
+      } while (isPunct(input, cursor, '*', '/'));
+      left = mkProduct(factors);
+      continue;
+    }
+    break;
+  }
+  return left;
 }
 
 /** §10.9 — case-insensitive except for NaN. @param {string} name @return {Node | null} */
@@ -295,41 +335,45 @@ function foldCalcKeyword(name) {
 
 const ADD_BP = 1;
 const MUL_BP = 3;
-const MATCH_CALC = /^(?:-(?:moz|webkit)-)?calc$/i;
-
-/** @param {Parser} p @param {string} name @param {string} rawName @return {Node} */
-function parseOpaqueCall(p, name, rawName) {
-  const { start, close, tokens, ends } = p.functionRange();
+/** @param {ParseInput} input @param {Cursor} cursor @param {Token} token @param {string} name @param {string} rawName @return {Node} */
+function parseOpaqueCall(input, cursor, token, name, rawName) {
+  const start = token.index + 1;
+  const close = input.ends.get(token.index) ?? -1;
   if (close === -1)
-    throw new Error(`Unclosed ${name}( at position ${p.eofPosition()}`);
-  p.consumeThrough(close + 1);
-  return setComponents(
-    call(name, [], sourceSpelling(rawName, name)),
-    componentTree(tokens, start, close, ends)
+    throw new Error(
+      `Unclosed ${name}( at position ${eofPosition(input, cursor)}`
+    );
+  skipTo(cursor, close + 1);
+  return opaqueCall(
+    name,
+    componentTree(input, start, close),
+    sourceSpelling(rawName, name)
   );
 }
 
-/** @param {Parser} p @param {Token} token */
-function requireSurroundingWs(p, token) {
-  if (!token.ws || !p.peek().ws)
+/** @param {ParseInput} input @param {Cursor} cursor @param {Token} token */
+function requireSurroundingWs(input, cursor, token) {
+  if (!token.ws || !peekToken(input, cursor).ws)
     throw new Error(
       `"${token.value}" must be surrounded by whitespace at position ${token.pos}`
     );
 }
 
-/** @param {Parser} p @param {Token} t @return {Node} */
-function parseCall(p, t) {
+/** @param {ParseInput} input @param {Cursor} cursor @param {Token} t @param {number} depth @return {Node} */
+function parseCall(input, cursor, t, depth) {
   const name = String(t.value);
   const rawName = t.raw.slice(0, -1);
-  if (name.toLowerCase() === 'var') return parseVar(p, name, rawName);
-  if (!MATCH_CALC.test(name) && !isSupportedMathFunction(name))
-    return parseOpaqueCall(p, name, rawName);
+  if (name.toLowerCase() === 'var')
+    return parseVar(input, cursor, t, name, rawName);
+  if (!isCalculationFunction(name) && !isSupportedMathFunction(name))
+    return parseOpaqueCall(input, cursor, t, name, rawName);
   /** @type {Node[]} */ const args = [];
-  if (!p.isPunct(')')) {
-    args.push(p.parseExpr(0));
-    while (p.matchPunct(',')) args.push(p.parseExpr(0));
+  if (!isPunct(input, cursor, ')')) {
+    args.push(parseExpr(input, cursor, 0, depth + 1));
+    while (matchPunct(input, cursor, ','))
+      args.push(parseExpr(input, cursor, 0, depth + 1));
   }
-  p.expectPunct(')');
+  expectPunct(input, cursor, ')');
   return call(name, args, sourceSpelling(rawName, name));
 }
 
@@ -351,15 +395,17 @@ function firstComma(tokens, start, end, ends) {
   }
   return -1;
 }
-/** @param {CSSToken[]} tokens @param {number} start @param {number} end */
-function blockEnds(tokens, start, end) {
+/** @param {CSSToken[]} tokens @param {number} [start] @param {number} [end] @return {BlockIndex} */
+function indexBlocks(tokens, start = 0, end = tokens.length) {
   /** @type {{index: number, close: import('@csstools/css-tokenizer').TokenType}[]} */
   const stack = [];
   /** @type {Map<number, number>} */ const ends = new Map();
+  let maxDepth = 0;
   for (let i = start; i < end; i++) {
     const close = BLOCK_CLOSE.get(tokens[i][0]);
     if (close !== undefined) {
       stack.push({ index: i, close });
+      maxDepth = Math.max(maxDepth, stack.length);
       continue;
     }
     const open = stack.at(-1);
@@ -368,7 +414,7 @@ function blockEnds(tokens, start, end) {
       ends.set(open.index, i);
     }
   }
-  return ends;
+  return { ends, maxDepth };
 }
 /** @param {CSSToken[]} tokens @param {number} start @param {number} end */
 function customProperty(tokens, start, end) {
@@ -388,10 +434,12 @@ function customProperty(tokens, start, end) {
     ? { decoded, raw: found[1], index: foundIndex }
     : null;
 }
-/** @param {CSSToken[]} tokens @param {number} start @param {number} end @param {Map<number, number>} ends @return {Component[]} */
-function componentTree(tokens, start, end, ends) {
-  /** @type {Component[]} */ const tree = [];
-  /** @param {Component} part */
+/** @param {ParseInput} input @param {number} start @param {number} end @param {number} [depth] @return {OpaqueComponent[]} */
+function componentTree(input, start, end, depth = 0) {
+  assertDepth(depth);
+  /** @type {OpaqueComponent[]} */ const tree = [];
+  const { tokens, ends } = input;
+  /** @param {OpaqueComponent} part */
   const push = (part) => {
     if (typeof part === 'string' && typeof tree.at(-1) === 'string')
       tree[tree.length - 1] += part;
@@ -406,68 +454,73 @@ function componentTree(tokens, start, end, ends) {
     }
     const isMathFunction =
       token[0] === CssType.Function &&
-      (MATCH_CALC.test(token[4].value) ||
+      (isCalculationFunction(token[4].value) ||
         isSupportedMathFunction(token[4].value));
     if (isMathFunction) {
       try {
-        push(parseRange(tokens, i, close + 1, ends));
+        push(parseRange(input, i, close + 1));
       } catch {
         push(rawTokens(tokens, i, close + 1));
       }
     } else {
       push(token[1]);
-      push(componentTree(tokens, i + 1, close, ends));
+      push(componentTree(input, i + 1, close, depth + 1));
       push(tokens[close][1]);
     }
     i = close;
   }
   return tree;
 }
-/** @param {Parser} p @param {string} name @param {string} rawName @return {Node} */
-function parseVar(p, name, rawName) {
-  const { start, close, tokens, ends } = p.functionRange();
+/** @param {ParseInput} input @param {Cursor} cursor @param {Token} token @param {string} name @param {string} rawName @return {Node} */
+function parseVar(input, cursor, token, name, rawName) {
+  const { tokens, ends } = input;
+  const start = token.index + 1;
+  const close = ends.get(token.index) ?? -1;
   if (close === -1)
-    throw new Error(`Unclosed ${name}( at position ${p.eofPosition()}`);
+    throw new Error(
+      `Unclosed ${name}( at position ${eofPosition(input, cursor)}`
+    );
   const comma = firstComma(tokens, start, close, ends);
   const property = customProperty(tokens, start, comma === -1 ? close : comma);
   if (!property)
     throw new Error(
-      `Invalid custom property in ${name}() at position ${tokens[start]?.[2] ?? p.eofPosition()}`
+      `Invalid custom property in ${name}() at position ${tokens[start]?.[2] ?? eofPosition(input, cursor)}`
     );
-  p.consumeThrough(close + 1);
-  const node = call(
-    name,
-    [ident(property.decoded, sourceSpelling(property.raw, property.decoded))],
-    sourceSpelling(rawName, name)
-  );
+  skipTo(cursor, close + 1);
+  /** @type {OpaqueComponent[]} */
+  const components = [
+    ident(property.decoded, sourceSpelling(property.raw, property.decoded)),
+  ];
   if (comma !== -1)
-    setComponents(node, componentTree(tokens, property.index + 1, close, ends));
-  return node;
+    components.push(...componentTree(input, property.index + 1, close));
+  return opaqueCall(name, components, sourceSpelling(rawName, name));
 }
 
 /** @type {Record<string, PrefixParselet>} */
 const PREFIX = {
-  number: (_p, t) => num(/** @type {number} */ (t.value)),
-  dimension: (_p, t) => {
+  number: (_input, _cursor, t) =>
+    num(normalizeSourceZero(/** @type {number} */ (t.value))),
+  dimension: (_input, _cursor, t) => {
     const unit = /** @type {string} */ (t.unit).toLowerCase();
     return dim(
-      /** @type {number} */ (t.value),
+      normalizeSourceZero(/** @type {number} */ (t.value)),
       unit,
       baseOf(unit) || t.rawUnit === unit ? undefined : t.rawUnit
     );
   },
-  ident: (_p, t) => {
+  ident: (_input, _cursor, t) => {
     const name = String(t.value);
     return foldCalcKeyword(name) ?? ident(name, sourceSpelling(t.raw, name));
   },
   function: parseCall,
-  '(': (p) => {
-    const e = p.parseExpr(0);
-    p.expectPunct(')');
+  '(': (input, cursor, _t, depth) => {
+    const e = parseExpr(input, cursor, 0, depth + 1);
+    expectPunct(input, cursor, ')');
     return e.type === 'Sum' ? { ...e, grouped: true } : e;
   },
-  '-': (p) => negate(p.parseExpr(7)),
-  '+': (p) => p.parseExpr(7),
+  '-': (input, cursor, _t, depth) =>
+    negate(parseExpr(input, cursor, 7, depth + 1)),
+  '+': (input, cursor, _t, depth) => parseExpr(input, cursor, 7, depth + 1),
 };
 
 /** @type {Record<string, {lbp: number}>} */
@@ -479,16 +532,23 @@ const INFIX = {
 };
 
 /**
- * @param {CSSToken[]} tokens
+ * @param {ParseInput} input
  * @param {number} start
  * @param {number} end
- * @param {Map<number, number>} ends
  * @return {Node}
  */
-function parseRange(tokens, start, end, ends) {
-  const p = new Parser(tokens, start, end, ends);
-  const ast = p.parseExpr(0);
-  const trailing = p.peek();
+function parseRange(input, start, end) {
+  const bounded =
+    input.end === end
+      ? input
+      : /** @type {ParseInput} */ ({
+          tokens: input.tokens,
+          end,
+          ends: input.ends,
+        });
+  const cursor = new Cursor(start);
+  const ast = parseExpr(bounded, cursor, 0, 0);
+  const trailing = peekToken(bounded, cursor);
   if (trailing.type !== 'eof')
     throw new Error(
       `Unexpected token "${trailing.raw}" at position ${trailing.pos}`
@@ -496,10 +556,10 @@ function parseRange(tokens, start, end, ends) {
   return ast;
 }
 
-/** @param {CSSToken[]} tokens @param {number} [start] @param {number} [end] @return {Node} */
-function parse(tokens, start = 0, end = tokens.length) {
-  const ends = blockEnds(tokens, start, end);
-  return parseRange(tokens, start, end, ends);
+/** @param {CSSToken[]} tokens @param {number} [start] @param {number} [end] @param {BlockIndex} [index] @return {Node} */
+function parse(tokens, start = 0, end = tokens.length, index) {
+  const ends = index?.ends ?? indexBlocks(tokens, start, end).ends;
+  return parseRange({ tokens, end, ends }, start, end);
 }
 
-export { parse };
+export { indexBlocks, parse };

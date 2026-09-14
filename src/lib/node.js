@@ -22,11 +22,13 @@
  * @typedef {{type: 'Dim', value: number, unit: string, rawUnit?: string}} Dim
  * @typedef {{type: 'Ident', name: string, rawName?: string}} Ident
  * @typedef {{type: 'Call', name: string, args: Node[], rawName?: string}} Call
+ * @typedef {string | Node | OpaqueComponent[]} OpaqueComponent
+ * @typedef {{type: 'OpaqueCall', name: string, components: OpaqueComponent[], rawName?: string}} OpaqueCall
  * @typedef {{sign: 1 | -1, node: Node}} SumTerm Sign is always +1 when node is Num or Dim.
  * @typedef {{type: 'Sum', terms: SumTerm[], grouped?: boolean}} Sum
  * @typedef {{exponent: 1 | -1, node: Node}} ProductFactor exponent +1 = numerator, -1 = denominator.
  * @typedef {{type: 'Product', factors: ProductFactor[]}} Product
- * @typedef {Num | Dim | Ident | Call | Sum | Product} Node
+ * @typedef {Num | Dim | Ident | Call | OpaqueCall | Sum | Product} Node
  */
 
 /**
@@ -70,6 +72,18 @@ function call(name, args, rawName) {
   return rawName === undefined
     ? { type: 'Call', name, args }
     : { type: 'Call', name, args, rawName };
+}
+
+/**
+ * @param {string} name
+ * @param {OpaqueComponent[]} components
+ * @param {string} [rawName]
+ * @return {OpaqueCall}
+ */
+function opaqueCall(name, components, rawName) {
+  return rawName === undefined
+    ? { type: 'OpaqueCall', name, components }
+    : { type: 'OpaqueCall', name, components, rawName };
 }
 
 /**
@@ -193,9 +207,9 @@ function negate(node) {
       ? { ...result, grouped: true }
       : result;
   }
-  // Opaque (Ident, Call, Product): wrap as a single negative-sign term —
+  // Opaque (Ident, Call, OpaqueCall, Product): wrap as a single negative-sign term —
   // the only case where sign=-1 remains on a SumTerm.
   return mkSum([{ sign: -1, node }]);
 }
 
-export { num, dim, ident, call, mkSum, mkProduct, negate };
+export { num, dim, ident, call, opaqueCall, mkSum, mkProduct, negate };
