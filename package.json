@@ -35,6 +35,7 @@
     "fmt": "oxfmt",
     "benchmark:arithmetic-chains": "node scripts/benchmark-arithmetic-chains.js",
     "benchmark:nested-fallbacks": "node scripts/benchmark-nested-fallbacks.js",
+    "benchmark:serialization": "node scripts/benchmark-serialization.js",
     "test": "node --test --test-reporter=dot 'test/**/*.test.js' 'test/**/*.test.cjs'",
     "test:mutation:corpus": "node test/mutation/corpus-selection.js",
     "test:corpus:full": "POSTCSS_CALC_FULL_CORPUS=1 node --test test/conformance/corpus.test.js"
