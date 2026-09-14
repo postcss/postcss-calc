@@ -25,6 +25,13 @@ describe('min() and max() folding', () => {
     assert.equal(out('min(1px, var(--x))'), 'min(1px, var(--x))');
   });
 
+  test('simplify: function name is serialized in lowercase', () => {
+    assert.equal(
+      out('calc(MIN(1px, var(--x)) + 1px)'),
+      'calc(1px + min(1px, var(--x)))'
+    );
+  });
+
   test('simplify: nested min / max', () => {
     assert.equal(out('max(1px, min(2px, 3px))'), 'calc(2px)');
   });
