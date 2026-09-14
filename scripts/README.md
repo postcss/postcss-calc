@@ -4,6 +4,7 @@ None of these run in `pnpm test` or CI — run directly with `node scripts/<name
 
 - **`benchmark-arithmetic-chains.js`** — times parser construction and flattening across long arithmetic chains.
 - **`benchmark-nested-fallbacks.js`** — measures parser scaling for nested var() fallbacks with increasing depths.
+- **`benchmark-serialization.js`** — measures buffered serializer scaling for wide sums/products, nested calls, and nested opaque fallbacks.
 - **`harvest-github.js`** — scrapes real-world `calc()` expressions from
   public GitHub into `test/corpus/github/expressions.txt`.
 - **`split-corpus.js`** — splits that file into `github-pure.txt` (feeds

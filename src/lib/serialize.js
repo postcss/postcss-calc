@@ -2,7 +2,6 @@
 // Outer calc() is added when the top-level result contains an arithmetic
 // operator, or when a finite scalar needs context-sensitive CSS semantics.
 
-import { num, dim } from './node.js';
 import { serializeComponents } from './opaque.js';
 import { checkCalculationDepth } from './limits.js';
 
@@ -18,478 +17,316 @@ import { checkCalculationDepth } from './limits.js';
  * @property {boolean} [unwrapSingleValue] Serialize fully resolved finite scalar results without calculation syntax.
  */
 
-// Below this is float noise, not a value: `0.1 + 0.2 - 0.3` is 5.5e-17.
+// The AST is canonical: sums and products are flat, so these precedence
+// levels cover every binary expression
+const SUM_PRECEDENCE = 1;
+const PRODUCT_PRECEDENCE = 2;
+const ATOMIC_PRECEDENCE = 3;
+// Unary minus binds more tightly than a sum but has the same atomic boundary
+// for deciding whether `-x` needs parentheses.
+const UNARY_PRECEDENCE = ATOMIC_PRECEDENCE;
 const NOISE_FLOOR = 1e-12;
 
-/**
- * Rounding to `prec` decimal places turns `calc(1/1000000)` into `0`, and a
- * `0` in CSS is often a switch, not a small number (`flex-grow: 0` never
- * grows). So when a value is too small for `prec`, keep its significant digits
- * instead: `1/1000000` -> `0.000001`, `1/3000000` -> `3.3333e-7`.
- *
- * @param {number} v
- * @param {number | false} prec
- * @return {number}
- */
+/** @param {number} v @param {number | false} prec @return {number} */
 function round(v, prec) {
-  if (prec === false) {
-    return v;
-  }
+  if (prec === false) return v;
   const m = Math.pow(10, prec);
   const rounded = Math.round(v * m) / m;
   if (rounded === 0 && Math.abs(v) > NOISE_FLOOR) {
-    // toPrecision needs at least one significant digit; `prec` may be 0.
     return Number(v.toPrecision(Math.max(prec, 1)));
   }
   return rounded;
 }
 
 // §10.13 / §10.7.2: Infinity/NaN serialize as canonical keywords.
-/**
- * @param {number} v
- * @return {boolean}
- */
+/** @param {number} v @return {boolean} */
 function isDegenerate(v) {
   return !Number.isFinite(v) || Number.isNaN(v);
 }
 
-/**
- * @param {number} v
- * @return {string}
- */
+/** @param {number} v @return {string} */
 function degenerateKeyword(v) {
-  if (Number.isNaN(v)) {
-    return 'NaN';
-  }
+  if (Number.isNaN(v)) return 'NaN';
   return v > 0 ? 'infinity' : '-infinity';
 }
 
-/**
- * Serialize a finite CSS number. CSS numbers may omit the zero before a
- * fractional value between -1 and 1 (`.5`, `-.5`). Scientific notation is
- * left untouched because it already has no leading zero to remove.
- *
- * @param {number} v
- * @return {string}
- */
+/** @param {number} v @return {string} */
 function serializeNumber(v) {
-  if (Object.is(v, -0)) {
-    return '0';
-  }
+  if (Object.is(v, -0)) return '0';
   const text = String(v);
-  if (text.startsWith('0.')) {
-    return text.slice(1);
-  }
-  if (text.startsWith('-0.')) {
-    return `-${text.slice(2)}`;
-  }
+  if (text.startsWith('0.')) return text.slice(1);
+  if (text.startsWith('-0.')) return `-${text.slice(2)}`;
   return text;
 }
 
-/**
- * @param {SerializeOptions} opts
- * @return {'standard' | 'unwrap-all'}
- */
+/** @param {SerializeOptions} opts @return {'standard' | 'unwrap-all'} */
 function normalizeScalarPolicy(opts) {
-  if (opts.unwrapSingleValue || opts.unwrapSingleNegativeNumber) {
-    return 'unwrap-all';
+  return opts.unwrapSingleValue || opts.unwrapSingleNegativeNumber
+    ? 'unwrap-all'
+    : 'standard';
+}
+
+/**
+ * @param {import('./node.js').Num | import('./node.js').Dim} node
+ * @param {number | false} precision
+ * @param {number} [value]
+ * @return {number}
+ */
+function roundedScalarValue(node, precision, value) {
+  return round(value ?? node.value, precision);
+}
+
+/**
+ * @param {import('./node.js').Num | import('./node.js').Dim} node
+ * @param {string[]} buffer
+ * @param {number} value
+ * @return {void}
+ */
+function emitRoundedScalar(node, buffer, value) {
+  buffer.push(serializeNumber(value));
+  if (node.type === 'Dim') {
+    buffer.push(node.rawUnit ?? node.unit);
   }
-  return 'standard';
 }
 
 /**
- * Round and serialize a scalar once so classification and rendering use the
- * same precision-adjusted value and text.
- *
  * @param {import('./node.js').Num | import('./node.js').Dim} node
- * @param {{precision: number | false}} formatting
- * @return {{value: number, text: string}}
+ * @param {ReturnType<typeof makeSession>} session
+ * @param {number} [value]
+ * @return {number}
  */
-function formatScalar(node, formatting) {
-  const value = round(node.value, formatting.precision);
-  const text = `${serializeNumber(value)}${node.type === 'Dim' ? (node.rawUnit ?? node.unit) : ''}`;
-  return { value, text };
+function emitFiniteScalar(node, session, value) {
+  const rounded = roundedScalarValue(node, session.precision, value);
+  emitRoundedScalar(node, session.buffer, rounded);
+  return rounded;
 }
 
 /**
- * An exact signed-zero leaf is observable when its enclosing calculation
- * continues evaluating (for example, through division or min()). CSS source
- * cannot spell that value as a literal `-0`, so recreate it with a nested
- * atomic calculation instead.
- *
  * @param {import('./node.js').Num | import('./node.js').Dim} node
- * @return {string}
+ * @param {ReturnType<typeof makeSession>} session
+ * @param {number} [value]
+ * @return {void}
  */
-function serializeSignedZero(node) {
+function emitScalar(node, session, value) {
+  const buffer = session.buffer;
+  if (Object.is(node.value, -0)) emitSignedZero(buffer, node);
+  else if (isDegenerate(node.value)) {
+    if (node.type === 'Dim') {
+      buffer.push(
+        'calc(',
+        degenerateKeyword(node.value),
+        ' * 1',
+        node.rawUnit ?? node.unit,
+        ')'
+      );
+    } else {
+      buffer.push(degenerateKeyword(node.value));
+    }
+  } else emitFiniteScalar(node, session, value);
+}
+
+/**
+ * @param {string[]} buffer
+ * @param {import('./node.js').Num | import('./node.js').Dim} node
+ * @return {void}
+ */
+function emitSignedZero(buffer, node) {
   const unit = node.type === 'Dim' ? (node.rawUnit ?? node.unit) : '';
-  return `calc(-1 * 0${unit})`;
+  buffer.push('calc(-1 * 0', unit, ')');
+}
+
+/** @param {Node} node @return {node is import('./node.js').Num | import('./node.js').Dim} */
+function isScalar(node) {
+  return node.type === 'Num' || node.type === 'Dim';
+}
+
+/** @param {Node} node @return {node is import('./node.js').Num | import('./node.js').Dim} */
+function isSignedZero(node) {
+  return isScalar(node) ? Object.is(node.value, -0) : false;
+}
+
+/** @param {Node} node @return {number} */
+function precedence(node) {
+  if (node.type === 'Sum') return SUM_PRECEDENCE;
+  if (node.type === 'Product') return PRODUCT_PRECEDENCE;
+  return ATOMIC_PRECEDENCE;
 }
 
 /**
  * @param {Node} node
- * @return {node is import('./node.js').Num | import('./node.js').Dim}
+ * @param {number} parentPrecedence
+ * @param {boolean} groupedRequired
+ * @return {boolean}
  */
-function isSignedZero(node) {
+function needsParentheses(node, parentPrecedence, groupedRequired) {
   return (
-    (node.type === 'Num' || node.type === 'Dim') && Object.is(node.value, -0)
+    precedence(node) < parentPrecedence ||
+    (node.type === 'Sum' && node.grouped === true && groupedRequired === true)
   );
 }
 
 /**
- * Decide whether a top-level scalar must remain in calculation syntax.
- *
- * CSS Values 4 §10 defines math-function behavior, while §10.12 defers range
- * checking until a top-level calculation. Keep those semantics available to
- * the browser for sensitive scalar results. Add future context-sensitive
- * serialization rules here rather than in render branches.
- *
- * @see https://www.w3.org/TR/css-values-4/#math
- * @see https://www.w3.org/TR/css-values-4/#calc-range-checking
- * @see https://www.w3.org/TR/css-values-4/#calc-serialize
- *
- * @param {{value: number, text: string}} scalar
- * @param {'standard' | 'unwrap-all'} policy
- * @return {'bare' | 'calc'}
- */
-function classifyScalarResult(scalar, policy) {
-  // §10.13: Infinity/NaN always require calculation syntax. The specialized
-  // dimensional spelling is applied by serializeMathResult below.
-  if (isDegenerate(scalar.value)) {
-    return 'calc';
-  }
-
-  if (policy === 'standard') {
-    return 'calc';
-  }
-
-  // The explicit escape hatch is used only where calculation syntax cannot
-  // remain or where the caller accepts losing context-sensitive semantics.
-  return 'bare';
-}
-
-/**
- * Render the top-level result after scalar formatting and classification.
- *
  * @param {Node} node
- * @param {{calcName: string, scalarPolicy: 'standard' | 'unwrap-all', formatting: {precision: number | false}}} context
- * @return {string}
+ * @param {ReturnType<typeof makeSession>} session
+ * @param {number} [parentPrecedence]
+ * @param {boolean} [groupedRequired]
+ * @param {number} [scalarValueOverride]
+ * @return {void}
  */
-function serializeMathResult(node, context) {
-  const { calcName, scalarPolicy } = context;
-  const formatting = context.formatting;
-  /** @param {Node} child */
-  const serializeOpaqueComponent = (child) =>
-    serializeNestedMathResult(child, formatting.precision, scalarPolicy);
-
-  if (node.type === 'Num' || node.type === 'Dim') {
-    const scalar = formatScalar(node, formatting);
-    const syntax = classifyScalarResult(scalar, scalarPolicy);
-
-    // §10.13: dimensional Infinity/NaN carry the unit as
-    // `<keyword> * 1<unit>` so the result keeps its type.
-    if (isDegenerate(scalar.value)) {
-      const body =
-        node.type === 'Dim'
-          ? `${degenerateKeyword(scalar.value)} * 1${node.rawUnit ?? node.unit}`
-          : degenerateKeyword(scalar.value);
-      return `${calcName}(${body})`;
-    }
-
-    return syntax === 'bare' ? scalar.text : `${calcName}(${scalar.text})`;
-  }
-
-  // A grouped sum with a leading negative term is the canonical result of
-  // negating a parenthesized expression. Re-invert its terms for the body so
-  // the grouping survives as `-(...)` instead of becoming `-a - b`.
-  if (
-    node.type === 'Sum' &&
-    node.grouped &&
-    node.terms.length > 1 &&
-    displaySign(node.terms[0]).sign === -1
-  ) {
-    const invertedTerms = node.terms.map((t) => ({
-      sign: /** @type {1 | -1} */ (-t.sign),
-      node: t.node,
-    }));
-    return `${calcName}(-(${serializeSumTerms(invertedTerms, formatting, serializeOpaqueComponent)}))`;
-  }
-
-  if (
-    node.type === 'Ident' ||
-    node.type === 'Call' ||
-    node.type === 'OpaqueCall'
-  ) {
-    return serializeExpr(node, formatting, serializeOpaqueComponent);
-  }
-
-  // Single-term Sum is the canonical form for `-var(--x)` / `-(a*b)` —
-  // sign=-1 around an opaque node. Signed leaves live in Num/Dim directly.
-  if (node.type === 'Sum' && node.terms.length === 1) {
-    return `${calcName}(${serializeLeadingNeg(node.terms[0].node, formatting, serializeOpaqueComponent)})`;
-  }
-
-  return `${calcName}(${serializeExpr(node, formatting, serializeOpaqueComponent)})`;
+function emitNode(
+  node,
+  session,
+  parentPrecedence = 0,
+  groupedRequired = false,
+  scalarValueOverride
+) {
+  const parenthesized = needsParentheses(
+    node,
+    parentPrecedence,
+    groupedRequired
+  );
+  if (parenthesized) session.buffer.push('(');
+  emitNodeBody(node, session, scalarValueOverride);
+  if (parenthesized) session.buffer.push(')');
 }
 
 /**
  * @param {Node} node
- * @param {SerializeOptions} [opts]
- * @return {string}
+ * @param {ReturnType<typeof makeSession>} session
+ * @param {number} [scalarValueOverride]
+ * @return {void}
  */
-function serialize(node, opts = {}) {
-  checkCalculationDepth(node);
-  return serializeMathResult(node, {
-    calcName: opts.calcName ?? 'calc',
-    scalarPolicy: normalizeScalarPolicy(opts),
-    formatting: {
-      precision: opts.precision ?? 5,
-    },
-  });
-}
-
-/**
- * @param {{tree: Node, status: 'resolved' | 'unresolved', rootName: string, rootSpelling: string, original: string}} result
- * @param {SerializeOptions} [opts]
- * @return {string}
- */
-function serializeResult(result, opts = {}) {
-  checkCalculationDepth(result.tree);
-  const precision = opts.precision ?? 5;
-  const unwrapSingleValue =
-    opts.unwrapSingleValue || opts.unwrapSingleNegativeNumber;
-  const isCalc = /^(?:-(?:moz|webkit)-)?calc$/i.test(result.rootName);
-  // Preserve vendor-prefixed spelling whenever the root still needs a calc.
-  const wrapper = isCalc
-    ? result.rootSpelling || opts.calcName || 'calc'
-    : 'calc';
-  const tree = result.tree;
-
-  if (!isCalc && result.status === 'unresolved') {
-    if (
-      (tree.type === 'Call' || tree.type === 'OpaqueCall') &&
-      tree.name.toLowerCase() === result.rootName.toLowerCase()
-    ) {
-      const rendered = serializeExpr(tree, { precision }, (child) =>
-        serializeNestedMathResult(
-          child,
-          precision,
-          unwrapSingleValue ? 'unwrap-all' : 'standard'
-        )
-      );
-      // Simplifiers deliberately normalize their fallback call names. At the
-      // reduction boundary, retain the root token exactly as it appeared in
-      // source so an unresolved `SIN()` does not become `sin()`.
-      return `${result.rootSpelling}${rendered.slice(rendered.indexOf('('))}`;
-    }
-    return result.original;
-  }
-
-  if (!unwrapSingleValue) {
-    // Scalar results are the final calculation boundary, so normalize their
-    // signed zero here. Degenerate dimensions also need their specialized
-    // `<keyword> * 1<unit>` calculation spelling.
-    if (tree.type === 'Num' || tree.type === 'Dim') {
-      return serializeMathResult(tree, {
-        calcName: wrapper,
-        scalarPolicy: 'standard',
-        formatting: { precision },
-      });
-    }
-    return `${wrapper}(${serializeRootExpr(tree, { precision }, (child) =>
-      serializeNestedMathResult(child, precision, 'standard')
-    )})`;
-  }
-
-  return serializeMathResult(tree, {
-    calcName: wrapper,
-    scalarPolicy: 'unwrap-all',
-    formatting: { precision },
-  });
-}
-
-/**
- * Render a root expression body while retaining the canonical grouped-sum
- * rule. Wrapper selection belongs to serializeResult; this function only
- * renders the tree.
- * @param {Node} node
- * @param {{precision: number | false}} formatting
- * @param {(node: Node) => string} serializeOpaqueComponent
- * @return {string}
- */
-function serializeRootExpr(node, formatting, serializeOpaqueComponent) {
-  if (
-    node.type === 'Sum' &&
-    node.grouped &&
-    node.terms.length > 1 &&
-    displaySign(node.terms[0]).sign === -1
-  ) {
-    const invertedTerms = node.terms.map((term) => ({
-      sign: /** @type {1 | -1} */ (-term.sign),
-      node: term.node,
-    }));
-    return `-(${serializeSumTerms(invertedTerms, formatting, serializeOpaqueComponent)})`;
-  }
-  if (node.type === 'Sum' && node.terms.length === 1) {
-    return serializeLeadingNeg(
-      node.terms[0].node,
-      formatting,
-      serializeOpaqueComponent
-    );
-  }
-  return serializeExpr(node, formatting, serializeOpaqueComponent);
-}
-
-/**
- * Nested calculations keep IEEE-754 signed zero until their enclosing
- * calculation has finished evaluating. Their other scalar context remains
- * the standard policy.
- *
- * @param {Node} node
- * @param {number | false} precision
- * @param {'standard' | 'unwrap-all'} scalarPolicy
- * @return {string}
- */
-function serializeNestedMathResult(node, precision, scalarPolicy) {
-  // This callback crosses into opaque component syntax. A normal scalar may
-  // obey unwrapSingleValue here, but unwrapping an exact -0 would erase its
-  // sign before the opaque function can evaluate it.
-  if (isSignedZero(node)) {
-    return serializeSignedZero(node);
-  }
-  return serializeMathResult(node, {
-    calcName: 'calc',
-    scalarPolicy,
-    formatting: { precision },
-  });
-}
-
-// --- Inside calc() expression --------------------------------------------
-
-/**
- * @param {Node} node
- * @param {{precision: number | false}} formatting
- * @param {(node: Node) => string} serializeOpaqueComponent
- * @return {string}
- */
-function serializeExpr(node, formatting, serializeOpaqueComponent) {
+function emitNodeBody(node, session, scalarValueOverride) {
+  const buffer = session.buffer;
   switch (node.type) {
     case 'Num':
-      if (Object.is(node.value, -0)) {
-        return serializeSignedZero(node);
-      }
-      if (isDegenerate(node.value)) {
-        return degenerateKeyword(node.value);
-      }
-      return formatScalar(node, formatting).text;
     case 'Dim':
-      if (Object.is(node.value, -0)) {
-        return serializeSignedZero(node);
-      }
-      if (isDegenerate(node.value)) {
-        // Nested degenerate Dim wraps in calc() so the `<kw> * 1<unit>` form
-        // parses back as one Dim factor. The bare form round-trips wrong
-        // inside a Product — `0 * Dim(Infinity, px)` would re-fold as NaN.
-        return `calc(${degenerateKeyword(node.value)} * 1${node.rawUnit ?? node.unit})`;
-      }
-      return formatScalar(node, formatting).text;
+      emitScalar(node, session, scalarValueOverride);
+      return;
     case 'Ident':
-      return node.rawName ?? node.name;
-    case 'Call': {
-      const args = node.args
-        .map((arg) => serializeExpr(arg, formatting, serializeOpaqueComponent))
-        .join(', ');
-      return `${node.rawName ?? node.name}(${args})`;
-    }
+      buffer.push(node.rawName ?? node.name);
+      return;
+    case 'Call':
+      emitCall(node, session);
+      return;
     case 'OpaqueCall':
-      return `${node.rawName ?? node.name}(${serializeComponents(node.components, serializeOpaqueComponent)})`;
+      emitOpaqueCall(node, session);
+      return;
     case 'Sum':
-      return serializeSum(node, formatting, serializeOpaqueComponent);
+      emitSum(node, session);
+      return;
     case 'Product':
-      return serializeProduct(node, formatting, serializeOpaqueComponent);
+      emitProduct(node, session);
+      return;
   }
 }
 
 /**
- * Combine the term's sign with a negative Num/Dim value's sign so
- * `{sign:+1, Num(-5)}` renders as `-5`, not `+ -5`. Skip degenerate
- * (Infinity/NaN) values — the `degenerateKeyword` path emits `-infinity`
- * inline, and a leading minus on `calc(infinity*1<unit>)` would now
- * tokenize as a `-calc` function.
- * @param {{sign: 1 | -1, node: Node}} term
- * @return {{sign: 1 | -1, magnitude: Node}}
+ * @param {import('./node.js').Call} node
+ * @param {ReturnType<typeof makeSession>} session
+ * @param {string} [callNameOverride]
+ * @return {void}
  */
-function displaySign(term) {
-  const { sign, node } = term;
-  if (node.type === 'Num' && Number.isFinite(node.value) && node.value < 0) {
-    return {
-      sign: /** @type {1 | -1} */ (-sign),
-      magnitude: num(-node.value),
-    };
+function emitCall(node, session, callNameOverride) {
+  const buffer = session.buffer;
+  buffer.push(callNameOverride ?? node.rawName ?? node.name, '(');
+  for (let i = 0; i < node.args.length; i++) {
+    if (i > 0) buffer.push(', ');
+    emitNode(node.args[i], session);
   }
-  if (node.type === 'Dim' && Number.isFinite(node.value) && node.value < 0) {
-    return {
-      sign: /** @type {1 | -1} */ (-sign),
-      magnitude: dim(-node.value, node.unit, node.rawUnit),
-    };
+  buffer.push(')');
+}
+
+/**
+ * @param {import('./node.js').OpaqueCall} node
+ * @param {ReturnType<typeof makeSession>} session
+ * @param {string} [callNameOverride]
+ * @return {void}
+ */
+function emitOpaqueCall(node, session, callNameOverride) {
+  const buffer = session.buffer;
+  buffer.push(callNameOverride ?? node.rawName ?? node.name, '(');
+  serializeComponents(node.components, buffer, (child, childBuffer) => {
+    emitNestedMathResult(child, session, childBuffer);
+  });
+  buffer.push(')');
+}
+
+/** @param {import('./node.js').SumTerm} term @param {1 | -1} multiplier @return {1 | -1} */
+function termSign(term, multiplier) {
+  let sign = /** @type {1 | -1} */ (term.sign * multiplier);
+  if (
+    isScalar(term.node) &&
+    Number.isFinite(term.node.value) &&
+    term.node.value < 0
+  ) {
+    sign = /** @type {1 | -1} */ (-sign);
   }
-  return { sign, magnitude: node };
+  return sign;
+}
+
+/**
+ * @param {import('./node.js').SumTerm} term
+ * @param {ReturnType<typeof makeSession>} session
+ * @param {1 | -1} sign
+ * @param {number | undefined} scalarValueOverride
+ * @return {void}
+ */
+function emitSumTerm(term, session, sign, scalarValueOverride) {
+  if (sign === 1) {
+    emitNode(term.node, session, SUM_PRECEDENCE, true, scalarValueOverride);
+  } else {
+    emitLeadingNeg(term.node, session, scalarValueOverride);
+  }
 }
 
 /**
  * @param {import('./node.js').SumTerm[]} terms
- * @param {{precision: number | false}} formatting
- * @param {(node: Node) => string} serializeOpaqueComponent
- * @return {string}
+ * @param {ReturnType<typeof makeSession>} session
+ * @param {1 | -1} [multiplier]
+ * @return {void}
  */
-function serializeSumTerms(terms, formatting, serializeOpaqueComponent) {
-  let out = '';
+function emitSumTerms(terms, session, multiplier = 1) {
+  const buffer = session.buffer;
   for (let i = 0; i < terms.length; i++) {
-    const { sign, magnitude } = displaySign(terms[i]);
+    const term = terms[i];
+    const termNode = term.node;
+    const scalar = isScalar(termNode);
+    const negativeScalar =
+      scalar && Number.isFinite(termNode.value) && termNode.value < 0;
+    let sign = /** @type {1 | -1} */ (term.sign * multiplier);
+    if (negativeScalar) sign = /** @type {1 | -1} */ (-sign);
+    const scalarValueOverride = negativeScalar ? -termNode.value : undefined;
     if (i === 0) {
-      if (magnitude.type === 'Sum' && magnitude.grouped) {
-        const body = `(${serializeExpr(magnitude, formatting, serializeOpaqueComponent)})`;
-        out = sign === 1 ? body : `-${body}`;
-        continue;
+      if (scalar) {
+        if (sign === -1) buffer.push('-');
+        emitScalar(termNode, session, scalarValueOverride);
+      } else {
+        emitSumTerm(term, session, sign, scalarValueOverride);
       }
-      out =
-        sign === 1
-          ? serializeExpr(magnitude, formatting, serializeOpaqueComponent)
-          : serializeLeadingNeg(
-              magnitude,
-              formatting,
-              serializeOpaqueComponent
-            );
+      continue;
+    }
+    buffer.push(sign === 1 ? ' + ' : ' - ');
+    if (scalar) {
+      emitScalar(termNode, session, scalarValueOverride);
     } else {
-      // `-` binds looser than `*`/`/` so the right side never needs parens.
-      let body = serializeExpr(magnitude, formatting, serializeOpaqueComponent);
-      if (magnitude.type === 'Sum' && magnitude.grouped) {
-        body = `(${body})`;
-      }
-      out += sign === 1 ? ` + ${body}` : ` - ${body}`;
+      emitNode(termNode, session, SUM_PRECEDENCE, true);
     }
   }
-  return out;
+}
+
+/** @param {Sum} sum @param {ReturnType<typeof makeSession>} session @return {void} */
+function emitSum(sum, session) {
+  emitSumTerms(sum.terms, session);
 }
 
 /**
- * @param {Sum} sum
- * @param {{precision: number | false}} formatting
- * @param {(node: Node) => string} serializeOpaqueComponent
- * @return {string}
- */
-function serializeSum(sum, formatting, serializeOpaqueComponent) {
-  return serializeSumTerms(sum.terms, formatting, serializeOpaqueComponent);
-}
-
-/**
- * Fold a leading negation into a finite leading Num if there is one
- * (`-(0.5 * x)` → `-0.5 * x`); else use `-(…)` for Sum/Product or `-x`.
  * @param {Node} node
- * @param {{precision: number | false}} formatting
- * @param {(node: Node) => string} serializeOpaqueComponent
- * @return {string}
+ * @param {ReturnType<typeof makeSession>} session
+ * @param {number} [scalarValueOverride]
+ * @return {void}
  */
-function serializeLeadingNeg(node, formatting, serializeOpaqueComponent) {
+function emitLeadingNeg(node, session, scalarValueOverride) {
   if (
     node.type === 'Product' &&
     node.factors.length > 0 &&
@@ -499,64 +336,256 @@ function serializeLeadingNeg(node, formatting, serializeOpaqueComponent) {
     node.factors[0].node.value !== 0
   ) {
     const head = node.factors[0].node;
-    const negatedValue = -head.value;
-    const rest = node.factors.slice(1);
-    // A coefficient of 1 is a no-op factor, matching mkProduct.
-    /** @type {ProductFactor[]} */
-    const negatedFactors =
-      negatedValue === 1
-        ? rest
-        : [{ exponent: 1, node: num(negatedValue) }, ...rest];
-    return serializeFactors(
-      negatedFactors,
-      formatting,
-      serializeOpaqueComponent
-    );
+    emitProductFactors(node.factors, session, 1, -head.value, head);
+    return;
   }
-  const body = serializeExpr(node, formatting, serializeOpaqueComponent);
-  return node.type === 'Sum' || node.type === 'Product'
-    ? `-(${body})`
-    : `-${body}`;
+  session.buffer.push('-');
+  emitNode(
+    node,
+    session,
+    UNARY_PRECEDENCE,
+    false,
+    isScalar(node) ? scalarValueOverride : undefined
+  );
 }
 
 /**
  * @param {ProductFactor[]} factors
- * @param {{precision: number | false}} formatting
- * @param {(node: Node) => string} serializeOpaqueComponent
- * @return {string}
+ * @param {ReturnType<typeof makeSession>} session
+ * @param {number} [start]
+ * @param {number} [coefficientValue]
+ * @param {import('./node.js').Num} [coefficientNode]
+ * @return {void}
  */
-function serializeFactors(factors, formatting, serializeOpaqueComponent) {
-  let out = '';
-  for (let i = 0; i < factors.length; i++) {
-    const f = factors[i];
-    let body = serializeExpr(f.node, formatting, serializeOpaqueComponent);
-    // A Sum factor needs parens: `a * (b + c)`. Flat canonical form means
-    // this is the only place parens are required.
-    if (f.node.type === 'Sum') {
-      body = `(${body})`;
-    }
-    if (i === 0) {
-      // Leading denominator: implicit 1 so we emit `1 / 2px`, not `/ 2px`.
-      out = f.exponent === 1 ? body : `1 / ${body}`;
+function emitProductFactors(
+  factors,
+  session,
+  start = 0,
+  coefficientValue,
+  coefficientNode
+) {
+  const buffer = session.buffer;
+  let first = true;
+  if (coefficientValue !== undefined && coefficientValue !== 1) {
+    emitScalar(
+      /** @type {import('./node.js').Num} */ (coefficientNode),
+      session,
+      coefficientValue
+    );
+    first = false;
+  }
+  for (let i = start; i < factors.length; i++) {
+    const factor = factors[i];
+    const factorNode = factor.node;
+    if (first) {
+      if (factor.exponent === -1) buffer.push('1 / ');
+      if (isScalar(factorNode)) emitScalar(factorNode, session);
+      else emitNode(factorNode, session, PRODUCT_PRECEDENCE);
+      first = false;
     } else {
-      out += f.exponent === 1 ? ` * ${body}` : ` / ${body}`;
+      buffer.push(factor.exponent === 1 ? ' * ' : ' / ');
+      if (isScalar(factorNode)) emitScalar(factorNode, session);
+      else emitNode(factorNode, session, PRODUCT_PRECEDENCE);
     }
   }
-  return out;
+}
+
+/** @param {Product} product @param {ReturnType<typeof makeSession>} session @return {void} */
+function emitProduct(product, session) {
+  emitProductFactors(product.factors, session);
+}
+
+/** @param {Node} node @param {ReturnType<typeof makeSession>} session @return {void} */
+function emitRootExpr(node, session) {
+  if (
+    node.type === 'Sum' &&
+    node.grouped &&
+    node.terms.length > 1 &&
+    termSign(node.terms[0], 1) === -1
+  ) {
+    session.buffer.push('-(');
+    emitSumTerms(node.terms, session, -1);
+    session.buffer.push(')');
+    return;
+  }
+  if (node.type === 'Sum' && node.terms.length === 1) {
+    emitLeadingNeg(node.terms[0].node, session);
+    return;
+  }
+  emitNode(node, session);
 }
 
 /**
- * @param {Product} product
- * @param {{precision: number | false}} formatting
- * @param {(node: Node) => string} serializeOpaqueComponent
+ * @param {Node} node
+ * @param {ReturnType<typeof makeSession>} session
+ * @param {string} wrapper
+ * @return {void}
+ */
+function emitMathResult(node, session, wrapper) {
+  if (isScalar(node)) {
+    const scalarValue = roundedScalarValue(node, session.precision);
+    const buffer = session.buffer;
+    if (isDegenerate(scalarValue)) {
+      buffer.push(wrapper, '(', degenerateKeyword(scalarValue));
+      if (node.type === 'Dim') buffer.push(' * 1', node.rawUnit ?? node.unit);
+      buffer.push(')');
+    } else if (session.scalarPolicy === 'standard') {
+      buffer.push(wrapper, '(');
+      emitRoundedScalar(node, buffer, scalarValue);
+      buffer.push(')');
+    } else {
+      emitRoundedScalar(node, buffer, scalarValue);
+    }
+    return;
+  }
+  if (
+    node.type === 'Sum' &&
+    node.grouped &&
+    node.terms.length > 1 &&
+    termSign(node.terms[0], 1) === -1
+  ) {
+    session.buffer.push(wrapper, '(-(');
+    emitSumTerms(node.terms, session, -1);
+    session.buffer.push('))');
+    return;
+  }
+  if (
+    node.type === 'Ident' ||
+    node.type === 'Call' ||
+    node.type === 'OpaqueCall'
+  ) {
+    emitNode(node, session);
+    return;
+  }
+  if (node.type === 'Sum' && node.terms.length === 1) {
+    session.buffer.push(wrapper, '(');
+    emitLeadingNeg(node.terms[0].node, session);
+    session.buffer.push(')');
+    return;
+  }
+  session.buffer.push(wrapper, '(');
+  emitNode(node, session);
+  session.buffer.push(')');
+}
+
+/**
+ * @param {Node} node
+ * @param {ReturnType<typeof makeSession>} session
+ * @param {string[]} [buffer]
+ * @return {void}
+ */
+function emitNestedMathResult(node, session, buffer = session.buffer) {
+  if (isSignedZero(node)) {
+    emitSignedZero(buffer, node);
+    return;
+  }
+  emitMathResult(node, session, 'calc');
+}
+
+/**
+ * @param {SerializeOptions} opts
+ * @return {{buffer: string[], precision: number | false, scalarPolicy: 'standard' | 'unwrap-all'}}
+ */
+function makeSession(opts) {
+  return {
+    buffer: [],
+    precision: opts.precision ?? 5,
+    scalarPolicy: normalizeScalarPolicy(opts),
+  };
+}
+
+/**
+ * @param {Node} node
+ * @param {SerializeOptions} opts
+ * @return {{kind: 'math', node: Node, session: ReturnType<typeof makeSession>, wrapper: string}}
+ */
+function planSerialize(node, opts) {
+  return {
+    kind: 'math',
+    node,
+    session: makeSession(opts),
+    wrapper: opts.calcName ?? 'calc',
+  };
+}
+
+/**
+ * @param {{tree: Node, status: 'resolved' | 'unresolved', rootName: string, rootSpelling: string, original: string}} result
+ * @param {SerializeOptions} opts
+ * @return {{kind: 'original', text: string} | {kind: 'root-call', node: Node, session: ReturnType<typeof makeSession>, callNameOverride: string} | {kind: 'wrapped-expr', node: Node, session: ReturnType<typeof makeSession>, wrapper: string} | {kind: 'math', node: Node, session: ReturnType<typeof makeSession>, wrapper: string}}
+ */
+function planSerializeResult(result, opts) {
+  const scalarPolicy = normalizeScalarPolicy(opts);
+  const isCalc = /^(?:-(?:moz|webkit)-)?calc$/i.test(result.rootName);
+  const wrapper = isCalc
+    ? result.rootSpelling || opts.calcName || 'calc'
+    : 'calc';
+  const session = makeSession(opts);
+
+  if (!isCalc && result.status === 'unresolved') {
+    if (
+      (result.tree.type === 'Call' || result.tree.type === 'OpaqueCall') &&
+      result.tree.name.toLowerCase() === result.rootName.toLowerCase()
+    ) {
+      return {
+        kind: 'root-call',
+        node: result.tree,
+        session,
+        callNameOverride: result.rootSpelling,
+      };
+    }
+    return { kind: 'original', text: result.original };
+  }
+
+  if (scalarPolicy === 'standard') {
+    if (isScalar(result.tree))
+      return { kind: 'math', node: result.tree, session, wrapper };
+    return { kind: 'wrapped-expr', node: result.tree, session, wrapper };
+  }
+  return { kind: 'math', node: result.tree, session, wrapper };
+}
+
+/** @param {ReturnType<typeof planSerialize> | ReturnType<typeof planSerializeResult>} plan @return {string} */
+function renderPlan(plan) {
+  if (plan.kind === 'original') return plan.text;
+  const { session } = plan;
+  if (plan.kind === 'root-call') {
+    if (plan.node.type === 'Call') {
+      emitCall(plan.node, session, plan.callNameOverride);
+    } else {
+      emitOpaqueCall(
+        /** @type {import('./node.js').OpaqueCall} */ (plan.node),
+        session,
+        plan.callNameOverride
+      );
+    }
+  } else if (plan.kind === 'wrapped-expr') {
+    session.buffer.push(plan.wrapper, '(');
+    emitRootExpr(plan.node, session);
+    session.buffer.push(')');
+  } else {
+    emitMathResult(plan.node, session, plan.wrapper);
+  }
+  return session.buffer.join('');
+}
+
+/**
+ * @param {Node} node
+ * @param {SerializeOptions} [opts]
  * @return {string}
  */
-function serializeProduct(product, formatting, serializeOpaqueComponent) {
-  return serializeFactors(
-    product.factors,
-    formatting,
-    serializeOpaqueComponent
-  );
+function serialize(node, opts = {}) {
+  checkCalculationDepth(node);
+  return renderPlan(planSerialize(node, opts));
+}
+
+/**
+ * @param {{tree: Node, status: 'resolved' | 'unresolved', rootName: string, rootSpelling: string, original: string}} result
+ * @param {SerializeOptions} [opts]
+ * @return {string}
+ */
+function serializeResult(result, opts = {}) {
+  checkCalculationDepth(result.tree);
+  return renderPlan(planSerializeResult(result, opts));
 }
 
 export { serialize, serializeResult };
