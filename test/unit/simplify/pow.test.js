@@ -7,16 +7,16 @@ import { out } from '../../helpers/out.js';
 // boundary behaviour the spec calls out (pow(0,0)=1, pow(-1,0.5)=NaN,
 // pow(infinity,0)=1).
 test('pow: positive base and integer exponent', () => {
-  assert.equal(out('pow(2, 3)'), '8');
+  assert.equal(out('pow(2, 3)'), 'calc(8)');
 });
 
 describe('pow()', () => {
   test('pow: zero base with zero exponent → 1 (JS convention)', () => {
-    assert.equal(out('pow(0, 0)'), '1');
+    assert.equal(out('pow(0, 0)'), 'calc(1)');
   });
 
   test('pow: positive base and fractional exponent', () => {
-    assert.equal(out('pow(4, 0.5)'), '2');
+    assert.equal(out('pow(4, 0.5)'), 'calc(2)');
   });
 
   test('pow: negative base with integer exponent', () => {
@@ -32,7 +32,7 @@ describe('pow()', () => {
   });
 
   test('pow: infinity base with zero exponent → 1', () => {
-    assert.equal(out('pow(infinity, 0)'), '1');
+    assert.equal(out('pow(infinity, 0)'), 'calc(1)');
   });
 
   test('pow: pow(1, infinity) → NaN per IEEE-754 (indeterminate form)', () => {
@@ -70,5 +70,5 @@ describe('pow()', () => {
 });
 
 test('reduces pow with multiplication', () => {
-  assert.equal(out('1rem * pow(1.618, 3)'), '4.2358rem');
+  assert.equal(out('1rem * pow(1.618, 3)'), 'calc(4.2358rem)');
 });

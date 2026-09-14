@@ -1,17 +1,17 @@
 import { describe, test } from 'node:test';
 import assert from 'node:assert/strict';
 import { out } from '../../helpers/out.js';
-import { tokenize } from '../../../src/lib/tokenizer.js';
+import { tokenize } from '@csstools/css-tokenizer';
 import { parse } from '../../../src/lib/parser.js';
 import { simplify } from '../../../src/lib/simplify.js';
 
 // --- calc() flattening (§10.10) -------------------------------------------
-test('simplify: bare calc() unwraps to its single value', () => {
-  assert.equal(out('calc(42px)'), '42px');
+test('simplify: bare calc() preserves single value wrapped in calc()', () => {
+  assert.equal(out('calc(42px)'), 'calc(42px)');
 });
 
 test('simplify: nested calc() collapses', () => {
-  assert.equal(out('calc(calc(1px + 2px))'), '3px');
+  assert.equal(out('calc(calc(1px + 2px))'), 'calc(3px)');
 });
 
 // Note: `-webkit-calc(...)` and `-moz-calc(...)` vendor wrappers come in
@@ -30,7 +30,7 @@ describe('simplify: math constants and non-finite values', () => {
   });
 
   test('simplify: pi in a product with a unit', () => {
-    assert.equal(out('calc(pi * 1rad)'), '3.14159rad');
+    assert.equal(out('calc(pi * 1rad)'), 'calc(3.14159rad)');
   });
 
   test('simplify: calc-keyword names are case-insensitive except NaN', () => {
@@ -47,17 +47,17 @@ describe('simplify: math constants and non-finite values', () => {
     assert.equal(out('calc(NaN)'), 'calc(NaN)');
   });
 
-  test('simplify: preserves -0 until top-level serialization', () => {
-    const negativeZero = simplify(parse(tokenize('calc(-0)')));
-    assert.equal(negativeZero.type, 'Num');
-    assert.equal(Object.is(negativeZero.value, -0), true);
+  test('simplify: source signed zero normalizes before evaluation', () => {
+    const sourceZero = simplify(parse(tokenize({ css: 'calc(-0)' })));
+    assert.equal(sourceZero.type, 'Num');
+    assert.equal(Object.is(sourceZero.value, -0), false);
 
-    const positiveZero = simplify(parse(tokenize('calc(0 - 0)')));
+    const positiveZero = simplify(parse(tokenize({ css: 'calc(0 - 0)' })));
     assert.equal(positiveZero.type, 'Num');
     assert.equal(Object.is(positiveZero.value, -0), false);
 
-    // Top-level scalar serialization may censor the sign.
-    assert.equal(out('calc(-0)'), '0');
-    assert.equal(out('calc(0 - 0)'), '0');
+    // Top-level scalar serialization is ordinary zero in both cases.
+    assert.equal(out('calc(-0)'), 'calc(0)');
+    assert.equal(out('calc(0 - 0)'), 'calc(0)');
   });
 });

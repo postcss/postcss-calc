@@ -7,10 +7,19 @@ import {
   num,
   dim,
   ident,
+  opaqueCall,
   mkSum,
   mkProduct,
   negate,
 } from '../../src/lib/node.js';
+
+test('opaqueCall: stores the component tree on the canonical node', () => {
+  assert.deepEqual(opaqueCall('var', [ident('--x'), ', 1px']), {
+    type: 'OpaqueCall',
+    name: 'var',
+    components: [{ type: 'Ident', name: '--x' }, ', 1px'],
+  });
+});
 
 // --- Leaf constructors ----------------------------------------------------
 //

@@ -3,13 +3,13 @@
 // before simplify runs. Uses sexpr for compact structural assertions.
 import { describe, test } from 'node:test';
 import assert from 'node:assert/strict';
-import { tokenize } from '../../src/lib/tokenizer.js';
+import { tokenize } from '@csstools/css-tokenizer';
 import { parse } from '../../src/lib/parser.js';
 import { serialize } from '../../src/lib/serialize.js';
 import { sexpr } from '../helpers/sexpr.js';
 
 /** Parse input, return its S-expression. */
-const ast = (input) => sexpr(parse(tokenize(input)));
+const ast = (input) => sexpr(parse(tokenize({ css: input })));
 // --- Opaque non-math functions -------------------------------------------
 //
 // Non-math functions use CSS component-value syntax rather than the math
@@ -18,46 +18,49 @@ const ast = (input) => sexpr(parse(tokenize(input)));
 describe('parser: opaque expressions and invalid syntax', () => {
   test('parser: anchor() with `<name> <side>` parses as opaque single arg', () => {
     assert.equal(
-      serialize(parse(tokenize('anchor(--foo top)'))),
+      serialize(parse(tokenize({ css: 'anchor(--foo top)' }))),
       'anchor(--foo top)'
     );
   });
 
   test('parser: anchor() with `implicit <side>` keyword name', () => {
     assert.equal(
-      serialize(parse(tokenize('anchor(implicit bottom)'))),
+      serialize(parse(tokenize({ css: 'anchor(implicit bottom)' }))),
       'anchor(implicit bottom)'
     );
   });
 
   test('parser: anchor() with comma-separated fallback', () => {
     assert.equal(
-      serialize(parse(tokenize('anchor(--foo top, 50px)'))),
+      serialize(parse(tokenize({ css: 'anchor(--foo top, 50px)' }))),
       'anchor(--foo top, 50px)'
     );
   });
 
   test('parser: anchor-size() also takes space-separated args', () => {
     assert.equal(
-      serialize(parse(tokenize('anchor-size(--foo height)'))),
+      serialize(parse(tokenize({ css: 'anchor-size(--foo height)' }))),
       'anchor-size(--foo height)'
     );
   });
 
   test('parser: anchor() composes inside calc() arithmetic', () => {
     assert.equal(
-      serialize(parse(tokenize('calc(anchor(--foo top) - 42px)'))),
+      serialize(parse(tokenize({ css: 'calc(anchor(--foo top) - 42px)' }))),
       'calc(anchor(--foo top) - 42px)'
     );
   });
 
   test('parser: anchor() with single side keyword', () => {
-    assert.equal(serialize(parse(tokenize('anchor(top)'))), 'anchor(top)');
+    assert.equal(
+      serialize(parse(tokenize({ css: 'anchor(top)' }))),
+      'anchor(top)'
+    );
   });
 
   test('parser: anchor arguments preserve escaped lexical spelling', () => {
     const input = String.raw`anchor(--x\ top left)`;
-    assert.equal(serialize(parse(tokenize(input))), input);
+    assert.equal(serialize(parse(tokenize({ css: input }))), input);
   });
 
   test('parser: arbitrary non-math function contents stay opaque', () => {
@@ -66,13 +69,41 @@ describe('parser: opaque expressions and invalid syntax', () => {
       'future-fn("x", [a b] {c: #fff})',
       'unknown(1px + 2px)',
     ]) {
-      assert.equal(serialize(parse(tokenize(input))), input);
+      assert.equal(serialize(parse(tokenize({ css: input }))), input);
+    }
+  });
+
+  test('parser: opaque calls expose their component trees', () => {
+    assert.deepEqual(parse(tokenize({ css: 'var(--x, 1px)' })), {
+      type: 'OpaqueCall',
+      name: 'var',
+      components: [{ type: 'Ident', name: '--x' }, ', 1px'],
+    });
+    assert.deepEqual(parse(tokenize({ css: 'unknown(1px + 2px)' })), {
+      type: 'OpaqueCall',
+      name: 'unknown',
+      components: ['1px + 2px'],
+    });
+  });
+
+  test('parser: opaque component trees retain nested math ASTs', () => {
+    const node = parse(tokenize({ css: 'unknown(calc(1px + 2px))' }));
+    assert.equal(node.type, 'OpaqueCall');
+    if (node.type === 'OpaqueCall') {
+      assert.equal(node.components.length, 1);
+      const component = node.components[0];
+      assert.equal(
+        typeof component === 'object' && !Array.isArray(component)
+          ? component.type
+          : null,
+        'Call'
+      );
     }
   });
 
   test('parser: unclosed anchor() throws', () => {
     assert.throws(
-      () => parse(tokenize('anchor(--foo top')),
+      () => parse(tokenize({ css: 'anchor(--foo top' })),
       /Unclosed anchor\(/
     );
   });
@@ -97,21 +128,21 @@ describe('parser: opaque expressions and invalid syntax', () => {
   });
   // --- Strict whitespace around +/- ----------------------------------------
   test('parser: `1px + 2px` is valid', () => {
-    assert.doesNotThrow(() => parse(tokenize('1px + 2px')));
+    assert.doesNotThrow(() => parse(tokenize({ css: '1px + 2px' })));
   });
   // §10.1: `+` and `-` must be surrounded by whitespace. All three asymmetric
   // cases (no/before-only/after-only) must throw the same way.
   for (const input of ['1px+2px', '1px +2px', '1px+ 2px']) {
     test(`parser: \`${input}\` throws (asymmetric whitespace around +)`, () => {
       assert.throws(
-        () => parse(tokenize(input)),
+        () => parse(tokenize({ css: input })),
         /must be surrounded by whitespace/
       );
     });
   }
   test('parser: * / do not require whitespace (spec allows both)', () => {
-    assert.doesNotThrow(() => parse(tokenize('1px*2')));
-    assert.doesNotThrow(() => parse(tokenize('1px/2')));
+    assert.doesNotThrow(() => parse(tokenize({ css: '1px*2' })));
+    assert.doesNotThrow(() => parse(tokenize({ css: '1px/2' })));
   });
   test('parser: tab / newline satisfy the §10.1 whitespace rule', () => {
     // The whitespace check inspects the token's `ws` flag, which the
@@ -124,47 +155,84 @@ describe('parser: opaque expressions and invalid syntax', () => {
     assert.equal(ast('1px/* gap */+/* gap */2px'), '(+ 1px 2px)');
     assert.equal(ast('/* gap */1px + 2px'), '(+ 1px 2px)');
   });
+  test('parser: lookahead preserves comment-derived whitespace when consumed', () => {
+    assert.equal(ast('1 /* before */ + /* after */ 2'), '(+ 1 2)');
+    assert.equal(ast('1 /* before */ - /* after */ 2'), '(+ 1 -2)');
+  });
   // --- Error positions ------------------------------------------------------
   test('parser: trailing operator throws (whitespace-before-EOF fails)', () => {
     // `1 +` has space before `+` but nothing after — EOF has ws=false, so
     // the strict-whitespace check fires before the unexpected-token path.
     assert.throws(
-      () => parse(tokenize('1 +')),
+      () => parse(tokenize({ css: '1 +' })),
       /must be surrounded by whitespace|Unexpected token/
     );
   });
   test('parser: unclosed paren expects )', () => {
-    assert.throws(() => parse(tokenize('(1 + 2')), /Expected/);
+    assert.throws(() => parse(tokenize({ css: '(1 + 2' })), /Expected/);
   });
   test('parser: stacked operators throw', () => {
-    assert.throws(() => parse(tokenize('1 * * 2')), /Unexpected token/);
+    assert.throws(
+      () => parse(tokenize({ css: '1 * * 2' })),
+      /Unexpected token/
+    );
   });
   // --- expect() failures (unclosed groups) -----------------------------------
   test('parser: unclosed paren throws with expected-token message', () => {
-    assert.throws(() => parse(tokenize('(1 + 2')), /Expected \)/);
+    assert.throws(() => parse(tokenize({ css: '(1 + 2' })), /Expected \)/);
   });
 
   test('parser: unclosed call throws with expected-token message', () => {
-    assert.throws(() => parse(tokenize('min(1, 2')), /Expected \)/);
+    assert.throws(() => parse(tokenize({ css: 'min(1, 2' })), /Expected \)/);
   });
 
   test('parser: unclosed var throws with unclosed message and position', () => {
     assert.throws(
-      () => parse(tokenize('var(--foo')),
+      () => parse(tokenize({ css: 'var(--foo' })),
       /Unclosed var\( at position 4/
     );
   });
   // --- Trailing tokens ------------------------------------------------------
   test('parse: rejects input with trailing tokens after a complete expression', () => {
-    assert.throws(() => parse(tokenize('1 2')), /Unexpected token/);
+    assert.throws(() => parse(tokenize({ css: '1 2' })), /Unexpected token/);
   });
   test('parse: empty input throws', () => {
-    assert.throws(() => parse(tokenize('')), /Unexpected token/);
+    assert.throws(() => parse(tokenize({ css: '' })), /Unexpected token/);
   });
 
   test('parser: punctuation helper methods match and expect punctuation tokens', () => {
     assert.equal(ast('1 + 2 + 3 + 4'), '(+ 1 2 3 4)');
     assert.equal(ast('2 * 3 * 4 * 5'), '(* 2 3 4 5)');
     assert.equal(ast('min(1, 2, 3)'), '(min 1 2 3)');
+  });
+
+  test('parser: var() and opaque calls resume outer parsing after block skipping', () => {
+    assert.equal(
+      ast('calc(var(--x, 1px) + 2px)'),
+      '(calc (+ OpaqueCall(var [--x ", 1px"]) 2px))'
+    );
+    assert.equal(
+      ast('calc(var(--x, 1px) - 2px)'),
+      '(calc (+ OpaqueCall(var [--x ", 1px"]) -2px))'
+    );
+    assert.equal(
+      ast('calc(unknown(1px + 2px) + 3px)'),
+      '(calc (+ OpaqueCall(unknown ["1px + 2px"]) 3px))'
+    );
+    assert.equal(
+      ast('calc(unknown(1px + 2px) - 3px)'),
+      '(calc (+ OpaqueCall(unknown ["1px + 2px"]) -3px))'
+    );
+  });
+
+  test('parser: skipped blocks do not hide trailing tokens', () => {
+    assert.throws(
+      () => parse(tokenize({ css: 'var(--x) 1px' })),
+      /Unexpected token/
+    );
+    assert.throws(
+      () => parse(tokenize({ css: 'unknown(1px + 2px) 3px' })),
+      /Unexpected token/
+    );
   });
 });

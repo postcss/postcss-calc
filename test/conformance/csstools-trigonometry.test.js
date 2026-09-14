@@ -23,19 +23,19 @@ const out = (input) => pipeline(input, { precision: false });
 // JS strings (e.g. cos(60deg) = 0.5000000000000001).
 describe('csstools trigonometric functions', () => {
   test('csstools trig: sin(0) → 0', () => {
-    assert.equal(out('sin(0)'), '0');
+    assert.equal(out('sin(0)'), 'calc(0)');
   });
 
   test('csstools trig: cos(0) → 1', () => {
-    assert.equal(out('cos(0)'), '1');
+    assert.equal(out('cos(0)'), 'calc(1)');
   });
 
   test('csstools trig: tan(0) → 0', () => {
-    assert.equal(out('tan(0)'), '0');
+    assert.equal(out('tan(0)'), 'calc(0)');
   });
 
   test('csstools trig: sin(90deg) → 1', () => {
-    assert.equal(out('sin(90deg)'), '1');
+    assert.equal(out('sin(90deg)'), 'calc(1)');
   });
 
   test('csstools trig: cos(180deg) → -1', () => {
@@ -59,7 +59,7 @@ describe('csstools trigonometric functions', () => {
   });
 
   test('csstools trig: bare-number arg is radians — sin(pi / 2) → 1', () => {
-    assert.equal(out('sin(pi / 2)'), '1');
+    assert.equal(out('sin(pi / 2)'), 'calc(1)');
   });
 
   test('csstools trig: var() arg → opaque', () => {
@@ -71,11 +71,11 @@ describe('csstools trigonometric functions', () => {
   });
 
   test('csstools inverse-trig: asin(0) → 0deg', () => {
-    assert.equal(out('asin(0)'), '0deg');
+    assert.equal(out('asin(0)'), 'calc(0deg)');
   });
 
   test('csstools inverse-trig: asin(1) → 90deg', () => {
-    assert.equal(out('asin(1)'), '90deg');
+    assert.equal(out('asin(1)'), 'calc(90deg)');
   });
 
   test('csstools inverse-trig: asin(-1) → -90deg', () => {
@@ -83,23 +83,23 @@ describe('csstools trigonometric functions', () => {
   });
 
   test('csstools inverse-trig: asin(0.5) → 30.000000000000004deg', () => {
-    assert.equal(out('asin(0.5)'), '30.000000000000004deg');
+    assert.equal(out('asin(0.5)'), 'calc(30.000000000000004deg)');
   });
 
   test('csstools inverse-trig: acos(1) → 0deg (zero-valued angle keeps unit)', () => {
-    assert.equal(out('acos(1)'), '0deg');
+    assert.equal(out('acos(1)'), 'calc(0deg)');
   });
 
   test('csstools inverse-trig: acos(-1) → 180deg', () => {
-    assert.equal(out('acos(-1)'), '180deg');
+    assert.equal(out('acos(-1)'), 'calc(180deg)');
   });
 
   test('csstools inverse-trig: atan(1) → 45deg (exact in JS)', () => {
-    assert.equal(out('atan(1)'), '45deg');
+    assert.equal(out('atan(1)'), 'calc(45deg)');
   });
 
   test('csstools inverse-trig: atan(infinity) → 90deg', () => {
-    assert.equal(out('atan(infinity)'), '90deg');
+    assert.equal(out('atan(infinity)'), 'calc(90deg)');
   });
 
   test('csstools inverse-trig: dim arg → opaque (asin/acos/atan need <number>)', () => {
@@ -107,15 +107,15 @@ describe('csstools trigonometric functions', () => {
   });
 
   test('csstools atan2: (0, 1) → 0deg', () => {
-    assert.equal(out('atan2(0, 1)'), '0deg');
+    assert.equal(out('atan2(0, 1)'), 'calc(0deg)');
   });
 
   test('csstools atan2: (1, 0) → 90deg', () => {
-    assert.equal(out('atan2(1, 0)'), '90deg');
+    assert.equal(out('atan2(1, 0)'), 'calc(90deg)');
   });
 
   test('csstools atan2: (1, 1) → 45deg', () => {
-    assert.equal(out('atan2(1, 1)'), '45deg');
+    assert.equal(out('atan2(1, 1)'), 'calc(45deg)');
   });
 
   test('csstools atan2: (-1, -1) → -135deg', () => {
@@ -123,7 +123,7 @@ describe('csstools trigonometric functions', () => {
   });
 
   test('csstools atan2: cross-unit-same-base (1in, 96px) → 45deg', () => {
-    assert.equal(out('atan2(1in, 96px)'), '45deg');
+    assert.equal(out('atan2(1in, 96px)'), 'calc(45deg)');
   });
 
   test('csstools atan2: type mismatch → opaque', () => {

@@ -109,7 +109,7 @@ describe('Discard zero', () => {
 
   test(
     'should discard zero values (#2) (2)',
-    testValue('calc(500px - 0px)', '500px')
+    testValue('calc(500px - 0px)', 'calc(500px)')
   );
 });
 
@@ -152,39 +152,45 @@ describe('Division precedence', () => {
 });
 
 describe('Exponent', () => {
-  test('exponent composed', testValue('calc(1.1e+1px + 1.1e+1px)', '22px'));
+  test(
+    'exponent composed',
+    testValue('calc(1.1e+1px + 1.1e+1px)', 'calc(22px)')
+  );
 
-  test('exponent composed (#1)', testValue('calc(10e+1px + 10e+1px)', '200px'));
+  test(
+    'exponent composed (#1)',
+    testValue('calc(10e+1px + 10e+1px)', 'calc(200px)')
+  );
 
   test(
     'exponent composed (#2)',
-    testValue('calc(1.1e+10px + 1.1e+10px)', '22000000000px')
+    testValue('calc(1.1e+10px + 1.1e+10px)', 'calc(22000000000px)')
   );
 
-  test('exponent composed (#3)', testValue('calc(9e+1 * 1px)', '90px'));
+  test('exponent composed (#3)', testValue('calc(9e+1 * 1px)', 'calc(90px)'));
 
-  test('exponent composed (#4)', testValue('calc(9e+1% + 10%)', '100%'));
+  test('exponent composed (#4)', testValue('calc(9e+1% + 10%)', 'calc(100%)'));
 
   test(
     'exponent composed (uppercase)',
-    testValue('calc(1.1E+1px + 1.1E+1px)', '22px')
+    testValue('calc(1.1E+1px + 1.1E+1px)', 'calc(22px)')
   );
 });
 
 describe('Plus', () => {
-  test('plus sign', testValue('calc(+100px + +100px)', '200px'));
+  test('plus sign', testValue('calc(+100px + +100px)', 'calc(200px)'));
 
-  test('plus sign (#1)', testValue('calc(+100px - +100px)', '0px'));
+  test('plus sign (#1)', testValue('calc(+100px - +100px)', 'calc(0px)'));
 
-  test('plus sign (#2)', testValue('calc(200px * +1)', '200px'));
+  test('plus sign (#2)', testValue('calc(200px * +1)', 'calc(200px)'));
 
-  test('plus sign (#3)', testValue('calc(200px / +1)', '200px'));
+  test('plus sign (#3)', testValue('calc(200px / +1)', 'calc(200px)'));
 });
 
 describe('Minus', () => {
   test('minus sign', testValue('calc(-100px + -100px)', 'calc(-200px)'));
 
-  test('minus sign (#2)', testValue('calc(-100px - -100px)', '0px'));
+  test('minus sign (#2)', testValue('calc(-100px - -100px)', 'calc(0px)'));
 
   test('minus sign (#3)', testValue('calc(200px * -1)', 'calc(-200px)'));
 
@@ -201,7 +207,7 @@ describe('Math edge cases', () => {
   test(
     'should not throw an exception when attempting to divide by unit (#1)',
     // dim / dim → unitless number; previously threw.
-    testValue('calc(500px/2px)', '250')
+    testValue('calc(500px/2px)', 'calc(250)')
   );
 });
 
@@ -226,7 +232,7 @@ describe('Math constants', () => {
   test(
     'should perform multiplication with pi',
     // fold `pi` (§10.7.1).
-    testValue('calc(1px * pi)', '3.14159px')
+    testValue('calc(1px * pi)', 'calc(3.14159px)')
   );
 
   test(
@@ -259,7 +265,7 @@ describe('Precision', () => {
 
   test(
     'should keep a dimension smaller than the precision',
-    testValue('calc(1px/1000000)', '.000001px')
+    testValue('calc(1px/1000000)', 'calc(.000001px)')
   );
 
   test(
@@ -279,17 +285,17 @@ describe('Precision', () => {
 
   test(
     'should still round float noise down to zero',
-    testValue('calc(0.1px + 0.2px - 0.3px)', '0px')
+    testValue('calc(0.1px + 0.2px - 0.3px)', 'calc(0px)')
   );
 
   test(
     'should fold exact cancellation with large operands to zero, not a phantom',
-    testValue('calc(0.07px * 1e7 - 700000px)', '0px')
+    testValue('calc(0.07px * 1e7 - 700000px)', 'calc(0px)')
   );
-  test('precision for calc', testValue('calc(100% / 3 * 3)', '100%'));
+  test('precision for calc', testValue('calc(100% / 3 * 3)', 'calc(100%)'));
 
   test(
     'precision for nested calc',
-    testValue('calc(calc(100% / 3) * 3)', '100%')
+    testValue('calc(calc(100% / 3) * 3)', 'calc(100%)')
   );
 });

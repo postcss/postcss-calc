@@ -4,7 +4,7 @@
 import { describe, test } from 'node:test';
 import assert from 'node:assert/strict';
 import fc from 'fast-check';
-import { tokenize } from '../../src/lib/tokenizer.js';
+import { tokenize } from '@csstools/css-tokenizer';
 import { parse } from '../../src/lib/parser.js';
 import { simplify } from '../../src/lib/simplify.js';
 import { serialize } from '../../src/lib/serialize.js';
@@ -18,8 +18,11 @@ describe('opaque CSS math properties', () => {
   test('property: bounded CSS math grammar parses and round-trips', () => {
     fc.assert(
       fc.property(cssMathSourceArb, (input) => {
-        const output = serialize(simplify(parse(tokenize(input))));
-        return typeof output === 'string' && parse(tokenize(output)) !== null;
+        const output = serialize(simplify(parse(tokenize({ css: input }))));
+        return (
+          typeof output === 'string' &&
+          parse(tokenize({ css: output })) !== null
+        );
       }),
       { numRuns: 300 }
     );
@@ -42,6 +45,6 @@ test('opaque grouping: nested groups and var() fallbacks preserve serialization'
   );
   assert.equal(
     out('calc(-(var(--a, calc(1px + 2px)) + var(--b, 4px)))'),
-    'calc(-(var(--a, 3px) + var(--b, 4px)))'
+    'calc(-(var(--a, calc(3px)) + var(--b, 4px)))'
   );
 });

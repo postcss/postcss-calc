@@ -6,31 +6,27 @@ import reduceCalc, {
   hasPotentialMathFunction,
   QUICK_MATH_TEST,
 } from 'postcss-calc/reduce';
+import { createReduceCalcTestHarness } from '../helpers/reduceCalc.js';
 
-function reduceWithWarnings(value, opts = {}) {
-  const warnings = [];
-  const output = reduceCalc(value, {
-    ...opts,
-    onWarn: (message) => {
-      warnings.push(message);
-      opts.onWarn?.(message);
-    },
-  });
-  return { output, warnings };
-}
-
-function assertIdempotent(value, opts = {}) {
-  const first = reduceWithWarnings(value, opts);
-  const second = reduceWithWarnings(first.output, opts);
-
-  assert.notEqual(first.output, value);
-  assert.equal(second.output, first.output);
-  assert.deepEqual(second.warnings, first.warnings);
-}
+const { reduceWithWarnings, assertIdempotent } =
+  createReduceCalcTestHarness(reduceCalc);
 
 describe('reduceCalc: basic pipeline', () => {
   test('reduceCalc: reduces simple calc in a value', () => {
-    assert.equal(reduceCalc('calc(1px + 2px)'), '3px');
+    assert.equal(reduceCalc('calc(1px + 2px)'), 'calc(3px)');
+  });
+
+  test('reduceCalc: resolves named functions containing clamp none bounds', () => {
+    const warnings = [];
+    assert.equal(
+      reduceCalc('sqrt(clamp(none, 1, 2))', {
+        warnWhenCannotResolve: true,
+        onWarn: (warning) => warnings.push(warning),
+      }),
+      'calc(1)'
+    );
+    assert.equal(reduceCalc('pow(clamp(none, 2, 3), 2)'), 'calc(4)');
+    assert.deepEqual(warnings, []);
   });
 
   test('reduceCalc: preserves non-calc values', () => {
@@ -44,12 +40,12 @@ describe('reduceCalc: basic pipeline', () => {
   });
 
   test('reduceCalc: simple resolved results preserve canonical token text', () => {
-    assert.equal(reduceCalc('calc(1px + 2px)'), '3px');
-    assert.equal(reduceCalc('calc(10% - 2%)'), '8%');
+    assert.equal(reduceCalc('calc(1px + 2px)'), 'calc(3px)');
+    assert.equal(reduceCalc('calc(10% - 2%)'), 'calc(8%)');
     assert.equal(reduceCalc('calc(1 / 4)'), 'calc(.25)');
     assert.equal(reduceCalc('calc(-2px + 1px)'), 'calc(-1px)');
-    assert.equal(reduceCalc('calc(1PX + 2PX)'), '3px');
-    assert.equal(reduceCalc(String.raw`calc(1P\58  + 2px)`), '3px');
+    assert.equal(reduceCalc('calc(1PX + 2PX)'), 'calc(3px)');
+    assert.equal(reduceCalc(String.raw`calc(1P\58  + 2px)`), 'calc(3px)');
   });
 
   test('reduceCalc: opaque escaped spellings survive simplification', () => {
@@ -65,7 +61,10 @@ describe('reduceCalc: basic pipeline', () => {
       reduceCalc(String.raw`calc(f\,n(1px) + anchor(--x\ top left))`),
       String.raw`calc(f\,n(1px) + anchor(--x\ top left))`
     );
-    assert.equal(reduceCalc(String.raw`calc(1f\6fo * 2)`), String.raw`2f\6fo`);
+    assert.equal(
+      reduceCalc(String.raw`calc(1f\6fo * 2)`),
+      String.raw`calc(2f\6fo)`
+    );
   });
 
   test('reduceCalc: negative scalar results retain calc()', () => {
@@ -74,25 +73,36 @@ describe('reduceCalc: basic pipeline', () => {
   });
 
   test('reduceCalc: rounded negative floating-point noise does not retain calc()', () => {
-    assert.equal(reduceCalc('calc(cos(270deg) * 100px)'), '0px');
+    assert.equal(reduceCalc('calc(cos(270deg) * 100px)'), 'calc(0px)');
     assert.equal(
       reduceCalc('calc(cos(270deg) * 100px)', { precision: false }),
       'calc(-1.8369701987210297e-14px)'
     );
   });
 
-  test('reduceCalc: preserves signed zero inside unresolved calculations', () => {
+  test('reduceCalc: source signed zero is ordinary zero', () => {
     assert.equal(
       reduceCalc('calc(-0 * var(--x))', { precision: false }),
-      'calc(-0 * var(--x))'
+      'calc(0 * var(--x))'
     );
     assert.equal(
       reduceCalc('calc(-0 + var(--x))', { precision: false }),
-      'calc(-0 + var(--x))'
+      'calc(var(--x))'
     );
   });
 
-  test('reduceCalc: unwrapSingleNegativeNumber controls negative scalar serialization', () => {
+  test('reduceCalc: preserves arithmetic signed zero inside unresolved calculations', () => {
+    assert.equal(
+      reduceCalc('calc(0 / -1 * var(--x))', { precision: false }),
+      'calc(calc(-1 * 0) * var(--x))'
+    );
+    assert.equal(
+      reduceCalc('min(0px / -1, var(--x))', { precision: false }),
+      'min(calc(-1 * 0px), var(--x))'
+    );
+  });
+
+  test('reduceCalc: unwrapSingleNegativeNumber aliases unwrapSingleValue', () => {
     assert.equal(
       reduceCalc('a:nth-child(calc(1 - 2))', {
         unwrapSingleNegativeNumber: true,
@@ -105,21 +115,24 @@ describe('reduceCalc: basic pipeline', () => {
     );
     assert.equal(
       reduceCalc('calc(1 / 2)', { unwrapSingleNegativeNumber: true }),
-      'calc(.5)'
+      '.5'
     );
     assert.equal(
       reduceCalc('calc(-1 / 2)', { unwrapSingleNegativeNumber: true }),
-      'calc(-.5)'
+      '-.5'
     );
   });
 
-  test('reduceCalc: unwrapSingleNumber unwraps negative and fractional scalars', () => {
-    assert.equal(reduceCalc('calc(1 - 2)', { unwrapSingleNumber: true }), '-1');
-    assert.equal(reduceCalc('calc(1 / 2)', { unwrapSingleNumber: true }), '.5');
+  test('reduceCalc: unwrapSingleValue unwraps negative and fractional scalars', () => {
+    assert.equal(reduceCalc('calc(1 - 2)', { unwrapSingleValue: true }), '-1');
+    assert.equal(reduceCalc('calc(1 / 2)', { unwrapSingleValue: true }), '.5');
   });
 
   test('reduceCalc: multiple calcs in one value', () => {
-    assert.equal(reduceCalc('calc(1px + 1px) calc(2px + 2px)'), '2px 4px');
+    assert.equal(
+      reduceCalc('calc(1px + 1px) calc(2px + 2px)'),
+      'calc(2px) calc(4px)'
+    );
   });
 
   test('reduceCalc: one value preserves bytes around several token-slice calculations', () => {
@@ -127,7 +140,7 @@ describe('reduceCalc: basic pipeline', () => {
       reduceCalc(
         '\\66 oo calc(/*a*/-2px + +5px)  /\\*keep*\\/ MIN(4px,2px)\\9'
       ),
-      '\\66 oo 3px  /\\*keep*\\/ 2px\\9'
+      '\\66 oo calc(3px)  /\\*keep*\\/ calc(2px)\\9'
     );
   });
 
@@ -196,7 +209,7 @@ describe('reduceCalc: basic pipeline', () => {
   test('reduceCalc: nested calculations inside non-math functions are reduced', () => {
     assert.equal(
       reduceCalc('translate(calc(10px + 20px), calc(5px * 2))'),
-      'translate(30px, 10px)'
+      'translate(calc(30px), calc(10px))'
     );
   });
 
@@ -212,14 +225,14 @@ describe('reduceCalc: basic pipeline', () => {
   });
 
   test('reduceCalc: removes leading zero from resolved decimals', () => {
-    assert.equal(reduceCalc('calc(1px / 4)'), '.25px');
+    assert.equal(reduceCalc('calc(1px / 4)'), 'calc(.25px)');
     assert.equal(reduceCalc('calc(1 / 2000000)'), 'calc(5e-7)');
   });
 
   test('reduceCalc: fractional unitless math results retain calc()', () => {
     assert.equal(reduceCalc('calc(1 / 2)'), 'calc(.5)');
     assert.equal(reduceCalc('sqrt(2)'), 'calc(1.41421)');
-    assert.equal(reduceCalc('calc(2 / 1)'), '2');
+    assert.equal(reduceCalc('calc(2 / 1)'), 'calc(2)');
   });
 
   test('reduceCalc: preserves grouping through unary negation', () => {
@@ -257,14 +270,14 @@ describe('reduceCalc: basic pipeline', () => {
       reduceCalc(
         'calc(var(--a) - (var(--b) - (var(--c, calc(1px + 2px)) + var(--d))))'
       ),
-      'calc(var(--a) - (var(--b) - (var(--c, 3px) + var(--d))))'
+      'calc(var(--a) - (var(--b) - (var(--c, calc(3px)) + var(--d))))'
     );
   });
 
   test('reduceCalc: preserves unresolved calc grouping in opaque fallbacks', () => {
     assert.equal(
       reduceCalc('calc(env(foo, calc(var(--x) + 1px) solid))'),
-      'env(foo, calc(1px + var(--x)) solid)'
+      'calc(env(foo, calc(1px + var(--x)) solid))'
     );
     assert.equal(
       reduceCalc('calc(2 * env(foo, calc(var(--x) + 1px)))'),
@@ -277,7 +290,7 @@ describe('reduceCalc: basic pipeline', () => {
       reduceCalc(
         'calc(var(--theme\\-size , foo(calc(1px + 2px), [max(4px, 5px)]), calc(6px + 7px)) + 1px)'
       ),
-      'calc(1px + var(--theme\\-size , foo(3px, [5px]), 13px))'
+      'calc(1px + var(--theme\\-size , foo(calc(3px), [calc(5px)]), calc(13px)))'
     );
   });
 });

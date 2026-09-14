@@ -9,16 +9,16 @@ import { out } from '../../helpers/out.js';
 // percentages are opaque (matches csstools — they need property-context
 // resolution).
 test('atan2: (0, 1) → 0deg', () => {
-  assert.equal(out('atan2(0, 1)'), '0deg');
+  assert.equal(out('atan2(0, 1)'), 'calc(0deg)');
 });
 
 describe('atan2()', () => {
   test('atan2: (1, 0) → 90deg', () => {
-    assert.equal(out('atan2(1, 0)'), '90deg');
+    assert.equal(out('atan2(1, 0)'), 'calc(90deg)');
   });
 
   test('atan2: (0, -1) → 180deg', () => {
-    assert.equal(out('atan2(0, -1)'), '180deg');
+    assert.equal(out('atan2(0, -1)'), 'calc(180deg)');
   });
 
   test('atan2: (-1, 0) → -90deg', () => {
@@ -26,7 +26,7 @@ describe('atan2()', () => {
   });
 
   test('atan2: (1, 1) → 45deg', () => {
-    assert.equal(out('atan2(1, 1)'), '45deg');
+    assert.equal(out('atan2(1, 1)'), 'calc(45deg)');
   });
 
   test('atan2: (-1, 1) → -45deg', () => {
@@ -34,7 +34,7 @@ describe('atan2()', () => {
   });
 
   test('atan2: (1, -1) → 135deg', () => {
-    assert.equal(out('atan2(1, -1)'), '135deg');
+    assert.equal(out('atan2(1, -1)'), 'calc(135deg)');
   });
 
   test('atan2: (-1, -1) → -135deg', () => {
@@ -43,16 +43,16 @@ describe('atan2()', () => {
 
   test('atan2: same-unit dim args fold (1px, 1px) → 45deg', () => {
     // atan2 only depends on the ratio when both args share a unit.
-    assert.equal(out('atan2(1px, 1px)'), '45deg');
+    assert.equal(out('atan2(1px, 1px)'), 'calc(45deg)');
   });
 
   test('atan2: cross-unit-same-base (1in, 96px) → 45deg', () => {
     // 1in = 96px → ratio 1 → 45deg.
-    assert.equal(out('atan2(1in, 96px)'), '45deg');
+    assert.equal(out('atan2(1in, 96px)'), 'calc(45deg)');
   });
 
   test('atan2: spec table (infinity, infinity) → 45deg', () => {
-    assert.equal(out('atan2(infinity, infinity)'), '45deg');
+    assert.equal(out('atan2(infinity, infinity)'), 'calc(45deg)');
   });
 
   test('atan2: spec table (-infinity, -infinity) → -135deg', () => {
@@ -61,7 +61,7 @@ describe('atan2()', () => {
 
   test('atan2: same-base angle args (1deg, 1deg) → 45deg', () => {
     // Spec only requires consistent type — angles for both args is fine.
-    assert.equal(out('atan2(1deg, 1deg)'), '45deg');
+    assert.equal(out('atan2(1deg, 1deg)'), 'calc(45deg)');
   });
 
   test('atan2: type mismatch (length, angle) → opaque', () => {

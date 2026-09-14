@@ -10,11 +10,12 @@
 // random gen to roll them.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { tokenize } from '../../src/lib/tokenizer.js';
+import { tokenize } from '@csstools/css-tokenizer';
 import { parse } from '../../src/lib/parser.js';
 import { simplify } from '../../src/lib/simplify.js';
 import { serialize } from '../../src/lib/serialize.js';
-const out = (s) => serialize(simplify(parse(tokenize(s))), { precision: 10 });
+const out = (s) =>
+  serialize(simplify(parse(tokenize({ css: s }))), { precision: 10 });
 const scalarText = (text) =>
   text.startsWith('calc(') && text.endsWith(')')
     ? text.slice('calc('.length, -1)

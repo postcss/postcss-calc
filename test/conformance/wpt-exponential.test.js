@@ -20,11 +20,11 @@ import { out } from '../helpers/out.js';
 // https://github.com/web-platform-tests/wpt/blob/master/css/css-values/
 describe('WPT exponential functions', () => {
   test('WPT pow: pow(2, 3) → 8', () => {
-    assert.equal(out('pow(2, 3)'), '8');
+    assert.equal(out('pow(2, 3)'), 'calc(8)');
   });
 
   test('WPT pow: pow(0, 0) → 1', () => {
-    assert.equal(out('pow(0, 0)'), '1');
+    assert.equal(out('pow(0, 0)'), 'calc(1)');
   });
 
   test('WPT pow: pow(2, 0.5) ≈ 1.41421', () => {
@@ -36,11 +36,11 @@ describe('WPT exponential functions', () => {
   });
 
   test('WPT pow: pow(infinity, 0) → 1', () => {
-    assert.equal(out('pow(infinity, 0)'), '1');
+    assert.equal(out('pow(infinity, 0)'), 'calc(1)');
   });
 
   test('WPT sqrt: sqrt(4) → 2', () => {
-    assert.equal(out('sqrt(4)'), '2');
+    assert.equal(out('sqrt(4)'), 'calc(2)');
   });
 
   test('WPT sqrt: sqrt(2) ≈ 1.41421', () => {
@@ -56,7 +56,7 @@ describe('WPT exponential functions', () => {
   });
 
   test('WPT exp: exp(0) → 1', () => {
-    assert.equal(out('exp(0)'), '1');
+    assert.equal(out('exp(0)'), 'calc(1)');
   });
 
   test('WPT exp: exp(1) ≈ 2.71828', () => {
@@ -64,7 +64,7 @@ describe('WPT exponential functions', () => {
   });
 
   test('WPT exp: exp(-infinity) → 0', () => {
-    assert.equal(out('exp(-infinity)'), '0');
+    assert.equal(out('exp(-infinity)'), 'calc(0)');
   });
 
   test('WPT exp: exp(infinity) → infinity', () => {
@@ -72,11 +72,11 @@ describe('WPT exponential functions', () => {
   });
 
   test('WPT log: log(e) → 1', () => {
-    assert.equal(out('log(e)'), '1');
+    assert.equal(out('log(e)'), 'calc(1)');
   });
 
   test('WPT log: log(1) → 0', () => {
-    assert.equal(out('log(1)'), '0');
+    assert.equal(out('log(1)'), 'calc(0)');
   });
 
   test('WPT log: log(0) → -infinity', () => {
@@ -88,19 +88,19 @@ describe('WPT exponential functions', () => {
   });
 
   test('WPT log: log(8, 2) → 3', () => {
-    assert.equal(out('log(8, 2)'), '3');
+    assert.equal(out('log(8, 2)'), 'calc(3)');
   });
 
   test('WPT log: log(100, 10) → 2', () => {
-    assert.equal(out('log(100, 10)'), '2');
+    assert.equal(out('log(100, 10)'), 'calc(2)');
   });
 
   test('WPT hypot: hypot(3, 4) → 5', () => {
-    assert.equal(out('hypot(3, 4)'), '5');
+    assert.equal(out('hypot(3, 4)'), 'calc(5)');
   });
 
   test('WPT hypot: hypot(3px, 4px) → 5px', () => {
-    assert.equal(out('hypot(3px, 4px)'), '5px');
+    assert.equal(out('hypot(3px, 4px)'), 'calc(5px)');
   });
 
   test('WPT hypot: hypot(infinity, 1) → infinity', () => {
@@ -108,7 +108,7 @@ describe('WPT exponential functions', () => {
   });
 
   test('WPT hypot: hypot(-2em) → 2em (single-arg = abs)', () => {
-    assert.equal(out('hypot(-2em)'), '2em');
+    assert.equal(out('hypot(-2em)'), 'calc(2em)');
   });
 });
 

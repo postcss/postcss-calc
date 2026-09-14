@@ -4,16 +4,16 @@ import { out } from '../../helpers/out.js';
 
 describe('product simplification', () => {
   test('simplify: dim * number', () => {
-    assert.equal(out('calc(3em * 2)'), '6em');
-    assert.equal(out('calc(2 * 3em)'), '6em');
+    assert.equal(out('calc(3em * 2)'), 'calc(6em)');
+    assert.equal(out('calc(2 * 3em)'), 'calc(6em)');
   });
 
   test('simplify: dim / number', () => {
-    assert.equal(out('calc(10px / 2)'), '5px');
+    assert.equal(out('calc(10px / 2)'), 'calc(5px)');
   });
 
   test('simplify: number * number', () => {
-    assert.equal(out('calc(3 * 4)'), '12');
+    assert.equal(out('calc(3 * 4)'), 'calc(12)');
   });
 
   test('simplify: number / number', () => {
@@ -27,7 +27,7 @@ describe('product simplification', () => {
   test('simplify: distributes number into a sum', () => {
     // not the spec's required behavior, but a natural consequence of folding
     // after a product — proves we fold where we can.
-    assert.equal(out('calc((1 + 2) * 3px)'), '9px');
+    assert.equal(out('calc((1 + 2) * 3px)'), 'calc(9px)');
   });
 
   test('simplify: distributes through a sum whose terms mix Num and Dim', () => {
@@ -54,7 +54,7 @@ describe('product simplification', () => {
   });
 
   test('simplify: chained multiplication folds left-to-right', () => {
-    assert.equal(out('calc(2 * 3 * 4px)'), '24px');
+    assert.equal(out('calc(2 * 3 * 4px)'), 'calc(24px)');
   });
 
   test('simplify: mixed * and / chain at the same precedence (left-assoc)', () => {
@@ -66,28 +66,28 @@ describe('product simplification', () => {
 // <T> / <T> → <number> when both sides reduce to the same base type and the
 // units are statically convertible within that type's conversion family.
 test('typed div: px / px → unitless', () => {
-  assert.equal(out('calc(10px / 2px)'), '5');
+  assert.equal(out('calc(10px / 2px)'), 'calc(5)');
 });
 
 describe('typed division', () => {
   test('typed div: in / px → unitless (cross-unit)', () => {
-    assert.equal(out('calc(1in / 48px)'), '2');
+    assert.equal(out('calc(1in / 48px)'), 'calc(2)');
   });
 
   test('typed div: cm / mm → unitless', () => {
-    assert.equal(out('calc(1cm / 5mm)'), '2');
+    assert.equal(out('calc(1cm / 5mm)'), 'calc(2)');
   });
 
   test('typed div: s / ms → unitless', () => {
-    assert.equal(out('calc(1s / 100ms)'), '10');
+    assert.equal(out('calc(1s / 100ms)'), 'calc(10)');
   });
 
   test('typed div: Hz / kHz → unitless', () => {
-    assert.equal(out('calc(1000hz / 1khz)'), '1');
+    assert.equal(out('calc(1000hz / 1khz)'), 'calc(1)');
   });
 
   test('typed div: deg / deg → unitless', () => {
-    assert.equal(out('calc(180deg / 180deg)'), '1');
+    assert.equal(out('calc(180deg / 180deg)'), 'calc(1)');
   });
 
   test('typed div: relative unit (vw) not statically convertible, preserved', () => {
@@ -111,7 +111,7 @@ describe('product distribution', () => {
 
   test('distribute: distribute-then-merge same-unit results', () => {
     // 3 * (1em + 2em) = 3em + 6em → merge → 9em.
-    assert.equal(out('calc(3 * (1em + 2em))'), '9em');
+    assert.equal(out('calc(3 * (1em + 2em))'), 'calc(9em)');
   });
 
   test('distribute: preserved when Sum contains an opaque term', () => {
@@ -123,22 +123,22 @@ describe('product distribution', () => {
   });
 
   test('distribute: cross-unit resolvable-sum still distributes', () => {
-    assert.equal(out('calc(2 * (1px + 1px))'), '4px');
+    assert.equal(out('calc(2 * (1px + 1px))'), 'calc(4px)');
   });
 
   test('distribute: coefficient 1 is a no-op (mkProduct drops factor of 1)', () => {
-    assert.equal(out('calc(1 * (2px + 3px))'), '5px');
+    assert.equal(out('calc(1 * (2px + 3px))'), 'calc(5px)');
   });
 
   test('distribute: coefficient on the left or right — both work', () => {
-    assert.equal(out('calc((1px + 2px) * 3)'), '9px');
-    assert.equal(out('calc(3 * (1px + 2px))'), '9px');
+    assert.equal(out('calc((1px + 2px) * 3)'), 'calc(9px)');
+    assert.equal(out('calc(3 * (1px + 2px))'), 'calc(9px)');
   });
 
   test('distribute: nested distribution chains', () => {
     // ((1 + 2) * 3px) = 9px, already exercised; deeper case:
     // 2 * (1 + 2) * 3px — two multipliers fold first, then distribute.
-    assert.equal(out('calc(2 * (1 + 2) * 3px)'), '18px');
+    assert.equal(out('calc(2 * (1 + 2) * 3px)'), 'calc(18px)');
   });
 });
 
@@ -166,7 +166,7 @@ describe('division by zero', () => {
 
 describe('non-finite arithmetic', () => {
   test('arithmetic: 1 / infinity → 0', () => {
-    assert.equal(out('calc(1 / infinity)'), '0');
+    assert.equal(out('calc(1 / infinity)'), 'calc(0)');
   });
 
   test('arithmetic: infinity * 0 → NaN', () => {

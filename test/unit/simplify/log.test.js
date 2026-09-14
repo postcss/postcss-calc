@@ -4,11 +4,11 @@ import { out } from '../../helpers/out.js';
 
 describe('log()', () => {
   test('log: e (single arg, natural log) → 1', () => {
-    assert.equal(out('log(e)'), '1');
+    assert.equal(out('log(e)'), 'calc(1)');
   });
 
   test('log: 1 → 0', () => {
-    assert.equal(out('log(1)'), '0');
+    assert.equal(out('log(1)'), 'calc(0)');
   });
 
   test('log: 0 → -infinity', () => {
@@ -20,11 +20,11 @@ describe('log()', () => {
   });
 
   test('log: with base — log(8, 2) → 3', () => {
-    assert.equal(out('log(8, 2)'), '3');
+    assert.equal(out('log(8, 2)'), 'calc(3)');
   });
 
   test('log: with base — log(100, 10) → 2', () => {
-    assert.equal(out('log(100, 10)'), '2');
+    assert.equal(out('log(100, 10)'), 'calc(2)');
   });
 
   test('log: log(1, 1) → NaN (0/0 form)', () => {
@@ -46,5 +46,5 @@ describe('log()', () => {
 
 test('log(exp(x)) round-trip → x', () => {
   // Composition exercises two helpers chained.
-  assert.equal(out('log(exp(5))'), '5');
+  assert.equal(out('log(exp(5))'), 'calc(5)');
 });

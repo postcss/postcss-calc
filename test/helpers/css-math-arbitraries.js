@@ -1,5 +1,5 @@
 import fc from 'fast-check';
-import { tokenize } from '../../src/lib/tokenizer.js';
+import { tokenize } from '@csstools/css-tokenizer';
 import { parse } from '../../src/lib/parser.js';
 // CSS Values & Units Level 4 math grammar, bounded to the functions exposed
 // by isSupportedMathFunction in this package.  This intentionally generates
@@ -21,7 +21,7 @@ const opaqueLeafArb = fc.constantFrom(
 function checkedSource(source) {
   // Keep the generator tied to the production grammar. Throwing here makes a
   // generator update fail immediately instead of silently reducing coverage.
-  parse(tokenize(source));
+  parse(tokenize({ css: source }));
   return source;
 }
 
@@ -80,7 +80,7 @@ export const opaqueGroupedCalcArb = fc
       },
       {
         input: `calc(5px - (var(${a}, 1px) + var(${b}, calc(2px + 3px))))`,
-        expected: `calc(5px - (var(${a}, 1px) + var(${b}, 5px)))`,
+        expected: `calc(5px - (var(${a}, 1px) + var(${b}, calc(5px))))`,
       },
       {
         input: `calc(var(${a}) + (var(${b}) + 10px))`,

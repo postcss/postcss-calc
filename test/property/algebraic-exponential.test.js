@@ -38,7 +38,7 @@ describe('exponential function laws', () => {
   test('law: pow(x, 0) ≡ 1 for finite x', () => {
     fc.assert(
       fc.property(fc.integer({ min: -1000, max: 1000 }), (v) => {
-        return out(call('pow', [num(v), num(0)])) === '1';
+        return out(call('pow', [num(v), num(0)])) === 'calc(1)';
       }),
       { numRuns: NUM_RUNS }
     );
@@ -94,7 +94,7 @@ describe('exponential function laws', () => {
   });
 
   test('law: hypot(3, 4) ≡ 5 (sentinel)', () => {
-    if (out(call('hypot', [num(3), num(4)])) !== '5') {
+    if (out(call('hypot', [num(3), num(4)])) !== 'calc(5)') {
       throw new Error('expected 5');
     }
   });

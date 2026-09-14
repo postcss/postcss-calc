@@ -9,10 +9,11 @@
 // hunting. We still keep them in CI as a guardrail.
 import { test } from 'node:test';
 import fc from 'fast-check';
-import { tokenize } from '../../src/lib/tokenizer.js';
+import { tokenize } from '@csstools/css-tokenizer';
 import { parse } from '../../src/lib/parser.js';
 import { simplify } from '../../src/lib/simplify.js';
 import { serialize } from '../../src/lib/serialize.js';
+import { checkCalculationType } from '../../src/lib/calculation-type.js';
 import {
   astArb,
   astArbWithDegenerate,
@@ -44,7 +45,7 @@ test('property: simplify → serialize → parse → simplify is a fixed point',
     fc.property(astArb(4), (ast) => {
       const first = simplify(ast);
       const str1 = str(first);
-      const second = simplify(parse(tokenize(str1)));
+      const second = simplify(parse(tokenize({ css: str1 })));
       return str1 === str(second);
     }),
     { numRuns: NUM_RUNS }
@@ -83,12 +84,18 @@ test('property: numeric x + 0 ≡ simplify(x)', () => {
 // --- Double negation -----------------------------------------------------
 test('property: -(-x) ≡ simplify(x)', () => {
   fc.assert(
-    fc.property(astArb(3), (ast) => {
-      const doubleNeg = negate(negate(ast));
-      const lhs = simplify(doubleNeg);
-      const rhs = simplify(ast);
-      return str(lhs) === str(rhs);
-    }),
+    // Double negation is a CSS identity only for a type-valid calculation.
+    // The structural generator intentionally combines arbitrary dimensions,
+    // which can otherwise produce invalid sums such as `-0 + 0px`.
+    fc.property(
+      astArb(3).filter((ast) => checkCalculationType(ast).kind !== 'failure'),
+      (ast) => {
+        const doubleNeg = negate(negate(ast));
+        const lhs = simplify(doubleNeg);
+        const rhs = simplify(ast);
+        return str(lhs) === str(rhs);
+      }
+    ),
     { numRuns: NUM_RUNS }
   );
 });
@@ -110,7 +117,7 @@ test('property: round-trip stable under degenerate / float leaves', () => {
     fc.property(astArbWithDegenerate(4), (ast) => {
       const first = simplify(ast);
       const str1 = str(first);
-      const second = simplify(parse(tokenize(str1)));
+      const second = simplify(parse(tokenize({ css: str1 })));
       return str1 === str(second);
     }),
     { numRuns: NUM_RUNS }

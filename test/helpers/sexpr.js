@@ -30,5 +30,14 @@ export function sexpr(node) {
       return node.args.length === 0
         ? `(${node.name})`
         : `(${node.name} ${node.args.map(sexpr).join(' ')})`;
+    case 'OpaqueCall':
+      return `OpaqueCall(${node.name.toLowerCase()} [${node.components.map(opaqueComponentSexpr).join(' ')}])`;
   }
+}
+
+function opaqueComponentSexpr(component) {
+  if (typeof component === 'string') return JSON.stringify(component);
+  if (Array.isArray(component))
+    return `[${component.map(opaqueComponentSexpr).join(' ')}]`;
+  return sexpr(component);
 }

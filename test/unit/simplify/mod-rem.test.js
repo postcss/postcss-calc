@@ -3,13 +3,13 @@ import assert from 'node:assert/strict';
 import { out } from '../../helpers/out.js';
 
 test('mod: positive A and positive B', () => {
-  assert.equal(out('mod(18, 5)'), '3');
-  assert.equal(out('mod(18px, 5px)'), '3px');
+  assert.equal(out('mod(18, 5)'), 'calc(3)');
+  assert.equal(out('mod(18px, 5px)'), 'calc(3px)');
 });
 
 test('rem: positive A and positive B (== mod when same sign)', () => {
-  assert.equal(out('rem(18, 5)'), '3');
-  assert.equal(out('rem(18px, 5px)'), '3px');
+  assert.equal(out('rem(18, 5)'), 'calc(3)');
+  assert.equal(out('rem(18px, 5px)'), 'calc(3px)');
 });
 
 test('mod: negative A and negative B (spec example -140deg, -90deg → -50deg)', () => {
@@ -21,7 +21,7 @@ test('rem: negative A and negative B (== mod when same sign)', () => {
 });
 
 test('mod: negative A and positive B (spec example -18px, 5px → 2px — sign of B)', () => {
-  assert.equal(out('mod(-18px, 5px)'), '2px');
+  assert.equal(out('mod(-18px, 5px)'), 'calc(2px)');
 });
 
 test('rem: negative A and positive B (spec example -18px, 5px → -3px — sign of A)', () => {
@@ -33,20 +33,20 @@ test('mod: positive A and negative B (spec example 140deg, -90deg → -40deg)', 
 });
 
 test('rem: positive A and negative B (spec example 140deg, -90deg → 50deg)', () => {
-  assert.equal(out('rem(140deg, -90deg)'), '50deg');
+  assert.equal(out('rem(140deg, -90deg)'), 'calc(50deg)');
 });
 
 test('mod: exact multiple → 0', () => {
-  assert.equal(out('mod(10px, 5px)'), '0px');
+  assert.equal(out('mod(10px, 5px)'), 'calc(0px)');
 });
 
 test('rem: exact multiple → 0', () => {
-  assert.equal(out('rem(10px, 5px)'), '0px');
+  assert.equal(out('rem(10px, 5px)'), 'calc(0px)');
 });
 
 describe('mod(): unit conversion and zero divisor', () => {
   test('mod: cross-unit conversion (1in, 24px) — 96px mod 24px = 0px in first unit', () => {
-    assert.equal(out('mod(1in, 24px)'), '0in');
+    assert.equal(out('mod(1in, 24px)'), 'calc(0in)');
   });
 
   test('mod: B=0 → NaN', () => {
@@ -92,11 +92,11 @@ test('rem: A is infinite → NaN', () => {
 });
 
 test('mod: B infinite, A same sign → A unchanged', () => {
-  assert.equal(out('mod(5, infinity)'), '5');
+  assert.equal(out('mod(5, infinity)'), 'calc(5)');
 });
 
 test('rem: B infinite → A unchanged', () => {
-  assert.equal(out('rem(5, infinity)'), '5');
+  assert.equal(out('rem(5, infinity)'), 'calc(5)');
   assert.equal(out('rem(-5, infinity)'), 'calc(-5)');
 });
 
@@ -111,11 +111,11 @@ describe('mod(): non-finite divisors and invalid calls', () => {
   });
 
   test('mod: zero A and finite B → 0 (preserves type)', () => {
-    assert.equal(out('mod(0, 5)'), '0');
-    assert.equal(out('mod(0px, 5px)'), '0px');
+    assert.equal(out('mod(0, 5)'), 'calc(0)');
+    assert.equal(out('mod(0px, 5px)'), 'calc(0px)');
   });
 });
 
 test('rem: zero A and finite B → 0', () => {
-  assert.equal(out('rem(0, 5)'), '0');
+  assert.equal(out('rem(0, 5)'), 'calc(0)');
 });
