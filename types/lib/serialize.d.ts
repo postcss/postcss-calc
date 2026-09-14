@@ -12,13 +12,13 @@ export type SerializeOptions = {
      */
     calcName?: string;
     /**
-     * Serialize finite negative scalars without a wrapper. Internal selector-only mode.
+     * Deprecated alias for `unwrapSingleValue`.
      */
     unwrapSingleNegativeNumber?: boolean;
     /**
-     * Serialize finite negative scalars and unitless fractions without a wrapper.
+     * Serialize fully resolved finite scalar results without calculation syntax.
      */
-    unwrapSingleNumber?: boolean;
+    unwrapSingleValue?: boolean;
 };
 /**
  * @param {Node} node
@@ -26,4 +26,16 @@ export type SerializeOptions = {
  * @return {string}
  */
 declare function serialize(node: Node, opts?: SerializeOptions): string;
-export { serialize };
+/**
+ * @param {{tree: Node, status: 'resolved' | 'unresolved', rootName: string, rootSpelling: string, original: string}} result
+ * @param {SerializeOptions} [opts]
+ * @return {string}
+ */
+declare function serializeResult(result: {
+    tree: Node;
+    status: 'resolved' | 'unresolved';
+    rootName: string;
+    rootSpelling: string;
+    original: string;
+}, opts?: SerializeOptions): string;
+export { serialize, serializeResult };
