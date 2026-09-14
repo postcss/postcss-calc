@@ -281,7 +281,15 @@ when changing parsing/simplification behavior:
 pnpm test:corpus:full
 ```
 
-Profile long arithmetic parser chains with `pnpm benchmark:arithmetic-chains`.
+Profile parser chains with `pnpm benchmark:arithmetic-chains` or
+`pnpm benchmark:nested-fallbacks`; both use 20 fresh paired blocks by default
+and write ignored schema-v2 reports. Compare a saved report with
+`node scripts/compare-parser-benchmarks.js <report>`. Run the correctness-aware
+corpus benchmark with `pnpm benchmark:corpus`.
+
+The PostCSS benchmark awaits `postcss().process(...)`, and that await already
+triggers result stringification. It therefore does not add a redundant
+`result.css` access.
 
 ## [Changelog](CHANGELOG.md)
 
