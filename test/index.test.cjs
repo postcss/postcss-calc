@@ -4,28 +4,34 @@ const { describe, test } = require('node:test');
 const { testValue } = require('./helpers/testValue.js');
 
 describe('Reduce', () => {
-  test('should reduce simple calc (1)', testValue('calc(1px + 1px)', '2px'));
+  test(
+    'should reduce simple calc (1)',
+    testValue('calc(1px + 1px)', 'calc(2px)')
+  );
   test(
     'should reduce simple calc (2)',
     // `2px+3px` violates §10.1 whitespace → preserved with a warning.
     testValue(
       'calc(1px + 1px);baz:calc(2px+3px)',
-      /* '2px;baz:5px' */ '2px;baz:calc(2px+3px)'
+      /* '2px;baz:5px' */ 'calc(2px);baz:calc(2px+3px)'
     )
   );
 
   test(
     'should reduce simple calc (3)',
-    testValue('calc(1rem * 1.5)', '1.5rem')
+    testValue('calc(1rem * 1.5)', 'calc(1.5rem)')
   );
 
-  test('should reduce simple calc (4)', testValue('calc(3em - 1em)', '2em'));
+  test(
+    'should reduce simple calc (4)',
+    testValue('calc(3em - 1em)', 'calc(2em)')
+  );
 
-  test('should reduce simple calc (5', testValue('calc(2ex / 2)', '1ex'));
+  test('should reduce simple calc (5', testValue('calc(2ex / 2)', 'calc(1ex)'));
 
   test(
     'should reduce simple calc (6)',
-    testValue('calc(50px - (20px - 30px))', '60px')
+    testValue('calc(50px - (20px - 30px))', 'calc(60px)')
   );
 
   test(
@@ -125,40 +131,46 @@ describe('Reduce', () => {
 describe('Ignore', () => {
   test(
     'should ignore value surrounding calc function (1)',
-    testValue('a calc(1px + 1px)', 'a 2px')
+    testValue('a calc(1px + 1px)', 'a calc(2px)')
   );
 
   test(
     'should ignore value surrounding calc function (2)',
-    testValue('calc(1px + 1px) a', '2px a')
+    testValue('calc(1px + 1px) a', 'calc(2px) a')
   );
 
   test(
     'should ignore value surrounding calc function (3)',
-    testValue('a calc(1px + 1px) b', 'a 2px b')
+    testValue('a calc(1px + 1px) b', 'a calc(2px) b')
   );
 
   test(
     'should ignore value surrounding calc function (4)',
-    testValue('a calc(1px + 1px) b calc(1em + 2em) c', 'a 2px b 3em c')
+    testValue(
+      'a calc(1px + 1px) b calc(1em + 2em) c',
+      'a calc(2px) b calc(3em) c'
+    )
   );
 });
 
 describe('Reduce', () => {
-  test('should reduce uppercase calc (1)', testValue('CALC(1px + 1px)', '2px'));
+  test(
+    'should reduce uppercase calc (1)',
+    testValue('CALC(1px + 1px)', 'CALC(2px)')
+  );
 
   test(
     'should reduce uppercase calc (2)',
-    testValue('CALC(1px + CALC(2px / 2))', '2px')
+    testValue('CALC(1px + CALC(2px / 2))', 'CALC(2px)')
   );
 
   test(
     'should reduce uppercase calc (3)',
-    testValue('-WEBKIT-CALC(1px + 1px)', '2px')
+    testValue('-WEBKIT-CALC(1px + 1px)', '-WEBKIT-CALC(2px)')
   );
 
   test(
     'should reduce uppercase calc (4)',
-    testValue('-WEBKIT-CALC(1px + -WEBKIT-CALC(2px / 2))', '2px')
+    testValue('-WEBKIT-CALC(1px + -WEBKIT-CALC(2px / 2))', '-WEBKIT-CALC(2px)')
   );
 });

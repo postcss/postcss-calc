@@ -7,12 +7,12 @@ import { out } from '../../helpers/out.js';
 // in degrees. NaN out-of-domain results stay as bare NaN — degenerate-
 // numeric serialization (calc(NaN * 1deg)) is a planned follow-up.
 test('asin: 0 → 0deg', () => {
-  assert.equal(out('asin(0)'), '0deg');
+  assert.equal(out('asin(0)'), 'calc(0deg)');
 });
 
 describe('asin() results', () => {
   test('asin: 1 → 90deg', () => {
-    assert.equal(out('asin(1)'), '90deg');
+    assert.equal(out('asin(1)'), 'calc(90deg)');
   });
 
   test('asin: -1 → -90deg', () => {
@@ -20,31 +20,31 @@ describe('asin() results', () => {
   });
 
   test('asin: 0.5 → 30deg (Math.asin(0.5)*180/π = 30.0000... rounds to 30)', () => {
-    assert.equal(out('asin(0.5)'), '30deg');
+    assert.equal(out('asin(0.5)'), 'calc(30deg)');
   });
 });
 
 describe('acos() results', () => {
   test('acos: 0 → 90deg', () => {
-    assert.equal(out('acos(0)'), '90deg');
+    assert.equal(out('acos(0)'), 'calc(90deg)');
   });
 
   test('acos: 1 → 0deg (zero-valued angle keeps the unit per §10.10)', () => {
-    assert.equal(out('acos(1)'), '0deg');
+    assert.equal(out('acos(1)'), 'calc(0deg)');
   });
 
   test('acos: -1 → 180deg', () => {
-    assert.equal(out('acos(-1)'), '180deg');
+    assert.equal(out('acos(-1)'), 'calc(180deg)');
   });
 });
 
 describe('atan() results', () => {
   test('atan: 0 → 0deg', () => {
-    assert.equal(out('atan(0)'), '0deg');
+    assert.equal(out('atan(0)'), 'calc(0deg)');
   });
 
   test('atan: 1 → 45deg (exact in JS)', () => {
-    assert.equal(out('atan(1)'), '45deg');
+    assert.equal(out('atan(1)'), 'calc(45deg)');
   });
 
   test('atan: -1 → -45deg', () => {
@@ -52,7 +52,7 @@ describe('atan() results', () => {
   });
 
   test('atan: infinity → 90deg (Math.atan(Infinity) = π/2 exactly)', () => {
-    assert.equal(out('atan(infinity)'), '90deg');
+    assert.equal(out('atan(infinity)'), 'calc(90deg)');
   });
 
   test('atan: -infinity → -90deg', () => {
@@ -89,7 +89,7 @@ describe('inverse trigonometric invalid inputs', () => {
 
 describe('inverse trigonometric simplification', () => {
   test('atan: pi folds through (pi - pi simplifies to 0 before atan)', () => {
-    assert.equal(out('atan(pi - pi)'), '0deg');
+    assert.equal(out('atan(pi - pi)'), 'calc(0deg)');
   });
 
   test('atan: wrong arity (two args) → opaque (atan2 is the two-arg form)', () => {

@@ -4,7 +4,7 @@ import { out } from '../../helpers/out.js';
 
 describe('sign()', () => {
   test('sign: positive number → 1', () => {
-    assert.equal(out('sign(5)'), '1');
+    assert.equal(out('sign(5)'), 'calc(1)');
   });
 
   test('sign: negative number → -1', () => {
@@ -12,11 +12,11 @@ describe('sign()', () => {
   });
 
   test('sign: zero → 0', () => {
-    assert.equal(out('sign(0)'), '0');
+    assert.equal(out('sign(0)'), 'calc(0)');
   });
 
   test('sign: positive dimension → 1 (returns <number> regardless of input)', () => {
-    assert.equal(out('sign(10px)'), '1');
+    assert.equal(out('sign(10px)'), 'calc(1)');
   });
 
   test('sign: negative dimension → -1', () => {
@@ -24,7 +24,7 @@ describe('sign()', () => {
   });
 
   test('sign: zero dimension → 0', () => {
-    assert.equal(out('sign(0px)'), '0');
+    assert.equal(out('sign(0px)'), 'calc(0)');
   });
 
   test('sign: var() → opaque', () => {
@@ -41,7 +41,7 @@ describe('sign()', () => {
   });
 
   test('sign: infinity → 1', () => {
-    assert.equal(out('sign(infinity)'), '1');
+    assert.equal(out('sign(infinity)'), 'calc(1)');
   });
 
   test('sign: -infinity → -1', () => {

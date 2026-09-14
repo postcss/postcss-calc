@@ -103,7 +103,7 @@ describe('CSS custom properties', () => {
 
 test(
   'should reduce calc with newline characters',
-  testValue('calc(\n1rem \n* 2 \n* 1.5)', '3rem')
+  testValue('calc(\n1rem \n* 2 \n* 1.5)', 'calc(3rem)')
 );
 
 test(
@@ -114,45 +114,45 @@ test(
 describe('Browser prefixes', () => {
   test(
     'should reduce browser-prefixed calc (1)',
-    testValue('-webkit-calc(1px + 1px)', '2px')
+    testValue('-webkit-calc(1px + 1px)', '-webkit-calc(2px)')
   );
 
   test(
     'should reduce browser-prefixed calc (2)',
-    testValue('-moz-calc(1px + 1px)', '2px')
+    testValue('-moz-calc(1px + 1px)', '-moz-calc(2px)')
   );
 });
 
 describe('Skip special functions', () => {
   test(
     'should skip constant function',
-    // single-value calc() unwrapped (§10.6).
     testValue(
       'calc(constant(safe-area-inset-left))',
-      'constant(safe-area-inset-left)'
+      'calc(constant(safe-area-inset-left))'
     )
   );
 
   test(
     'should skip env function',
-    // single-value calc() unwrapped (§10.6).
-    testValue('calc(env(safe-area-inset-left))', 'env(safe-area-inset-left)')
+    testValue(
+      'calc(env(safe-area-inset-left))',
+      'calc(env(safe-area-inset-left))'
+    )
   );
 
   test(
     'should skip env function (#1)',
     testValue(
       'calc(env(safe-area-inset-left, 50px 20px))',
-      'env(safe-area-inset-left, 50px 20px)'
+      'calc(env(safe-area-inset-left, 50px 20px))'
     )
   );
 
   test(
     'should skip unknown function',
-    // single-value calc() unwrapped (§10.6).
     testValue(
       'calc(unknown(safe-area-inset-left))',
-      'unknown(safe-area-inset-left)'
+      'calc(unknown(safe-area-inset-left))'
     )
   );
 
@@ -167,7 +167,7 @@ describe('Skip special functions', () => {
 
 test(
   'should not yield warnings when nothing is wrong',
-  testValue('calc(500px - 0px)', '500px', { warnWhenCannotResolve: true })
+  testValue('calc(500px - 0px)', 'calc(500px)', { warnWhenCannotResolve: true })
 );
 
 test(

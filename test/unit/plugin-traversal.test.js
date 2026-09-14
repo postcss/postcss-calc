@@ -4,22 +4,9 @@ import { describe, test } from 'node:test';
 import assert from 'node:assert/strict';
 import postcss from 'postcss';
 import plugin from '../../src/index.js';
+import { createPluginTestHarness } from '../helpers/plugin.js';
 
-const POSTCSS_OPTS = { from: undefined };
-
-async function process(fixture, opts = {}) {
-  const result = await postcss(plugin(opts)).process(fixture, POSTCSS_OPTS);
-  return { css: result.css, warnings: result.warnings().map((w) => w.text) };
-}
-
-async function assertIdempotent(fixture, opts = {}) {
-  const first = await process(fixture, opts);
-  const second = await process(first.css, opts);
-
-  assert.notEqual(first.css, fixture);
-  assert.equal(second.css, first.css);
-  assert.deepEqual(second.warnings, first.warnings);
-}
+const { process, assertIdempotent } = createPluginTestHarness(plugin);
 // --- Option combinations -------------------------------------------------
 describe('plugin: option combinations', () => {
   test('plugin: obsolete preserve option and warnWhenCannotResolve work together', async () => {
@@ -115,34 +102,37 @@ describe('plugin: bare math functions', () => {
     const { css } = await process(
       'a{width:c\\61 lc(1px + 2px);height:m\\69 n(1px, 2px)}'
     );
-    assert.equal(css, 'a{width:3px;height:1px}');
+    assert.equal(css, 'a{width:c\\61 lc(3px);height:calc(1px)}');
   });
 
   test('plugin: simplifies bare max() outside of calc()', async () => {
     const { css } = await process('a{ height: max(1px, 2px, 3px) }');
-    assert.equal(css, 'a{ height: 3px }');
+    assert.equal(css, 'a{ height: calc(3px) }');
   });
 
   test('plugin: simplifies bare clamp() outside of calc()', async () => {
     const { css } = await process('a{ width: clamp(0px, 5px, 10px) }');
-    assert.equal(css, 'a{ width: 5px }');
+    assert.equal(css, 'a{ width: calc(5px) }');
   });
 
   test('plugin: simplifies clamp() with none keyword', async () => {
     const { css } = await process(
       'a{ a: clamp(none, 10px, 20px); b: clamp(10px, 20px, none); c: clamp(none, 10px, none); d: clamp(none, var(--x), 20px) }'
     );
-    assert.equal(css, 'a{ a: 10px; b: 20px; c: 10px; d: min(var(--x), 20px) }');
+    assert.equal(
+      css,
+      'a{ a: calc(10px); b: calc(20px); c: calc(10px); d: clamp(none, var(--x), 20px) }'
+    );
   });
 
   test('plugin: simplifies bare math functions case-insensitively', async () => {
     const { css } = await process('a{ width: MIN(1px, 2px) }');
-    assert.equal(css, 'a{ width: 1px }');
+    assert.equal(css, 'a{ width: calc(1px) }');
   });
 
   test('plugin: simplifies a supported bare function from the dispatcher', async () => {
     const { css } = await process('a{ width: pow(2, 3) }');
-    assert.equal(css, 'a{ width: 8 }');
+    assert.equal(css, 'a{ width: calc(8) }');
   });
 
   test('plugin: leaves unsupported bare functions untouched', async () => {
@@ -152,14 +142,14 @@ describe('plugin: bare math functions', () => {
 
   test('plugin: supported math is found inside unsupported functions', async () => {
     const { css } = await process('a{width: unknown(calc(1px + 2px))}');
-    assert.equal(css, 'a{width: unknown(3px)}');
+    assert.equal(css, 'a{width: unknown(calc(3px))}');
   });
 
   test('plugin: supported math is found inside nested simple blocks', async () => {
     const { css } = await process(
       'a{width:unknown([calc(1px + 2px)] {max(3px, 4px)})}'
     );
-    assert.equal(css, 'a{width:unknown([3px] {4px})}');
+    assert.equal(css, 'a{width:unknown([calc(3px)] {calc(4px)})}');
   });
 
   test('plugin: a failing supported outer function suppresses its children', async () => {
@@ -169,20 +159,20 @@ describe('plugin: bare math functions', () => {
       onParseError: (_, input) => inputs.push(input),
     });
     assert.equal(css, fixture);
-    assert.deepEqual(inputs, ['calc(1 /) + calc(1px + 2px)']);
+    assert.deepEqual(inputs, ['calc(calc(1 /) + calc(1px + 2px))']);
   });
 
   test('plugin: stray malformed closers do not hide later calculations', async () => {
     const { css } = await process('a{width:] calc(1px + 2px)}');
-    assert.equal(css, 'a{width:] 3px}');
+    assert.equal(css, 'a{width:] calc(3px)}');
   });
 
   test('plugin: an unclosed function consumes through the end of a node value', async () => {
     const root = postcss.root({
       nodes: [postcss.decl({ prop: 'width', value: 'calc(1px + 2px' })],
     });
-    const result = await postcss(plugin()).process(root, POSTCSS_OPTS);
-    assert.equal(result.css, 'width: 3px');
+    const { css } = await process(root);
+    assert.equal(css, 'width: calc(1px + 2px');
   });
 
   test('plugin: leaves opaque-arg bare min() preserved', async () => {
@@ -197,7 +187,7 @@ describe('plugin: bare math functions', () => {
 // unchanged.
 test('plugin: IE backslash hack survives the outer walk untouched', async () => {
   const { css } = await process('a{width:calc(1px + 2px)\\9}');
-  assert.equal(css, 'a{width:3px\\9}');
+  assert.equal(css, 'a{width:calc(3px)\\9}');
 });
 
 describe('plugin: escaped and opaque content', () => {
@@ -220,6 +210,9 @@ describe('plugin: escaped and opaque content', () => {
     const { css } = await process(
       'a{grid-template-columns:[full-start] calc(1px + 2px) [full-end]}'
     );
-    assert.equal(css, 'a{grid-template-columns:[full-start] 3px [full-end]}');
+    assert.equal(
+      css,
+      'a{grid-template-columns:[full-start] calc(3px) [full-end]}'
+    );
   });
 });

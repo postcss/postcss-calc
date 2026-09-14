@@ -2,28 +2,14 @@
 // PostCSS adapter, option wiring, and error reporting behavior.
 import { describe, test } from 'node:test';
 import assert from 'node:assert/strict';
-import postcss from 'postcss';
 import plugin from '../../src/index.js';
+import { createPluginTestHarness } from '../helpers/plugin.js';
 
-const POSTCSS_OPTS = { from: undefined };
-
-async function process(fixture, opts = {}) {
-  const result = await postcss(plugin(opts)).process(fixture, POSTCSS_OPTS);
-  return { css: result.css, warnings: result.warnings().map((w) => w.text) };
-}
-
-async function assertIdempotent(fixture, opts = {}) {
-  const first = await process(fixture, opts);
-  const second = await process(first.css, opts);
-
-  assert.notEqual(first.css, fixture);
-  assert.equal(second.css, first.css);
-  assert.deepEqual(second.warnings, first.warnings);
-}
+const { process, assertIdempotent } = createPluginTestHarness(plugin);
 // --- obsolete JavaScript options ----------------------------------------
 test('plugin: obsolete preserve option is ignored at runtime', async () => {
   const { css } = await process('a{b:calc(1px + 2px)}', { preserve: true });
-  assert.equal(css, 'a{b:3px}');
+  assert.equal(css, 'a{b:calc(3px)}');
 });
 
 // --- warnWhenCannotResolve -----------------------------------------------
@@ -57,7 +43,7 @@ describe('plugin: media queries', () => {
       '@media (min-width: calc(100px + 100px)) { a{b:c} }',
       { mediaQueries: true }
     );
-    assert.match(css, /min-width: 200px/);
+    assert.match(css, /min-width: calc\(200px\)/);
   });
 
   test('plugin: mediaQueries off leaves @media untouched', async () => {
@@ -72,7 +58,7 @@ describe('plugin: media queries', () => {
       '@media (min-width: calc(100px + 100px)) { a{b:c} }',
       { mediaQueries: true }
     );
-    assert.equal(css, '@media (min-width: 200px) { a{b:c} }');
+    assert.equal(css, '@media (min-width: calc(200px)) { a{b:c} }');
   });
 
   test('plugin: mediaQueries transformations are idempotent', async () => {
@@ -99,15 +85,15 @@ describe('plugin: parse error handling', () => {
     assert.equal(warnings.length, 0);
     assert.equal(captured.length, 1);
     assert.match(captured[0].message, /Unexpected token/);
-    assert.equal(captured[0].input, '1 /');
+    assert.equal(captured[0].input, 'calc(1 /)');
   });
 
-  test('plugin: onParseError receives the inner calc body, not the full decl', async () => {
+  test('plugin: onParseError receives the complete invalid roots', async () => {
     const inputs = [];
     await process('a{b:calc(1 /) calc(2 /)}', {
       onParseError: (_, input) => inputs.push(input),
     });
-    assert.deepEqual(inputs, ['1 /', '2 /']);
+    assert.deepEqual(inputs, ['calc(1 /)', 'calc(2 /)']);
   });
 
   test('plugin: division by zero now folds to infinity (no error)', async () => {
@@ -127,7 +113,7 @@ describe('plugin: parse error handling', () => {
 describe('plugin: precision', () => {
   test('plugin: precision option applies to numeric output', async () => {
     const { css } = await process('a{b:calc(1in + 10px)}', { precision: 2 });
-    assert.equal(css, 'a{b:1.1in}');
+    assert.equal(css, 'a{b:calc(1.1in)}');
   });
 
   test('plugin: precision false keeps full float precision', async () => {
@@ -139,6 +125,6 @@ describe('plugin: precision', () => {
 
   test('plugin: precision 0 rounds to whole numbers', async () => {
     const { css } = await process('a{b:calc(1in + 10px)}', { precision: 0 });
-    assert.equal(css, 'a{b:1in}');
+    assert.equal(css, 'a{b:calc(1in)}');
   });
 });

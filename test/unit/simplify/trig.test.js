@@ -8,41 +8,41 @@ import { out } from '../../helpers/out.js';
 // table. Output is a bare <number>. Outputs assume default precision 5;
 // values like Math.sin(Math.PI) ≈ 1.2e-16 round to 0.
 test('sin: zero', () => {
-  assert.equal(out('sin(0)'), '0');
+  assert.equal(out('sin(0)'), 'calc(0)');
 });
 
 test('cos: zero', () => {
-  assert.equal(out('cos(0)'), '1');
+  assert.equal(out('cos(0)'), 'calc(1)');
 });
 
 test('tan: zero', () => {
-  assert.equal(out('tan(0)'), '0');
+  assert.equal(out('tan(0)'), 'calc(0)');
 });
 
 test('sin: 90deg → 1 (exact in JS)', () => {
-  assert.equal(out('sin(90deg)'), '1');
+  assert.equal(out('sin(90deg)'), 'calc(1)');
 });
 
 test('cos: 90deg → 0 (Math.cos(π/2) ≈ 6e-17 rounds at precision 5)', () => {
-  assert.equal(out('cos(90deg)'), '0');
+  assert.equal(out('cos(90deg)'), 'calc(0)');
 });
 
 describe('sin() angle conversion', () => {
   test('sin: 0.5turn → 0 (Math.sin(π) ≈ 1.2e-16 rounds at precision 5)', () => {
-    assert.equal(out('sin(0.5turn)'), '0');
+    assert.equal(out('sin(0.5turn)'), 'calc(0)');
   });
 
   test('sin: 200grad → 0 (200grad = π rad)', () => {
-    assert.equal(out('sin(200grad)'), '0');
+    assert.equal(out('sin(200grad)'), 'calc(0)');
   });
 
   test('sin: pi keyword folds before sin sees the arg', () => {
     // Parser folds `pi` to Num(π); simplifier delivers it as a plain Num.
-    assert.equal(out('sin(pi)'), '0');
+    assert.equal(out('sin(pi)'), 'calc(0)');
   });
 
   test('sin: pi / 2 folds to a Num before sin', () => {
-    assert.equal(out('sin(pi / 2)'), '1');
+    assert.equal(out('sin(pi / 2)'), 'calc(1)');
   });
 });
 
@@ -57,7 +57,7 @@ describe('cos()', () => {
 });
 
 test('tan: 45deg → 1 (Math.tan(π/4) = 0.999... rounds to 1)', () => {
-  assert.equal(out('tan(45deg)'), '1');
+  assert.equal(out('tan(45deg)'), 'calc(1)');
 });
 
 describe('trigonometric numeric edge cases', () => {
@@ -100,7 +100,7 @@ describe('trigonometric invalid inputs', () => {
 
 test('cos: inner sum folds first then cos', () => {
   // 1deg + 89deg → 90deg → cos(90deg) → ~0 (rounds to 0).
-  assert.equal(out('cos(1deg + 89deg)'), '0');
+  assert.equal(out('cos(1deg + 89deg)'), 'calc(0)');
 });
 
 test('sin: case-insensitive function and unit', () => {

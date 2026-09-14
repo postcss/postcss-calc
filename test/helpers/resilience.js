@@ -1,7 +1,7 @@
 // Resilience: every corpus input must produce a string or throw a real
 // synchronous Error. No hangs, no non-Error throws, no infinite loops.
 import { readFileSync } from 'node:fs';
-import { tokenize } from '../../src/lib/tokenizer.js';
+import { tokenize } from '@csstools/css-tokenizer';
 import { parse } from '../../src/lib/parser.js';
 import { simplify } from '../../src/lib/simplify.js';
 import { serialize } from '../../src/lib/serialize.js';
@@ -22,7 +22,7 @@ export function runCorpus(corpusPath) {
   for (const input of lines) {
     const start = performance.now();
     try {
-      serialize(simplify(parse(tokenize(input))), { precision: 10 });
+      serialize(simplify(parse(tokenize({ css: input }))), { precision: 10 });
       result.ok++;
     } catch (err) {
       if (err instanceof Error) {
