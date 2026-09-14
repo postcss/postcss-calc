@@ -1,6 +1,10 @@
 export type CSSToken = import('@csstools/css-tokenizer').CSSToken;
 export type Node = import('./node.js').Node;
-export type Component = string | Node | Component[];
+export type OpaqueComponent = import('./node.js').OpaqueComponent;
+export type BlockIndex = {
+    ends: Map<number, number>;
+    maxDepth: number;
+};
 export type Token = {
     type: 'number' | 'dimension' | 'ident' | 'function' | 'punct' | 'eof';
     value: string | number;
@@ -10,46 +14,32 @@ export type Token = {
     signCharacter?: '+' | '-';
     pos: number;
     ws: boolean;
+    index: number;
 };
-export type PrefixParselet = (p: Parser, token: Token) => Node;
-/** Bounded cursor that skips trivia but records whether it preceded a token. */
-declare class Parser {
-    #private;
-    /**
-     * @param {CSSToken[]} tokens
-     * @param {number} start
-     * @param {number} end
-     * @param {Map<number, number>} [ends]
-     */
-    constructor(tokens: CSSToken[], start: number, end: number, ends?: Map<number, number>);
-    /** @return {Map<number, number>} */
-    get ends(): Map<number, number>;
-    /** @return {number} */
-    eofPosition(): number;
-    /** @return {Token} */
-    read(): Token;
-    /** @return {Token} */
-    peek(): Token;
-    /** @return {Token} */
-    next(): Token;
-    /** @return {{start: number, close: number, tokens: CSSToken[], ends: Map<number, number>}} */
-    functionRange(): {
-        start: number;
-        close: number;
-        tokens: CSSToken[];
-        ends: Map<number, number>;
-    };
-    /** @param {number} index */
-    consumeThrough(index: number): void;
-    /** @param {string} value @param {string} [value2] @return {boolean} */
-    isPunct(value: string, value2?: string): boolean;
-    /** @param {string} value @return {boolean} */
-    matchPunct(value: string): boolean;
-    /** @param {string} value @return {Token} */
-    expectPunct(value: string): Token;
-    /** @param {number} [minBp] @return {Node} */
-    parseExpr(minBp?: number): Node;
+export type ParseInput = Readonly<{
+    tokens: CSSToken[];
+    end: number;
+    ends: Map<number, number>;
+}>;
+export type PrefixParselet = (input: ParseInput, cursor: Cursor, token: Token, depth: number) => Node;
+/**
+ * Mutable navigation state only. `index` is always the next native token
+ * position; trivia is intentionally left visible to `scanToken`.
+ */
+declare class Cursor {
+    /** @type {number} */
+    index: number;
+    /** @type {boolean} */
+    firstToken: boolean;
+    /** @type {Token | null} */
+    lookahead: Token | null;
+    /** @type {number} */
+    lookaheadNextIndex: number;
+    /** @param {number} start */
+    constructor(start: number);
 }
-/** @param {CSSToken[]} tokens @param {number} [start] @param {number} [end] @return {Node} */
-declare function parse(tokens: CSSToken[], start?: number, end?: number): Node;
-export { parse };
+/** @param {CSSToken[]} tokens @param {number} [start] @param {number} [end] @return {BlockIndex} */
+declare function indexBlocks(tokens: CSSToken[], start?: number, end?: number): BlockIndex;
+/** @param {CSSToken[]} tokens @param {number} [start] @param {number} [end] @param {BlockIndex} [index] @return {Node} */
+declare function parse(tokens: CSSToken[], start?: number, end?: number, index?: BlockIndex): Node;
+export { indexBlocks, parse };
