@@ -73,10 +73,14 @@ test('analyze: enforces the calculation depth limit', () => {
   for (let depth = 0; depth < 1025; depth++) {
     tree = call('abs', [tree]);
   }
-  assert.throws(() => analyze(tree), { name: 'CalculationLimitError' });
-  assert.throws(() => checkCalculationType(tree), {
-    name: 'CalculationLimitError',
-  });
+  assert.throws(
+    () => analyze(tree),
+    /Calculation nesting exceeds the limit of 1024/
+  );
+  assert.throws(
+    () => checkCalculationType(tree),
+    /Calculation nesting exceeds the limit of 1024/
+  );
 });
 
 test('analyze: treats inherited object names as unknown functions', () => {

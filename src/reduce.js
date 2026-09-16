@@ -4,11 +4,7 @@
 import { tokenize as cssTokenize } from '@csstools/css-tokenizer';
 import { indexBlocks } from './lib/parser.js';
 import { hasPotentialMathFunction, QUICK_MATH_TEST } from './lib/functions.js';
-import {
-  MAX_CALCULATION_DEPTH,
-  CalculationLimitError,
-  assertDepth,
-} from './lib/limits.js';
+import { assertDepth } from './lib/limits.js';
 import { findCalculations } from './lib/scan.js';
 import { compileCandidates } from './lib/compile.js';
 import { applyReplacements } from './lib/print.js';
@@ -49,15 +45,6 @@ import { applyReplacements } from './lib/print.js';
  * @property {string} original
  */
 
-/** @param {unknown} error @return {Error} */
-function normalizeTopLevelError(error) {
-  if (error instanceof RangeError) {
-    return new CalculationLimitError(MAX_CALCULATION_DEPTH);
-  }
-  if (error instanceof Error) return error;
-  return new Error('Error');
-}
-
 /**
  * Simplify every supported CSS math function in a component-value string.
  * Text outside those functions is preserved byte-for-byte.
@@ -88,8 +75,10 @@ function reduceCalc(value, opts) {
     index = indexBlocks(tokens);
     assertDepth(index.maxDepth);
   } catch (error) {
-    const err = normalizeTopLevelError(error);
-    options.onParseError?.(err, value);
+    options.onParseError?.(
+      error instanceof Error ? error : new Error('Error', { cause: error }),
+      value
+    );
     return value;
   }
 

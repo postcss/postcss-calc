@@ -2,11 +2,7 @@
 // analyze() for the complete result and limits.js for depth policy.
 
 import { analyze } from './analyze.js';
-import {
-  MAX_CALCULATION_DEPTH,
-  CalculationLimitError,
-  checkCalculationDepth,
-} from './limits.js';
+import { MAX_CALCULATION_DEPTH, checkCalculationDepth } from './limits.js';
 
 /** @typedef {import('./node.js').Node} Node */
 
@@ -23,7 +19,6 @@ function checkCalculationType(node) {
 
 export {
   MAX_CALCULATION_DEPTH,
-  CalculationLimitError,
   checkCalculationDepth,
   checkCalculationType,
   analyze,
