@@ -131,7 +131,7 @@ describe('v12 output policy', () => {
           }),
           input
         );
-        assert.deepEqual(errors, [['CalculationTypeError', input]]);
+        assert.deepEqual(errors, [['Error', input]]);
       }
     }
   });

@@ -15,9 +15,6 @@ export type CompileContext = {
 /** @typedef {import('@csstools/css-tokenizer').CSSToken} CSSToken */
 /** @typedef {ReturnType<typeof import('./block-index.js').indexBlocks>} BlockIndex */
 /** @typedef {{options: ResolvedReduceCalcOptions, value: string, tokens: CSSToken[], index: BlockIndex}} CompileContext */
-declare class CalculationTypeError extends Error {
-    constructor();
-}
 /**
  * Parse, analyze, and simplify one candidate.
  *
@@ -35,4 +32,4 @@ declare function compileCandidate(candidate: Candidate, ctx: CompileContext): Re
  * @return {Replacement[]}
  */
 declare function compileCandidates(candidates: Candidate[], ctx: CompileContext): Replacement[];
-export { CalculationTypeError, compileCandidate, compileCandidates };
+export { compileCandidate, compileCandidates };

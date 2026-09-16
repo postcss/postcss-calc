@@ -9,13 +9,6 @@ import { analyze } from './analyze.js';
 /** @typedef {ReturnType<typeof import('./block-index.js').indexBlocks>} BlockIndex */
 /** @typedef {{options: ResolvedReduceCalcOptions, value: string, tokens: CSSToken[], index: BlockIndex}} CompileContext */
 
-class CalculationTypeError extends Error {
-  constructor() {
-    super('Invalid CSS calculation type');
-    this.name = 'CalculationTypeError';
-  }
-}
-
 /**
  * Parse, analyze, and simplify one candidate.
  *
@@ -37,7 +30,7 @@ function compileCandidate(candidate, ctx) {
   );
   const analysis = analyze(parsed);
   if (!analysis.valid) {
-    throw new CalculationTypeError();
+    throw new Error('Invalid CSS calculation type');
   }
   const tree = simplify(parsed);
   const original =
@@ -82,4 +75,4 @@ function compileCandidates(candidates, ctx) {
   return replacements;
 }
 
-export { CalculationTypeError, compileCandidate, compileCandidates };
+export { compileCandidate, compileCandidates };
