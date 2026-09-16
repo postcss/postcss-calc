@@ -2,19 +2,12 @@
 
 const MAX_CALCULATION_DEPTH = 1024;
 
-class CalculationLimitError extends Error {
-  /** @param {number} limit */
-  constructor(limit) {
-    super(`Calculation nesting exceeds the limit of ${limit}`);
-    this.name = 'CalculationLimitError';
-    this.limit = limit;
-  }
-}
-
 /** @param {number} depth @return {void} */
 function assertDepth(depth) {
   if (depth > MAX_CALCULATION_DEPTH) {
-    throw new CalculationLimitError(MAX_CALCULATION_DEPTH);
+    throw new Error(
+      `Calculation nesting exceeds the limit of ${MAX_CALCULATION_DEPTH}`
+    );
   }
 }
 
@@ -43,9 +36,4 @@ function checkCalculationDepth(node, depth = 0) {
   for (const child of children) checkCalculationDepth(child, depth + 1);
 }
 
-export {
-  MAX_CALCULATION_DEPTH,
-  CalculationLimitError,
-  assertDepth,
-  checkCalculationDepth,
-};
+export { MAX_CALCULATION_DEPTH, assertDepth, checkCalculationDepth };

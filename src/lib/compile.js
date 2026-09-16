@@ -1,7 +1,6 @@
 import { parse } from './parser.js';
 import { simplify } from './simplify.js';
 import { analyze } from './analyze.js';
-import { MAX_CALCULATION_DEPTH, CalculationLimitError } from './limits.js';
 
 /** @typedef {import('./scan.js').Candidate} Candidate */
 /** @typedef {import('../reduce.js').ResolvedReduceCalcOptions} ResolvedReduceCalcOptions */
@@ -15,14 +14,6 @@ class CalculationTypeError extends Error {
     super('Invalid CSS calculation type');
     this.name = 'CalculationTypeError';
   }
-}
-
-/** @param {unknown} error @return {Error} */
-function normalizeCalculationError(error) {
-  if (error instanceof RangeError) {
-    return new CalculationLimitError(MAX_CALCULATION_DEPTH);
-  }
-  return error instanceof Error ? error : new Error('Error');
 }
 
 /**
@@ -78,9 +69,8 @@ function compileCandidates(candidates, ctx) {
     try {
       replacements.push(compileCandidate(candidate, ctx));
     } catch (error) {
-      const err = normalizeCalculationError(error);
       ctx.options.onParseError?.(
-        err,
+        error instanceof Error ? error : new Error('Error', { cause: error }),
         ctx.value.slice(candidate.start, candidate.end)
       );
     }

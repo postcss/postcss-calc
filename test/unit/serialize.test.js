@@ -624,8 +624,7 @@ describe('serializeResult: root planning', () => {
     );
     assert.throws(
       () => serializeResult(serializeResultInput(nestedOpaque(513))),
-      (error) =>
-        error instanceof Error && error.name === 'CalculationLimitError'
+      /Calculation nesting exceeds the limit of 1024/
     );
   });
 });

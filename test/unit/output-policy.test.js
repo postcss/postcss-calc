@@ -196,7 +196,7 @@ describe('v12 output policy', () => {
     assert.deepEqual(errors, []);
   });
 
-  test('bounds nesting without leaking RangeError', () => {
+  test('bounds nesting and reports the nesting limit', () => {
     for (const count of [1024, 1025]) {
       const input = 'calc('.repeat(count) + '1' + ')'.repeat(count);
       const errors = [];
@@ -209,7 +209,10 @@ describe('v12 output policy', () => {
       } else {
         assert.equal(output, input);
         assert.equal(errors.length, 1);
-        assert.equal(errors[0].name, 'CalculationLimitError');
+        assert.match(
+          errors[0].message,
+          /Calculation nesting exceeds the limit of 1024/
+        );
       }
     }
   });
@@ -224,6 +227,9 @@ describe('v12 output policy', () => {
     ).process(input, { from: undefined });
     assert.equal(result.css, input);
     assert.equal(errors.length, 1);
-    assert.equal(errors[0].name, 'CalculationLimitError');
+    assert.match(
+      errors[0].message,
+      /Calculation nesting exceeds the limit of 1024/
+    );
   });
 });
