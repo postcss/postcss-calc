@@ -42,7 +42,8 @@ import { applyReplacements } from './lib/print.js';
  * @property {'resolved' | 'unresolved'} status
  * @property {string} rootName
  * @property {string} rootSpelling
- * @property {string} original
+ * @property {boolean} calculation
+ * @property {string | undefined} original
  */
 
 /**
@@ -92,7 +93,12 @@ function reduceCalc(value, opts) {
   if (replacements.length === 0) {
     return value;
   }
-  return applyReplacements(value, replacements, options);
+  const serializationOptions = {
+    precision: options.precision,
+    unwrapSingleNegativeNumber: options.unwrapSingleNegativeNumber,
+    unwrapSingleValue: options.unwrapSingleValue,
+  };
+  return applyReplacements(value, replacements, options, serializationOptions);
 }
 
 export { QUICK_MATH_TEST, hasPotentialMathFunction };

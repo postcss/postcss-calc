@@ -14,6 +14,7 @@ import { indexBlocks } from '../../src/lib/block-index.js';
 import { parse } from '../../src/lib/parser.js';
 import { simplify } from '../../src/lib/simplify.js';
 import { serialize } from '../../src/lib/serialize.js';
+import { CSS_NUMBER_PREFIX } from '../../src/lib/regex.js';
 import { astArb, astToCalc, trigExpFlatArb } from '../helpers/arbitraries.js';
 const NUM_RUNS = 2000;
 /** Precision high enough to make real divergences visible without catching
@@ -29,7 +30,6 @@ const COMPARE_PRECISION = 9;
 // precision, so request enough fractional digits to preserve the generated
 // arithmetic chains.
 const CSTOOLS_PRECISION = 24;
-const NUMERIC_RAW = /^[+-]?(?:\d+(?:\.\d+)?|\.\d+)(?:[eE][+-]?\d+)?/;
 function ourOut(input) {
   const tokens = tokenize({ css: input });
   return serialize(
@@ -61,7 +61,7 @@ function lowerReferenceSignedZeros(input) {
         type === TokenType.Percentage) &&
       Object.is(detail?.value, -0)
     ) {
-      const numeric = NUMERIC_RAW.exec(raw)?.[0];
+      const numeric = CSS_NUMBER_PREFIX.exec(raw)?.[0];
       if (numeric !== undefined) {
         const suffix = raw.slice(numeric.length);
         output += `calc(-1 * 0${suffix})`;

@@ -13,6 +13,7 @@ import {
 } from './node.js';
 import { isCalculationFunction, isSupportedMathFunction } from './functions.js';
 import { assertDepth } from './limits.js';
+import { CSS_NUMBER_PREFIX } from './regex.js';
 
 /** @typedef {import('@csstools/css-tokenizer').CSSToken} CSSToken */
 /** @typedef {import('./node.js').Node} Node */
@@ -31,8 +32,6 @@ import { assertDepth } from './limits.js';
  * Immutable bounds and shared block index for one parse range.
  * @typedef {Readonly<{tokens: CSSToken[], end: number, index: BlockIndex}>} ParseInput
  */
-
-const NUMERIC_RAW = /^[+-]?(?:\d+(?:\.\d+)?|\.\d+)(?:[eE][+-]?\d+)?/;
 
 /** @param {string} value @return {value is '+' | '-' | '*' | '/'} */
 function isOperator(value) {
@@ -147,7 +146,7 @@ function normalizeToken(t, index, ws) {
         signCharacter: detail.signCharacter,
       };
     case CssType.Dimension: {
-      const match = NUMERIC_RAW.exec(raw);
+      const match = CSS_NUMBER_PREFIX.exec(raw);
       return {
         type: 'dimension',
         value: detail.value,

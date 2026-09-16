@@ -295,6 +295,16 @@ const mathFunctions = new Map(
   ])
 );
 
+/**
+ * @param {string} name
+ * @return {{normalizedName: string, definition: MathFunction} | undefined}
+ */
+function lookupMathFunction(name) {
+  const normalizedName = name.toLowerCase();
+  const definition = mathFunctions.get(normalizedName);
+  return definition === undefined ? undefined : { normalizedName, definition };
+}
+
 const mathFunctionNames = [...mathFunctions.keys()];
 const QUICK_MATH_TEST = new RegExp(
   `(?:${mathFunctionNames.join('|')})\\(`,
@@ -308,8 +318,8 @@ function isCalculationFunction(name) {
 
 /** @param {string} name @return {boolean} */
 function isSupportedMathFunction(name) {
-  const normalized = name.toLowerCase();
-  const definition = mathFunctions.get(normalized);
+  const normalizedName = name.toLowerCase();
+  const definition = mathFunctions.get(normalizedName);
   return definition !== undefined && definition.calculation !== true;
 }
 
@@ -323,6 +333,7 @@ function hasPotentialMathFunction(value) {
 export {
   addTypes,
   mathFunctions,
+  lookupMathFunction,
   QUICK_MATH_TEST,
   isFailure,
   isCalculationFunction,

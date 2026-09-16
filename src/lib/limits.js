@@ -11,29 +11,39 @@ function assertDepth(depth) {
   }
 }
 
+/** @param {unknown} part @param {number} depth @return {void} */
+function checkOpaquePartDepth(part, depth) {
+  assertDepth(depth);
+  if (typeof part === 'string') return;
+  if (Array.isArray(part)) {
+    for (const child of part) checkOpaquePartDepth(child, depth + 1);
+    return;
+  }
+  checkCalculationDepth(/** @type {Node} */ (part), depth + 1);
+}
+
 /** @param {Node} node @param {number} [depth] @return {void} */
 function checkCalculationDepth(node, depth = 0) {
   assertDepth(depth);
-  const children = [];
-  if (node.type === 'Sum')
-    children.push(...node.terms.map((term) => term.node));
-  if (node.type === 'Product')
-    children.push(...node.factors.map((factor) => factor.node));
-  if (node.type === 'Call') children.push(...node.args);
-  if (node.type === 'OpaqueCall') {
-    /** @param {unknown} part @param {number} partDepth */
-    const visit = (part, partDepth) => {
-      assertDepth(partDepth);
-      if (typeof part === 'string') return;
-      if (Array.isArray(part)) {
-        for (const child of part) visit(child, partDepth + 1);
-        return;
+  switch (node.type) {
+    case 'Sum':
+      for (const term of node.terms) {
+        checkCalculationDepth(term.node, depth + 1);
       }
-      checkCalculationDepth(/** @type {Node} */ (part), partDepth + 1);
-    };
-    for (const part of node.components) visit(part, depth + 1);
+      return;
+    case 'Product':
+      for (const factor of node.factors) {
+        checkCalculationDepth(factor.node, depth + 1);
+      }
+      return;
+    case 'Call':
+      for (const child of node.args) checkCalculationDepth(child, depth + 1);
+      return;
+    case 'OpaqueCall':
+      for (const part of node.components) {
+        checkOpaquePartDepth(part, depth + 1);
+      }
   }
-  for (const child of children) checkCalculationDepth(child, depth + 1);
 }
 
 export { MAX_CALCULATION_DEPTH, assertDepth, checkCalculationDepth };
