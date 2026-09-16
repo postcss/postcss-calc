@@ -76,7 +76,7 @@ function analyzeSum(node, depth) {
     return finish(failureType, false, hasUnresolved);
   }
   return finish(
-    hasUnknown ? unknownType : (type ?? numberType),
+    type ?? (hasUnknown ? unknownType : numberType),
     valid,
     hasUnresolved
   );

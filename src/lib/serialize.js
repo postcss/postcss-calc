@@ -28,13 +28,66 @@ const ATOMIC_PRECEDENCE = 3;
 const UNARY_PRECEDENCE = ATOMIC_PRECEDENCE;
 const NOISE_FLOOR = 1e-12;
 
-/** @param {number} v @param {number | false} prec @return {number} */
+/**
+ * Decimal rounding with "round half away from zero" (e.g. 1.005 at precision 2 -> 1.01).
+ *
+ * Binary floating-point (IEEE-754) cannot represent many decimal fractions exactly
+ * (e.g. 1.005 is binary 1.004999999999999893...), causing arithmetic formulas like
+ * `Math.round(v * 100) / 100` to round down to 1.00. Exponential notation string shifting
+ * (`1.005e2` -> `100.5`) lets the ECMAScript string-to-number parser read the exact
+ * intended decimal value before rounding.
+ *
+ * @param {number} v
+ * @param {number | false} prec
+ * @return {number}
+ */
 function round(v, prec) {
-  if (prec === false) return v;
-  const m = Math.pow(10, prec);
-  const rounded = Math.round(v * m) / m;
-  if (rounded === 0 && Math.abs(v) > NOISE_FLOOR) {
-    return Number(v.toPrecision(Math.max(prec, 1)));
+  if (prec === false || !Number.isFinite(v)) return v;
+  if (Object.is(v, -0) || v === 0) return v;
+  const abs = Math.abs(v);
+  // Numbers >= MAX_SAFE_INTEGER (2^53 - 1) cannot represent fractional values, and
+  // integers already have 0 fractional places. Bypassing them avoids float drift.
+  if (abs >= Number.MAX_SAFE_INTEGER || Number.isInteger(v)) return v;
+
+  // Clamp precision to [0, 100] integer to prevent NaN from fractional precisions
+  // or exponent overflows into Infinity/NaN (e.g. exponent + prec > 308).
+  const p = Math.min(100, Math.max(0, Math.trunc(prec)));
+  const sign = v < 0 ? -1 : 1;
+  let rounded;
+
+  if (p === 0) {
+    // Fast path: rounding to integer with "round half away from zero".
+    rounded = sign * Math.round(abs);
+  } else {
+    // Avoid .split('e') allocations: for numbers between 1e-6 and MAX_SAFE_INTEGER,
+    // String(abs) never contains exponential notation ('e').
+    const absStr = String(abs);
+    const eIdx = absStr.indexOf('e');
+    let shifted;
+    if (eIdx === -1) {
+      shifted = Math.round(Number(absStr + 'e' + p));
+    } else {
+      const mantissa = absStr.slice(0, eIdx);
+      const exponent = Number(absStr.slice(eIdx + 1));
+      shifted = Math.round(Number(mantissa + 'e' + (exponent + p)));
+    }
+
+    // shifted is an integer. It only contains exponential notation ('e') if >= 1e21.
+    if (shifted >= 1e21) {
+      const shiftedStr = String(shifted);
+      const seIdx = shiftedStr.indexOf('e');
+      const sMantissa = shiftedStr.slice(0, seIdx);
+      const sExponent = Number(shiftedStr.slice(seIdx + 1));
+      rounded = sign * Number(sMantissa + 'e' + (sExponent - p));
+    } else {
+      rounded = sign * Number(shifted + 'e-' + p);
+    }
+  }
+
+  // Preserve non-zero values smaller than precision (e.g. 1/1000000) from collapsing
+  // to zero, while still snapping true floating-point dust (< 1e-12) to zero.
+  if (rounded === 0 && abs > NOISE_FLOOR) {
+    return Number(v.toPrecision(Math.max(p, 1)));
   }
   return rounded;
 }

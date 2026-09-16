@@ -298,4 +298,31 @@ describe('Precision', () => {
     'precision for nested calc',
     testValue('calc(calc(100% / 3) * 3)', 'calc(100%)')
   );
+
+  test(
+    'accurate midpoint rounding for dimensions',
+    testValue('calc(1.005px)', 'calc(1.01px)', { precision: 2 })
+  );
+
+  test(
+    'accurate midpoint rounding for negative dimensions',
+    testValue('calc(-1.005px)', 'calc(-1.01px)', { precision: 2 })
+  );
+
+  test(
+    'precision false retains lossless float for division',
+    testValue('calc(1/3)', 'calc(.3333333333333333)', { precision: false })
+  );
+
+  test(
+    'canonical reciprocal coefficient with opaque term at default precision',
+    testValue('calc(var(--x) / 3)', 'calc(.33333 * var(--x))')
+  );
+
+  test(
+    'canonical reciprocal coefficient with opaque term at precision false',
+    testValue('calc(var(--x) / 3)', 'calc(.3333333333333333 * var(--x))', {
+      precision: false,
+    })
+  );
 });

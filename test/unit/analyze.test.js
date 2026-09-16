@@ -88,6 +88,37 @@ test('reduceCalc: preserves an invalid sum hidden by an unresolved term', () => 
   );
 });
 
+test('reduceCalc: preserves an invalid sum of incompatible types through an unresolved term', () => {
+  assert.equal(
+    reduceCalc('calc(2 * (0% + -1) + round(0turn, 1turn))'),
+    'calc(2 * (0% + -1) + round(0turn, 1turn))'
+  );
+});
+
+test('analyze: rejects sum when unresolved term is constrained to a type incompatible with other terms', () => {
+  assert.deepEqual(analyzeSource('2 * (0% + -1) + round(0turn, 1turn)'), {
+    type: 'unknown',
+    valid: false,
+    unresolved: true,
+  });
+});
+
+test('analyze: resolves sum type when unresolved term is constrained by a dimension', () => {
+  assert.deepEqual(analyzeSource('10% + 20px'), {
+    type: { dimension: 'length' },
+    valid: true,
+    unresolved: true,
+  });
+});
+
+test('analyze: rejects sum when multiple incompatible dimensions surround an unresolved term', () => {
+  assert.deepEqual(analyzeSource('10px + var(--x) + 5s'), {
+    type: 'unknown',
+    valid: false,
+    unresolved: true,
+  });
+});
+
 test('analyze: round() validates arity, types, and single-argument rules', () => {
   assert.deepEqual(analyzeSource('round(5)'), {
     type: 'number',
