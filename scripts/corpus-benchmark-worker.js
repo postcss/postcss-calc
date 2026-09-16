@@ -4,7 +4,9 @@ import { calc as referenceCalc } from '@csstools/css-calc';
 import { ourOutput as canonicalizeOutput } from './lib/corpus-policy.js';
 /* oxlint-disable no-bitwise */
 
-const payload = JSON.parse(process.argv[2] ?? '{}');
+const payload = JSON.parse(
+  process.argv[2] ?? (readFileSync(0, 'utf8') || '{}')
+);
 if (!['ours-first', 'reference-first'].includes(payload.calibrationOrder))
   throw new Error('invalid calibration order');
 const TARGET_MS = payload.targetBatchMs ?? 25;

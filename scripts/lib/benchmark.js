@@ -944,16 +944,13 @@ export function materializeBaseline(root, ref) {
 
 /** @param {string} worker @param {object} payload @param {string} cwd */
 export function runChild(worker, payload, cwd) {
-  const result = spawnSync(
-    process.execPath,
-    [worker, JSON.stringify(payload)],
-    {
-      cwd,
-      encoding: 'utf8',
-      maxBuffer: 64 * 1024 * 1024,
-      env: { ...process.env },
-    }
-  );
+  const result = spawnSync(process.execPath, [worker], {
+    cwd,
+    encoding: 'utf8',
+    input: JSON.stringify(payload),
+    maxBuffer: 64 * 1024 * 1024,
+    env: { ...process.env },
+  });
   if (result.error) throw result.error;
   if (result.status !== 0)
     throw new Error(
