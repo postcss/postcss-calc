@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { isSupportedMathFunction } from '../../../src/lib/simplify/call.js';
+import { isSupportedMathFunction } from '../../../src/lib/functions.js';
 
 test('isSupportedMathFunction: recognizes every implemented bare math function', () => {
   const supported = [

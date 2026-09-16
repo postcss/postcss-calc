@@ -10,6 +10,7 @@
 import { test } from 'node:test';
 import fc from 'fast-check';
 import { tokenize } from '@csstools/css-tokenizer';
+import { indexBlocks } from '../../src/lib/block-index.js';
 import { parse } from '../../src/lib/parser.js';
 import { simplify } from '../../src/lib/simplify.js';
 import { serialize } from '../../src/lib/serialize.js';
@@ -45,7 +46,10 @@ test('property: simplify → serialize → parse → simplify is a fixed point',
     fc.property(astArb(4), (ast) => {
       const first = simplify(ast);
       const str1 = str(first);
-      const second = simplify(parse(tokenize({ css: str1 })));
+      const tokens = tokenize({ css: str1 });
+      const second = simplify(
+        parse(tokens, 0, tokens.length, indexBlocks(tokens))
+      );
       return str1 === str(second);
     }),
     { numRuns: NUM_RUNS }
@@ -117,7 +121,10 @@ test('property: round-trip stable under degenerate / float leaves', () => {
     fc.property(astArbWithDegenerate(4), (ast) => {
       const first = simplify(ast);
       const str1 = str(first);
-      const second = simplify(parse(tokenize({ css: str1 })));
+      const tokens = tokenize({ css: str1 });
+      const second = simplify(
+        parse(tokens, 0, tokens.length, indexBlocks(tokens))
+      );
       return str1 === str(second);
     }),
     { numRuns: NUM_RUNS }

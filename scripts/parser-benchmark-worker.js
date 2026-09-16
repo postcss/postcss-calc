@@ -11,9 +11,12 @@ if (typeof sourceRoot !== 'string')
   throw new Error('missing parser source root');
 
 const parser = await import(pathToFileURL(`${sourceRoot}/lib/parser.js`).href);
+const blockIndex = await import(
+  pathToFileURL(`${sourceRoot}/lib/block-index.js`).href
+);
 if (
   typeof parser.parse !== 'function' ||
-  typeof parser.indexBlocks !== 'function'
+  typeof blockIndex.indexBlocks !== 'function'
 )
   throw new Error('incompatible baseline parser API');
 
@@ -62,12 +65,12 @@ function makeRun(workload) {
   const tokens = tokenize({ css: workload.source });
   const index =
     workload.mode === 'hot-shared-index'
-      ? parser.indexBlocks(tokens)
+      ? blockIndex.indexBlocks(tokens)
       : undefined;
-  return () =>
-    workload.mode === 'hot-shared-index'
-      ? parser.parse(tokens, 0, tokens.length, index)
-      : parser.parse(tokens);
+  return () => {
+    const currentIndex = index ?? blockIndex.indexBlocks(tokens);
+    return parser.parse(tokens, 0, tokens.length, currentIndex);
+  };
 }
 
 function timedBatch(run, repetitions) {

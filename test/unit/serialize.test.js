@@ -14,6 +14,7 @@ import {
   mkProduct,
 } from '../../src/lib/node.js';
 import { tokenize } from '@csstools/css-tokenizer';
+import { indexBlocks } from '../../src/lib/block-index.js';
 import { parse } from '../../src/lib/parser.js';
 import { simplify } from '../../src/lib/simplify.js';
 
@@ -253,7 +254,10 @@ describe('serialize: scalar context policy', () => {
         const output = serialize(scalarCase.node, policy.options);
         assert.equal(output, scalarCase.expected[policyIndex]);
 
-        const reparsed = simplify(parse(tokenize({ css: output })));
+        const tokens = tokenize({ css: output });
+        const reparsed = simplify(
+          parse(tokens, 0, tokens.length, indexBlocks(tokens))
+        );
         assert.equal(
           serialize(reparsed, policy.options),
           output,

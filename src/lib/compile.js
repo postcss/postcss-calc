@@ -6,7 +6,7 @@ import { analyze } from './analyze.js';
 /** @typedef {import('../reduce.js').ResolvedReduceCalcOptions} ResolvedReduceCalcOptions */
 /** @typedef {import('../reduce.js').Replacement} Replacement */
 /** @typedef {import('@csstools/css-tokenizer').CSSToken} CSSToken */
-/** @typedef {import('./block-index.js').BlockIndex} BlockIndex */
+/** @typedef {ReturnType<typeof import('./block-index.js').indexBlocks>} BlockIndex */
 /** @typedef {{options: ResolvedReduceCalcOptions, value: string, tokens: CSSToken[], index: BlockIndex}} CompileContext */
 
 class CalculationTypeError extends Error {

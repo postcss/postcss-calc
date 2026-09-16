@@ -2,7 +2,7 @@
 // dependency so it can also be used for individual declaration values,
 // at-rule parameters, or selector text.
 import { tokenize as cssTokenize } from '@csstools/css-tokenizer';
-import { indexBlocks } from './lib/parser.js';
+import { indexBlocks } from './lib/block-index.js';
 import { hasPotentialMathFunction, QUICK_MATH_TEST } from './lib/functions.js';
 import { assertDepth } from './lib/limits.js';
 import { findCalculations } from './lib/scan.js';
@@ -68,7 +68,7 @@ function reduceCalc(value, opts) {
   };
   /** @type {import('@csstools/css-tokenizer').CSSToken[]} */
   let tokens;
-  /** @type {import('./lib/block-index.js').BlockIndex} */
+  /** @type {ReturnType<typeof indexBlocks>} */
   let index;
   try {
     tokens = cssTokenize({ css: value });

@@ -2,13 +2,7 @@
 // args so they don't need to recurse into `simplify` themselves.
 
 import { call } from '../node.js';
-import {
-  mathFunctions,
-  QUICK_MATH_TEST,
-  hasPotentialMathFunction,
-  isSupportedMathFunction,
-  isCalculationFunction,
-} from '../functions.js';
+import { mathFunctions, isCalculationFunction } from '../functions.js';
 
 /** @typedef {import('../node.js').Node} Node */
 /** @typedef {import('../simplify.js').SimplifyFn} SimplifyFn */
@@ -39,9 +33,4 @@ function simplifyCall(node, simplify) {
   return call(node.name, args, node.rawName);
 }
 
-export {
-  isSupportedMathFunction,
-  simplifyCall,
-  hasPotentialMathFunction,
-  QUICK_MATH_TEST,
-};
+export { simplifyCall };

@@ -19,7 +19,7 @@ import { isCalculationFunction, isSupportedMathFunction } from './functions.js';
  *
  * @param {string} value
  * @param {import('@csstools/css-tokenizer').CSSToken[]} tokens
- * @param {import('./block-index.js').BlockIndex} index
+ * @param {ReturnType<typeof import('./block-index.js').indexBlocks>} index
  * @return {Candidate[]}
  */
 function findCalculations(value, tokens, index) {

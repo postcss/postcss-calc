@@ -24,8 +24,8 @@ export type Candidate = {
  *
  * @param {string} value
  * @param {import('@csstools/css-tokenizer').CSSToken[]} tokens
- * @param {import('./block-index.js').BlockIndex} index
+ * @param {ReturnType<typeof import('./block-index.js').indexBlocks>} index
  * @return {Candidate[]}
  */
-declare function findCalculations(value: string, tokens: import('@csstools/css-tokenizer').CSSToken[], index: import('./block-index.js').BlockIndex): Candidate[];
+declare function findCalculations(value: string, tokens: import('@csstools/css-tokenizer').CSSToken[], index: ReturnType<typeof import('./block-index.js').indexBlocks>): Candidate[];
 export { findCalculations };

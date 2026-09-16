@@ -11,6 +11,7 @@ import { fileURLToPath } from 'node:url';
 import fc from 'fast-check';
 import { calc as csstoolsCalc } from '@csstools/css-calc';
 import { tokenize } from '@csstools/css-tokenizer';
+import { indexBlocks } from '../src/lib/block-index.js';
 import { parse } from '../src/lib/parser.js';
 import { simplify } from '../src/lib/simplify.js';
 import { serialize } from '../src/lib/serialize.js';
@@ -30,9 +31,11 @@ const MODE = process.env.RANDOMIZER_MODE ?? 'complex';
 const COMPARE_PRECISION = 9;
 function ourOut(input) {
   try {
-    return serialize(simplify(parse(tokenize({ css: input }))), {
-      precision: COMPARE_PRECISION,
-    });
+    const tokens = tokenize({ css: input });
+    return serialize(
+      simplify(parse(tokens, 0, tokens.length, indexBlocks(tokens))),
+      { precision: COMPARE_PRECISION }
+    );
   } catch {
     return null;
   }

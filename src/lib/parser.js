@@ -13,12 +13,11 @@ import {
 } from './node.js';
 import { isSupportedMathFunction, isCalculationFunction } from './functions.js';
 import { assertDepth } from './limits.js';
-import { indexBlocks } from './block-index.js';
 
 /** @typedef {import('@csstools/css-tokenizer').CSSToken} CSSToken */
 /** @typedef {import('./node.js').Node} Node */
 /** @typedef {import('./node.js').OpaqueComponent} OpaqueComponent */
-/** @typedef {import('./block-index.js').BlockIndex} BlockIndex */
+/** @typedef {ReturnType<typeof import('./block-index.js').indexBlocks>} BlockIndex */
 /**
  * @typedef {object} Token
  * @property {'number' | 'dimension' | 'ident' | 'function' | 'punct' | 'eof'} type
@@ -540,10 +539,9 @@ function parseRange(input, start, end) {
   return ast;
 }
 
-/** @param {CSSToken[]} tokens @param {number} [start] @param {number} [end] @param {BlockIndex} [index] @return {Node} */
-function parse(tokens, start = 0, end = tokens.length, index) {
-  const blockIndex = index ?? indexBlocks(tokens, start, end);
-  return parseRange({ tokens, end, index: blockIndex }, start, end);
+/** @param {CSSToken[]} tokens @param {number} start @param {number} end @param {BlockIndex} index @return {Node} */
+function parse(tokens, start, end, index) {
+  return parseRange({ tokens, end, index }, start, end);
 }
 
-export { indexBlocks, parse };
+export { parse };

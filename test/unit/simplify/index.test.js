@@ -2,6 +2,7 @@ import { describe, test } from 'node:test';
 import assert from 'node:assert/strict';
 import { out } from '../../helpers/out.js';
 import { tokenize } from '@csstools/css-tokenizer';
+import { indexBlocks } from '../../../src/lib/block-index.js';
 import { parse } from '../../../src/lib/parser.js';
 import { simplify } from '../../../src/lib/simplify.js';
 
@@ -48,11 +49,27 @@ describe('simplify: math constants and non-finite values', () => {
   });
 
   test('simplify: source signed zero normalizes before evaluation', () => {
-    const sourceZero = simplify(parse(tokenize({ css: 'calc(-0)' })));
+    const sourceZeroTokens = tokenize({ css: 'calc(-0)' });
+    const sourceZero = simplify(
+      parse(
+        sourceZeroTokens,
+        0,
+        sourceZeroTokens.length,
+        indexBlocks(sourceZeroTokens)
+      )
+    );
     assert.equal(sourceZero.type, 'Num');
     assert.equal(Object.is(sourceZero.value, -0), false);
 
-    const positiveZero = simplify(parse(tokenize({ css: 'calc(0 - 0)' })));
+    const positiveZeroTokens = tokenize({ css: 'calc(0 - 0)' });
+    const positiveZero = simplify(
+      parse(
+        positiveZeroTokens,
+        0,
+        positiveZeroTokens.length,
+        indexBlocks(positiveZeroTokens)
+      )
+    );
     assert.equal(positiveZero.type, 'Num');
     assert.equal(Object.is(positiveZero.value, -0), false);
 
