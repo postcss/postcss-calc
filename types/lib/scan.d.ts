@@ -1,8 +1,10 @@
 export type Candidate = {
     name: string;
+    normalizedName: string;
     start: number;
     end: number;
     rootSpelling: string;
+    calculation: boolean;
     sliceStart: number;
     sliceEnd: number;
     closed: boolean;
@@ -10,9 +12,11 @@ export type Candidate = {
 /**
  * @typedef {object} Candidate
  * @property {string} name
+ * @property {string} normalizedName
  * @property {number} start
  * @property {number} end
  * @property {string} rootSpelling
+ * @property {boolean} calculation
  * @property {number} sliceStart
  * @property {number} sliceEnd
  * @property {boolean} closed

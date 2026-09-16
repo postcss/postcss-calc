@@ -22,6 +22,14 @@ declare function isFailure(type: CalculationType): boolean;
 /** @param {CalculationType} a @param {CalculationType} b @return {CalculationType} */
 declare function addTypes(a: CalculationType, b: CalculationType): CalculationType;
 declare const mathFunctions: Map<string, MathFunction>;
+/**
+ * @param {string} name
+ * @return {{normalizedName: string, definition: MathFunction} | undefined}
+ */
+declare function lookupMathFunction(name: string): {
+    normalizedName: string;
+    definition: MathFunction;
+} | undefined;
 declare const QUICK_MATH_TEST: RegExp;
 /** @param {string} name @return {boolean} */
 declare function isCalculationFunction(name: string): boolean;
@@ -29,4 +37,4 @@ declare function isCalculationFunction(name: string): boolean;
 declare function isSupportedMathFunction(name: string): boolean;
 /** @param {string} value @return {boolean} */
 declare function hasPotentialMathFunction(value: string): boolean;
-export { addTypes, mathFunctions, QUICK_MATH_TEST, isFailure, isCalculationFunction, isSupportedMathFunction, hasPotentialMathFunction, };
+export { addTypes, mathFunctions, lookupMathFunction, QUICK_MATH_TEST, isFailure, isCalculationFunction, isSupportedMathFunction, hasPotentialMathFunction, };

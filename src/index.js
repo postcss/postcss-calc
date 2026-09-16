@@ -1,6 +1,6 @@
 // PostCSS adapter over the standalone component-value reducer.
-import reduceCalc, { hasPotentialMathFunction } from './reduce.js';
-
+import reduceCalc from './reduce.js';
+import { hasPotentialMathFunction } from './lib/functions.js';
 /**
  * @typedef {object} PostCssCalcOptions
  * @property {number | false} [precision]

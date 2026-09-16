@@ -1,7 +1,6 @@
 export type ResolvedReduceCalcOptions = import('../reduce.js').ResolvedReduceCalcOptions;
 export type Replacement = import('../reduce.js').Replacement;
-/** @typedef {import('../reduce.js').ResolvedReduceCalcOptions} ResolvedReduceCalcOptions */
-/** @typedef {import('../reduce.js').Replacement} Replacement */
+export type SerializeOptions = import('./serialize.js').SerializeOptions;
 /**
  * Serialize compiled candidates and splice the resulting text into the
  * original source. Replacements are already non-overlapping because the
@@ -10,7 +9,8 @@ export type Replacement = import('../reduce.js').Replacement;
  * @param {string} value
  * @param {Replacement[]} replacements
  * @param {ResolvedReduceCalcOptions} options
+ * @param {SerializeOptions} serializeOptions
  * @return {string}
  */
-declare function applyReplacements(value: string, replacements: Replacement[], options: ResolvedReduceCalcOptions): string;
+declare function applyReplacements(value: string, replacements: Replacement[], options: ResolvedReduceCalcOptions, serializeOptions: SerializeOptions): string;
 export { applyReplacements };

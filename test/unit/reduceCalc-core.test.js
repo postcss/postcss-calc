@@ -2,10 +2,11 @@
 // that operate on a CSS value string rather than PostCSS node walking.
 import { describe, test } from 'node:test';
 import assert from 'node:assert/strict';
-import reduceCalc, {
+import reduceCalc from 'postcss-calc/reduce';
+import {
   hasPotentialMathFunction,
   QUICK_MATH_TEST,
-} from 'postcss-calc/reduce';
+} from '../../src/lib/functions.js';
 import { createReduceCalcTestHarness } from '../helpers/reduceCalc.js';
 
 const { reduceWithWarnings, assertIdempotent } =
