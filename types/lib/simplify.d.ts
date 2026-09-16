@@ -8,6 +8,8 @@ export type SimplifyFn = (node: Node) => Node;
  * @typedef {(node: Node) => Node} SimplifyFn
  */
 /**
+ * Simplify is an independent, composable AST transformation. It may
+ * synthesize canonical nodes while preserving the Node -> Node contract.
  * @param {Node} node
  * @param {number} [depth]
  * @return {Node}

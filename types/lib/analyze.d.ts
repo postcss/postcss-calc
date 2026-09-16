@@ -8,6 +8,11 @@ export type Analysis = {
     valid: boolean;
     unresolved: boolean;
 };
-/** @param {Node} node @return {Analysis} */
+/**
+ * Analyze the original complete tree and return its root summary. Analysis
+ * validates and classifies the tree; it is not a rewrite plan.
+ * @param {Node} node
+ * @return {Analysis}
+ */
 declare function analyze(node: Node): Analysis;
 export { analyze };

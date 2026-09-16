@@ -3,7 +3,7 @@
 // through both the worktree serializer and the serializer from HEAD.
 import { execFileSync } from 'node:child_process';
 import assert from 'node:assert/strict';
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
@@ -144,16 +144,12 @@ function benchmarkPair(worktreeSerializer, headSerializer, node, materialize) {
 /** @return {Promise<typeof import('../src/lib/serialize.js')>} */
 async function loadHeadSerializer() {
   const root = mkdtempSync(join(tmpdir(), 'postcss-calc-serialize-'));
-  const lib = join(root, 'lib');
-  mkdirSync(lib);
-  for (const file of ['serialize.js', 'node.js', 'opaque.js', 'limits.js']) {
-    const source = execFileSync('git', ['show', `HEAD:src/lib/${file}`], {
-      encoding: 'utf8',
-    });
-    writeFileSync(join(lib, file), source);
-  }
   try {
-    return await import(pathToFileURL(join(lib, 'serialize.js')).href);
+    const archive = execFileSync('git', ['archive', 'HEAD', '--', 'src/lib']);
+    execFileSync('tar', ['-x', '-f', '-', '-C', root], { input: archive });
+    return await import(
+      pathToFileURL(join(root, 'src', 'lib', 'serialize.js')).href
+    );
   } finally {
     rmSync(root, { recursive: true, force: true });
   }

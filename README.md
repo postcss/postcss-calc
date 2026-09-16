@@ -120,7 +120,8 @@ postcss().use(calc({ precision: 10 }));
 #### `precision` (default: `5`)
 
 Allows you to define the precision for decimal numbers. Set it to `false` to
-disable rounding.
+disable rounding and preserve full IEEE-754 floating-point precision (emitting
+the shortest round-tripping decimal representation).
 
 ```js
 var out = postcss()

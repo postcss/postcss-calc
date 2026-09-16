@@ -128,6 +128,84 @@ describe('serialize: numbers', () => {
       serialize(dim(1.123456789, 'px'), { precision: false }),
       'calc(1.123456789px)'
     );
+    assert.equal(
+      serialize(num(1 / 3), { precision: false }),
+      'calc(.3333333333333333)'
+    );
+    assert.equal(
+      serialize(dim(1 / 3, 'px'), { precision: false }),
+      'calc(.3333333333333333px)'
+    );
+  });
+
+  test('serialize: rounds decimal midpoints away from zero accurately', () => {
+    assert.equal(serialize(num(1.005), { precision: 2 }), 'calc(1.01)');
+    assert.equal(serialize(num(-1.005), { precision: 2 }), 'calc(-1.01)');
+    assert.equal(serialize(dim(1.005, 'px'), { precision: 2 }), 'calc(1.01px)');
+    assert.equal(
+      serialize(dim(-1.005, 'px'), { precision: 2 }),
+      'calc(-1.01px)'
+    );
+    assert.equal(serialize(num(1.000005), { precision: 5 }), 'calc(1.00001)');
+    assert.equal(serialize(num(-1.000005), { precision: 5 }), 'calc(-1.00001)');
+  });
+
+  test('serialize: precision 0 rounds to integers away from zero', () => {
+    assert.equal(serialize(num(1.5), { precision: 0 }), 'calc(2)');
+    assert.equal(serialize(num(-1.5), { precision: 0 }), 'calc(-2)');
+    assert.equal(serialize(dim(1.2, 'px'), { precision: 0 }), 'calc(1px)');
+    assert.equal(serialize(dim(-1.2, 'px'), { precision: 0 }), 'calc(-1px)');
+  });
+
+  test('serialize: negative and fractional precisions are clamped and truncated', () => {
+    assert.equal(serialize(num(1.5), { precision: -1 }), 'calc(2)');
+    assert.equal(serialize(num(-1.5), { precision: -2 }), 'calc(-2)');
+    assert.equal(serialize(num(1.005), { precision: 2.5 }), 'calc(1.01)');
+    assert.equal(
+      serialize(dim(1.005, 'px'), { precision: 2.9 }),
+      'calc(1.01px)'
+    );
+  });
+
+  test('serialize: boundary precisions avoid NaN overflow', () => {
+    assert.equal(serialize(num(1), { precision: 20 }), 'calc(1)');
+    assert.equal(serialize(dim(1, 'px'), { precision: 100 }), 'calc(1px)');
+    assert.equal(serialize(num(1), { precision: 310 }), 'calc(1)');
+    assert.equal(serialize(dim(1, 'px'), { precision: 310 }), 'calc(1px)');
+    assert.equal(serialize(num(1.5), { precision: 25 }), 'calc(1.5)');
+    assert.equal(serialize(dim(1.5, 'px'), { precision: 25 }), 'calc(1.5px)');
+  });
+
+  test('serialize: handles input magnitudes in scientific notation, MAX_SAFE_INTEGER, and noise floor', () => {
+    assert.equal(serialize(num(1e-7), { precision: 5 }), 'calc(1e-7)');
+    assert.equal(serialize(num(1e-15), { precision: 5 }), 'calc(0)');
+    assert.equal(serialize(num(1e21), { precision: 5 }), 'calc(1e+21)');
+    assert.equal(
+      serialize(num(Number.MAX_SAFE_INTEGER), { precision: 2 }),
+      'calc(9007199254740991)'
+    );
+    assert.equal(
+      serialize(dim(Number.MAX_SAFE_INTEGER, 'px'), { precision: 2 }),
+      'calc(9007199254740991px)'
+    );
+  });
+
+  test('serialize: preserves signed zero vs zero under custom precision', () => {
+    const negNested = call('min', [num(-0), num(1)]);
+    const posNested = call('min', [num(0), num(1)]);
+    assert.equal(
+      serialize(negNested, { precision: 2 }),
+      'min(calc(-1 * 0), 1)'
+    );
+    assert.equal(serialize(posNested, { precision: 2 }), 'min(0, 1)');
+
+    const negDim = call('min', [dim(-0, 'px'), dim(1, 'px')]);
+    const posDim = call('min', [dim(0, 'px'), dim(1, 'px')]);
+    assert.equal(
+      serialize(negDim, { precision: 2 }),
+      'min(calc(-1 * 0px), 1px)'
+    );
+    assert.equal(serialize(posDim, { precision: 2 }), 'min(0px, 1px)');
   });
 
   test('serialize: omits the leading zero from fractional numbers', () => {
