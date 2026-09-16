@@ -8,11 +8,13 @@
 // test exists to assert the design hasn't drifted rather than to drive bug
 // hunting. We still keep them in CI as a guardrail.
 import { test } from 'node:test';
+import assert from 'node:assert/strict';
 import fc from 'fast-check';
 import { tokenize } from '@csstools/css-tokenizer';
 import { indexBlocks } from '../../src/lib/block-index.js';
 import { parse } from '../../src/lib/parser.js';
 import { simplify } from '../../src/lib/simplify.js';
+import { analyze } from '../../src/lib/analyze.js';
 import { serialize } from '../../src/lib/serialize.js';
 import { checkCalculationType } from '../../src/lib/calculation-type.js';
 import {
@@ -37,6 +39,64 @@ test('property: simplify is idempotent', () => {
     }),
     { numRuns: NUM_RUNS }
   );
+});
+// --- Analysis/simplification contract -----------------------------------
+// Analysis summarizes the original tree, while simplification may refine
+// coarse unknown types. It must not invalidate a valid tree, change a known
+// type, or introduce unresolved state.
+test('property: simplification preserves analysis invariants', () => {
+  fc.assert(
+    fc.property(astArb(4), (ast) => {
+      const before = analyze(ast);
+      if (!before.valid) return true;
+      const after = analyze(simplify(ast));
+      assert.deepEqual(after.valid, true);
+      if (before.type !== 'unknown') {
+        assert.deepEqual(after.type, before.type);
+      }
+      if (!before.unresolved) {
+        assert.deepEqual(after.unresolved, false);
+      }
+      return true;
+    }),
+    { numRuns: NUM_RUNS }
+  );
+});
+
+test('property: simplification preserves analysis invariants on degenerate trees', () => {
+  fc.assert(
+    fc.property(astArbWithDegenerate(3), (ast) => {
+      const before = analyze(ast);
+      if (!before.valid) return true;
+      const after = analyze(simplify(ast));
+      assert.deepEqual(after.valid, true);
+      if (before.type !== 'unknown') {
+        assert.deepEqual(after.type, before.type);
+      }
+      if (!before.unresolved) {
+        assert.deepEqual(after.unresolved, false);
+      }
+      return true;
+    }),
+    { numRuns: NUM_RUNS }
+  );
+});
+
+test('property: percentage division can refine its coarse type', () => {
+  const tokens = tokenize({ css: '10% / 5%' });
+  const ast = parse(tokens, 0, tokens.length, indexBlocks(tokens));
+  const before = analyze(ast);
+  const after = analyze(simplify(ast));
+  assert.deepEqual(before, {
+    type: 'unknown',
+    valid: true,
+    unresolved: true,
+  });
+  assert.deepEqual(after, {
+    type: 'number',
+    valid: true,
+    unresolved: false,
+  });
 });
 // --- Parse-serialize round-trip ------------------------------------------
 // serialize(simplify(x)) parsed+simplified back must be indistinguishable

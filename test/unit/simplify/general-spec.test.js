@@ -55,6 +55,7 @@ describe('CSS stepped-value and sign functions', () => {
     assert.equal(out('round(up, 5, 0)'), 'calc(NaN)');
     assert.equal(out('round(down, 5, 0)'), 'calc(NaN)');
     assert.equal(out('round(to-zero, 5, 0)'), 'calc(NaN)');
+    assert.equal(out('round(5px, 0px)'), 'calc(NaN * 1px)');
   });
 
   test('spec §10.7.1: round(finite, ±infinity) is strategy-dependent', () => {

@@ -54,11 +54,20 @@ describe('round()', () => {
   test('round: B = 0 → NaN', () => {
     assert.equal(out('round(5, 0)'), 'calc(NaN)');
     assert.equal(out('round(up, 5, 0)'), 'calc(NaN)');
-    // Dim arg currently drops unit: `round(5px, 0px)` → `calc(NaN)`. The
-    // unit-preserving `calc(NaN * 1px)` form would require simplifyRound to
-    // emit `dim(NaN, unit)` instead of bare Num(NaN); deferred.
-    assert.equal(out('round(5px, 0px)'), 'calc(NaN)');
-    assert.equal(out('round(down, 10deg, 0deg)'), 'calc(NaN)');
+    assert.equal(out('round(5px, 0px)'), 'calc(NaN * 1px)');
+    assert.equal(out('round(down, 10deg, 0deg)'), 'calc(NaN * 1deg)');
+    assert.equal(out('round(5px, NaN * 1px)'), 'calc(NaN * 1px)');
+    assert.equal(out('round(NaN * 1px, 5px)'), 'calc(NaN * 1px)');
+    assert.equal(
+      out('round(infinity * 1px, infinity * 1px)'),
+      'calc(NaN * 1px)'
+    );
+    assert.equal(
+      out('round(-infinity * 1px, infinity * 1px)'),
+      'calc(NaN * 1px)'
+    );
+    assert.equal(out('calc(round(5px, NaN * 1px) + 10px)'), 'calc(NaN * 1px)');
+    assert.equal(out('calc(round(5px, 0px) + 10px)'), 'calc(NaN * 1px)');
   });
 
   test('round: opaque var() arg → opaque', () => {

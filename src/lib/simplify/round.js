@@ -44,11 +44,11 @@ function simplifyRound(args) {
   // to applyRound, where floor*b===ceil*b===±∞ collapses back to A
   // (§10.3.1 "result is the same infinity").
   if (Number.isNaN(b)) {
-    return num(Number.NaN);
+    return foldResult(fold, Number.NaN);
   }
   if (!Number.isFinite(b)) {
     if (!Number.isFinite(a)) {
-      return num(Number.NaN);
+      return foldResult(fold, Number.NaN);
     }
     let result;
     if (strategy === 'up' && a > 0) {
@@ -63,7 +63,7 @@ function simplifyRound(args) {
 
   const result = applyRound(strategy, a, b);
   if (Number.isNaN(result)) {
-    return num(Number.NaN);
+    return foldResult(fold, Number.NaN);
   }
   return foldResult(fold, result);
 }

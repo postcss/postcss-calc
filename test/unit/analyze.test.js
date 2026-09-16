@@ -5,6 +5,7 @@ import { checkCalculationType } from '../../src/lib/calculation-type.js';
 import { call, num } from '../../src/lib/node.js';
 import { indexBlocks } from '../../src/lib/block-index.js';
 import { parse } from '../../src/lib/parser.js';
+import reduceCalc from '../../src/reduce.js';
 import { tokenize } from '@csstools/css-tokenizer';
 
 function analyzeSource(source) {
@@ -44,6 +45,111 @@ test('analyze: tracks unresolved values without confusing grammar keywords', () 
   assert.deepEqual(analyzeSource('round(up, 5px, 2px)'), {
     type: { dimension: 'length' },
     valid: true,
+    unresolved: false,
+  });
+});
+
+test('analyze: sign() always returns number at valid arity', () => {
+  assert.deepEqual(analyzeSource('sign(10px)'), {
+    type: 'number',
+    valid: true,
+    unresolved: false,
+  });
+  assert.deepEqual(analyzeSource('sign(10%)'), {
+    type: 'number',
+    valid: true,
+    unresolved: true,
+  });
+  assert.deepEqual(analyzeSource('sign(var(--x))'), {
+    type: 'number',
+    valid: true,
+    unresolved: true,
+  });
+  assert.deepEqual(analyzeSource('sign()'), {
+    type: 'unknown',
+    valid: false,
+    unresolved: false,
+  });
+  assert.deepEqual(analyzeSource('sign(1px, 2px)'), {
+    type: 'unknown',
+    valid: false,
+    unresolved: false,
+  });
+});
+
+test('reduceCalc: accepts a calculation containing sign() of a dimension', () => {
+  assert.equal(reduceCalc('calc(sign(10px) + 1)'), 'calc(2)');
+});
+
+test('reduceCalc: preserves an invalid sum hidden by an unresolved term', () => {
+  assert.equal(
+    reduceCalc('calc(0% * 0px / 0px + 0px + -1 * 0)'),
+    'calc(0% * 0px / 0px + 0px + -1 * 0)'
+  );
+});
+
+test('analyze: round() validates arity, types, and single-argument rules', () => {
+  assert.deepEqual(analyzeSource('round(5)'), {
+    type: 'number',
+    valid: true,
+    unresolved: false,
+  });
+  assert.deepEqual(analyzeSource('round(up, 5)'), {
+    type: 'number',
+    valid: true,
+    unresolved: false,
+  });
+  assert.deepEqual(analyzeSource('round(var(--x))'), {
+    type: 'unknown',
+    valid: true,
+    unresolved: true,
+  });
+  assert.deepEqual(analyzeSource('round(10px)'), {
+    type: 'unknown',
+    valid: false,
+    unresolved: false,
+  });
+  assert.deepEqual(analyzeSource('round(up, 10px)'), {
+    type: 'unknown',
+    valid: false,
+    unresolved: false,
+  });
+  assert.deepEqual(analyzeSource('round(10px, 20s)'), {
+    type: 'unknown',
+    valid: false,
+    unresolved: false,
+  });
+  assert.deepEqual(analyzeSource('round(10px, 20px)'), {
+    type: { dimension: 'length' },
+    valid: true,
+    unresolved: false,
+  });
+  assert.deepEqual(analyzeSource('round()'), {
+    type: 'unknown',
+    valid: false,
+    unresolved: false,
+  });
+  assert.deepEqual(analyzeSource('round(1px, 2px, 3px)'), {
+    type: 'unknown',
+    valid: false,
+    unresolved: false,
+  });
+});
+
+test('analyze: clamp() validates keywords and matching types', () => {
+  assert.deepEqual(analyzeSource('clamp(none, 10px, none)'), {
+    type: { dimension: 'length' },
+    valid: true,
+    unresolved: false,
+  });
+  assert.deepEqual(analyzeSource('clamp(10s, 10px, 20px)'), {
+    type: 'unknown',
+    valid: false,
+    unresolved: false,
+  });
+  assert.deepEqual(analyzeSource('clamp(10px, 20px)'), {
+    type: 'unknown',
+    valid: false,
     unresolved: false,
   });
 });

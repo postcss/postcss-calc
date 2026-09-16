@@ -10,7 +10,9 @@ import { analyze } from './analyze.js';
 /** @typedef {{options: ResolvedReduceCalcOptions, value: string, tokens: CSSToken[], index: BlockIndex}} CompileContext */
 
 /**
- * Parse, analyze, and simplify one candidate.
+ * Parse, analyze, and simplify one candidate. Analysis is the validity/status
+ * gate over the original tree; simplification then runs independently as a
+ * composable AST transformation that may synthesize nodes.
  *
  * @param {Candidate} candidate
  * @param {CompileContext} ctx

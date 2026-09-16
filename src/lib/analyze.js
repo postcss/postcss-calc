@@ -12,7 +12,12 @@ import { assertDepth } from './limits.js';
 /** @type {CalculationType} */ const unknownType = { kind: 'unknown' };
 /** @type {CalculationType} */ const failureType = { kind: 'failure' };
 
-/** @param {Node} node @return {Analysis} */
+/**
+ * Analyze the original complete tree and return its root summary. Analysis
+ * validates and classifies the tree; it is not a rewrite plan.
+ * @param {Node} node
+ * @return {Analysis}
+ */
 function analyze(node) {
   const result = analyzeType(node);
   return {
@@ -49,18 +54,32 @@ function analyzeType(node, depth = 0) {
 
 /** @param {Extract<Node, {type: 'Sum'}>} node @param {number} depth @return {{type: CalculationType, valid: boolean, unresolved: boolean}} */
 function analyzeSum(node, depth) {
-  let type = numberType;
+  let type = null;
+  let hasUnknown = false;
   let valid = true;
-  let hasTerm = false;
   let hasUnresolved = false;
   for (const term of node.terms) {
     const child = analyzeType(term.node, depth + 1);
-    type = hasTerm ? addTypes(type, child.type) : child.type;
-    hasTerm = true;
     valid = valid && child.valid;
     hasUnresolved = hasUnresolved || child.unresolved;
+    if (isFailure(child.type)) {
+      type = failureType;
+    } else if (child.type.kind === 'unknown') {
+      hasUnknown = true;
+    } else if (type === null) {
+      type = child.type;
+    } else if (!isFailure(type)) {
+      type = addTypes(type, child.type);
+    }
   }
-  return finish(type, valid, hasUnresolved);
+  if (type !== null && isFailure(type)) {
+    return finish(failureType, false, hasUnresolved);
+  }
+  return finish(
+    hasUnknown ? unknownType : (type ?? numberType),
+    valid,
+    hasUnresolved
+  );
 }
 
 /** @param {Extract<Node, {type: 'Product'}>} node @param {number} depth @return {{type: CalculationType, valid: boolean, unresolved: boolean}} */
@@ -119,14 +138,19 @@ function analyzeProduct(node, depth) {
 /** @param {Extract<Node, {type: 'Call'}>} node @param {number} depth @return {{type: CalculationType, valid: boolean, unresolved: boolean}} */
 function analyzeCall(node, depth) {
   const name = node.name.toLowerCase();
-  const childResults = node.args.map((arg) => analyzeType(arg, depth + 1));
-  const childTypes = childResults.map((child) => child.type);
-  const valid = childResults.every((child) => child.valid);
   const definition = mathFunctions.get(name);
-  const unresolvedArgs = childResults.some(
-    (child, index) =>
-      !definition?.isKeyword?.(node.args[index], index) && child.unresolved
-  );
+  /** @type {CalculationType[]} */
+  const childTypes = [];
+  let valid = true;
+  let unresolvedArgs = false;
+  for (let index = 0; index < node.args.length; index++) {
+    const child = analyzeType(node.args[index], depth + 1);
+    childTypes.push(child.type);
+    valid = valid && child.valid;
+    if (!definition?.isKeyword?.(node.args[index], index) && child.unresolved) {
+      unresolvedArgs = true;
+    }
+  }
   if (!definition) return finish(unknownType, valid, true);
   const type = definition.analyze(childTypes, node.args);
   const unresolvedType = type.kind === 'unknown';
