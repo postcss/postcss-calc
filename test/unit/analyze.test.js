@@ -3,11 +3,13 @@ import assert from 'node:assert/strict';
 import { analyze } from '../../src/lib/analyze.js';
 import { checkCalculationType } from '../../src/lib/calculation-type.js';
 import { call, num } from '../../src/lib/node.js';
+import { indexBlocks } from '../../src/lib/block-index.js';
 import { parse } from '../../src/lib/parser.js';
 import { tokenize } from '@csstools/css-tokenizer';
 
 function analyzeSource(source) {
-  return analyze(parse(tokenize({ css: source })));
+  const tokens = tokenize({ css: source });
+  return analyze(parse(tokens, 0, tokens.length, indexBlocks(tokens)));
 }
 
 test('analyze: reports CSS type and validity in one result', () => {

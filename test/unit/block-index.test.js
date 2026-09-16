@@ -1,11 +1,11 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { tokenize } from '@csstools/css-tokenizer';
-import { indexBlocks, parse } from '../../src/lib/parser.js';
+import { indexBlocks } from '../../src/lib/block-index.js';
+import { parse } from '../../src/lib/parser.js';
 import { MAX_CALCULATION_DEPTH } from '../../src/lib/limits.js';
 
 const nested = (depth) => `${'unknown('.repeat(depth)}x${')'.repeat(depth)}`;
-
 const tokenIndex = (tokens, raw, occurrence = 0) => {
   let seen = 0;
   for (let i = 0; i < tokens.length; i++) {
@@ -69,12 +69,19 @@ test('BlockIndex tolerates unmatched openers without rejecting the stream', () =
 });
 
 test('opaque component traversal is iterative at the nesting limit', () => {
+  const acceptedTokens = tokenize({ css: nested(MAX_CALCULATION_DEPTH + 1) });
   assert.doesNotThrow(() =>
-    parse(tokenize({ css: nested(MAX_CALCULATION_DEPTH + 1) }))
+    parse(acceptedTokens, 0, acceptedTokens.length, indexBlocks(acceptedTokens))
   );
   let error;
+  const rejectedTokens = tokenize({ css: nested(MAX_CALCULATION_DEPTH + 2) });
   try {
-    parse(tokenize({ css: nested(MAX_CALCULATION_DEPTH + 2) }));
+    parse(
+      rejectedTokens,
+      0,
+      rejectedTokens.length,
+      indexBlocks(rejectedTokens)
+    );
   } catch (candidate) {
     error = candidate;
   }

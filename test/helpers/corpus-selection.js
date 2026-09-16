@@ -5,9 +5,10 @@
 // choosing a stable, shape-diverse routine sample.  It derives shape from the
 // real parser rather than from source spelling so whitespace and literal
 // churn do not crowd out distinct calculation forms.
-import { parse } from '../../src/lib/parser.js';
 import { tokenize } from '@csstools/css-tokenizer';
+import { indexBlocks } from '../../src/lib/block-index.js';
 import { baseOf, convert } from '../../src/lib/convertUnits.js';
+import { parse } from '../../src/lib/parser.js';
 
 export const ROUTINE_CORPUS_TARGET = 6000;
 
@@ -84,7 +85,8 @@ function describe(node, literals) {
 export function classifyCorpusExpression(input) {
   try {
     const literals = [];
-    const ast = parse(tokenize({ css: input }));
+    const tokens = tokenize({ css: input });
+    const ast = parse(tokens, 0, tokens.length, indexBlocks(tokens));
     // A calc() function accepts exactly one expression. The harvested GitHub
     // pool also contains malformed calc-like calls; those remain covered by
     // invalid-corpus resilience tests instead of becoming differential noise.

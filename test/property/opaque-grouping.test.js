@@ -5,6 +5,7 @@ import { describe, test } from 'node:test';
 import assert from 'node:assert/strict';
 import fc from 'fast-check';
 import { tokenize } from '@csstools/css-tokenizer';
+import { indexBlocks } from '../../src/lib/block-index.js';
 import { parse } from '../../src/lib/parser.js';
 import { simplify } from '../../src/lib/simplify.js';
 import { serialize } from '../../src/lib/serialize.js';
@@ -18,10 +19,19 @@ describe('opaque CSS math properties', () => {
   test('property: bounded CSS math grammar parses and round-trips', () => {
     fc.assert(
       fc.property(cssMathSourceArb, (input) => {
-        const output = serialize(simplify(parse(tokenize({ css: input }))));
+        const tokens = tokenize({ css: input });
+        const output = serialize(
+          simplify(parse(tokens, 0, tokens.length, indexBlocks(tokens)))
+        );
+        const outputTokens = tokenize({ css: output });
         return (
           typeof output === 'string' &&
-          parse(tokenize({ css: output })) !== null
+          parse(
+            outputTokens,
+            0,
+            outputTokens.length,
+            indexBlocks(outputTokens)
+          ) !== null
         );
       }),
       { numRuns: 300 }

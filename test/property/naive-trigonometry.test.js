@@ -11,11 +11,17 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { tokenize } from '@csstools/css-tokenizer';
+import { indexBlocks } from '../../src/lib/block-index.js';
 import { parse } from '../../src/lib/parser.js';
 import { simplify } from '../../src/lib/simplify.js';
 import { serialize } from '../../src/lib/serialize.js';
-const out = (s) =>
-  serialize(simplify(parse(tokenize({ css: s }))), { precision: 10 });
+const out = (s) => {
+  const tokens = tokenize({ css: s });
+  return serialize(
+    simplify(parse(tokens, 0, tokens.length, indexBlocks(tokens))),
+    { precision: 10 }
+  );
+};
 const scalarText = (text) =>
   text.startsWith('calc(') && text.endsWith(')')
     ? text.slice('calc('.length, -1)

@@ -1,4 +1,3 @@
-import { QUICK_MATH_TEST, hasPotentialMathFunction, isSupportedMathFunction } from '../functions.js';
 export type Node = import('../node.js').Node;
 export type SimplifyFn = import('../simplify.js').SimplifyFn;
 export type MathSimplifier = (name: string, args: Node[]) => Node;
@@ -13,4 +12,4 @@ export type MathSimplifier = (name: string, args: Node[]) => Node;
 declare function simplifyCall(node: Extract<Node, {
     type: 'Call';
 }>, simplify: SimplifyFn): Node;
-export { isSupportedMathFunction, simplifyCall, hasPotentialMathFunction, QUICK_MATH_TEST, };
+export { simplifyCall };

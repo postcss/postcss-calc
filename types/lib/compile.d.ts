@@ -2,7 +2,7 @@ export type Candidate = import('./scan.js').Candidate;
 export type ResolvedReduceCalcOptions = import('../reduce.js').ResolvedReduceCalcOptions;
 export type Replacement = import('../reduce.js').Replacement;
 export type CSSToken = import('@csstools/css-tokenizer').CSSToken;
-export type BlockIndex = import('./block-index.js').BlockIndex;
+export type BlockIndex = ReturnType<typeof import('./block-index.js').indexBlocks>;
 export type CompileContext = {
     options: ResolvedReduceCalcOptions;
     value: string;
@@ -13,7 +13,7 @@ export type CompileContext = {
 /** @typedef {import('../reduce.js').ResolvedReduceCalcOptions} ResolvedReduceCalcOptions */
 /** @typedef {import('../reduce.js').Replacement} Replacement */
 /** @typedef {import('@csstools/css-tokenizer').CSSToken} CSSToken */
-/** @typedef {import('./block-index.js').BlockIndex} BlockIndex */
+/** @typedef {ReturnType<typeof import('./block-index.js').indexBlocks>} BlockIndex */
 /** @typedef {{options: ResolvedReduceCalcOptions, value: string, tokens: CSSToken[], index: BlockIndex}} CompileContext */
 declare class CalculationTypeError extends Error {
     constructor();
