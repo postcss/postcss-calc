@@ -18,6 +18,8 @@ import { assertDepth } from './limits.js';
  */
 
 /**
+ * Simplify is an independent, composable AST transformation. It may
+ * synthesize canonical nodes while preserving the Node -> Node contract.
  * @param {Node} node
  * @param {number} [depth]
  * @return {Node}
