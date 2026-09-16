@@ -2,42 +2,42 @@
 import { TokenType as CssType } from '@csstools/css-tokenizer';
 import { baseOf } from './convertUnits.js';
 import {
-  mkSum,
-  mkProduct,
-  negate,
-  num,
+  call,
   dim,
   ident,
-  call,
+  mkProduct,
+  mkSum,
+  negate,
+  num,
   opaqueCall,
 } from './node.js';
-import { isSupportedMathFunction, isCalculationFunction } from './functions.js';
+import { isCalculationFunction, isSupportedMathFunction } from './functions.js';
 import { assertDepth } from './limits.js';
 
 /** @typedef {import('@csstools/css-tokenizer').CSSToken} CSSToken */
 /** @typedef {import('./node.js').Node} Node */
 /** @typedef {import('./node.js').OpaqueComponent} OpaqueComponent */
 /** @typedef {ReturnType<typeof import('./block-index.js').indexBlocks>} BlockIndex */
-/**
- * @typedef {object} Token
- * @property {'number' | 'dimension' | 'ident' | 'function' | 'punct' | 'eof'} type
- * @property {string | number} value
- * @property {string} raw
- * @property {string} [unit]
- * @property {string} [rawUnit]
- * @property {'+' | '-'} [signCharacter]
- * @property {number} pos
- * @property {boolean} ws
- * @property {number} index
- */
+/** @typedef {{raw: string, pos: number, ws: boolean, index: number}} TokenBase */
+/** @typedef {TokenBase & {type: 'number', value: number, signCharacter?: '+' | '-'}} NumberToken */
+/** @typedef {TokenBase & {type: 'dimension', value: number, unit: string, rawUnit: string, signCharacter?: '+' | '-'}} DimensionToken */
+/** @typedef {TokenBase & {type: 'ident', value: string}} IdentToken */
+/** @typedef {TokenBase & {type: 'function', value: string}} FunctionToken */
+/** @typedef {'(' | ')' | ',' | '+' | '-' | '*' | '/'} Punctuator */
+/** @typedef {TokenBase & {type: 'punct', value: Punctuator}} PunctToken */
+/** @typedef {TokenBase & {type: 'eof', value: '', raw: ''}} EofToken */
+/** @typedef {NumberToken | DimensionToken | IdentToken | FunctionToken | PunctToken | EofToken} Token */
 /**
  * Immutable bounds and shared block index for one parse range.
  * @typedef {Readonly<{tokens: CSSToken[], end: number, index: BlockIndex}>} ParseInput
  */
-/** @typedef {(input: ParseInput, cursor: Cursor, token: Token, depth: number) => Node} PrefixParselet */
 
 const NUMERIC_RAW = /^[+-]?(?:\d+(?:\.\d+)?|\.\d+)(?:[eE][+-]?\d+)?/;
-const PUNCT_DELIMS = new Set(['+', '-', '*', '/']);
+
+/** @param {string} value @return {value is '+' | '-' | '*' | '/'} */
+function isOperator(value) {
+  return value === '+' || value === '-' || value === '*' || value === '/';
+}
 
 /**
  * CSS numeric tokens do not retain a signed-zero distinction.  Keep that
@@ -96,6 +96,7 @@ function pushComponent(target, part) {
  *
  * @param {ParseInput} input
  * @param {Cursor} cursor
+ * @return {Token}
  */
 function scanToken(input, cursor) {
   let i = cursor.index;
@@ -108,11 +109,13 @@ function scanToken(input, cursor) {
       continue;
     }
     if (native[0] === CssType.EOF) break;
-    cursor.lookahead = normalizeToken(native, i, ws);
+    const token = normalizeToken(native, i, ws);
+    cursor.lookahead = token;
     cursor.lookaheadNextIndex = i + 1;
-    return;
+    return token;
   }
-  cursor.lookahead = {
+  /** @type {EofToken} */
+  const token = {
     type: 'eof',
     value: '',
     raw: '',
@@ -120,11 +123,13 @@ function scanToken(input, cursor) {
     ws,
     index: i,
   };
+  cursor.lookahead = token;
   // Native EOF is a real token and is consumed past its array index. When
   // the bounded range ends before native EOF, this is a virtual EOF and must
   // remain at the range boundary.
   cursor.lookaheadNextIndex =
     i < input.end && input.tokens[i][0] === CssType.EOF ? i + 1 : input.end;
+  return token;
 }
 
 /** @param {CSSToken} t @param {number} index @param {boolean} ws @return {Token} */
@@ -178,19 +183,23 @@ function normalizeToken(t, index, ws) {
         index,
       };
     case CssType.OpenParen:
+      return { type: 'punct', value: '(', raw, pos, ws, index };
     case CssType.CloseParen:
+      return { type: 'punct', value: ')', raw, pos, ws, index };
     case CssType.Comma:
-      return { type: 'punct', value: raw, raw, pos, ws, index };
+      return { type: 'punct', value: ',', raw, pos, ws, index };
     case CssType.Delim:
-      if (PUNCT_DELIMS.has(detail.value))
-        return { type: 'punct', value: detail.value, raw, pos, ws, index };
+      if (isOperator(detail.value))
+        return {
+          type: 'punct',
+          value: detail.value,
+          raw,
+          pos,
+          ws,
+          index,
+        };
   }
   throw new Error(`Unexpected character "${raw[0] ?? ''}" at position ${pos}`);
-}
-
-/** @param {ParseInput} input @param {Cursor} cursor @return {number} */
-function eofPosition(input, cursor) {
-  return eofPositionAt(input, cursor.index);
 }
 
 /** @param {ParseInput} input @param {number} index @return {number} */
@@ -213,8 +222,7 @@ function eofPositionAt(input, index) {
 
 /** @param {ParseInput} input @param {Cursor} cursor @return {Token} */
 function peekToken(input, cursor) {
-  if (cursor.lookahead === null) scanToken(input, cursor);
-  return /** @type {Token} */ (cursor.lookahead);
+  return cursor.lookahead ?? scanToken(input, cursor);
 }
 
 /**
@@ -225,15 +233,14 @@ function peekToken(input, cursor) {
  * @return {Token}
  */
 function takeToken(input, cursor) {
-  if (cursor.lookahead === null) scanToken(input, cursor);
-  const token = cursor.lookahead;
+  const token = peekToken(input, cursor);
   cursor.index = cursor.lookaheadNextIndex;
   cursor.firstToken = false;
   cursor.lookahead = null;
-  return /** @type {Token} */ (token);
+  return token;
 }
 
-/** @param {ParseInput} input @param {Cursor} cursor @param {string} value @param {string} [value2] @return {boolean} */
+/** @param {ParseInput} input @param {Cursor} cursor @param {Punctuator} value @param {Punctuator} [value2] @return {boolean} */
 function isPunct(input, cursor, value, value2) {
   const t = peekToken(input, cursor);
   return (
@@ -242,14 +249,14 @@ function isPunct(input, cursor, value, value2) {
   );
 }
 
-/** @param {ParseInput} input @param {Cursor} cursor @param {string} value @return {boolean} */
+/** @param {ParseInput} input @param {Cursor} cursor @param {Punctuator} value @return {boolean} */
 function matchPunct(input, cursor, value) {
   if (!isPunct(input, cursor, value)) return false;
   takeToken(input, cursor);
   return true;
 }
 
-/** @param {ParseInput} input @param {Cursor} cursor @param {string} value @return {Token} */
+/** @param {ParseInput} input @param {Cursor} cursor @param {Punctuator} value @return {PunctToken} */
 function expectPunct(input, cursor, value) {
   const t = takeToken(input, cursor);
   if (t.type !== 'punct' || t.value !== value) {
@@ -258,15 +265,49 @@ function expectPunct(input, cursor, value) {
   return t;
 }
 
+/** @param {ParseInput} input @param {Cursor} cursor @param {Token} token @param {number} depth @return {Node} */
+function parsePrefix(input, cursor, token, depth) {
+  switch (token.type) {
+    case 'number':
+      return num(normalizeSourceZero(token.value));
+    case 'dimension': {
+      const unit = token.unit.toLowerCase();
+      return dim(
+        normalizeSourceZero(token.value),
+        unit,
+        baseOf(unit) || token.rawUnit === unit ? undefined : token.rawUnit
+      );
+    }
+    case 'ident':
+      return (
+        foldCalcKeyword(token.value) ??
+        ident(token.value, sourceSpelling(token.raw, token.value))
+      );
+    case 'function':
+      return parseCall(input, cursor, token, depth);
+    case 'punct':
+      switch (token.value) {
+        case '(': {
+          const expression = parseExpr(input, cursor, 0, depth + 1);
+          expectPunct(input, cursor, ')');
+          return expression.type === 'Sum'
+            ? { ...expression, grouped: true }
+            : expression;
+        }
+        case '-':
+          return negate(parseExpr(input, cursor, 7, depth + 1));
+        case '+':
+          return parseExpr(input, cursor, 7, depth + 1);
+      }
+  }
+  throw new Error(`Unexpected token "${token.raw}" at position ${token.pos}`);
+}
+
 /** @param {ParseInput} input @param {Cursor} cursor @param {number} minBp @param {number} depth @return {Node} */
 function parseExpr(input, cursor, minBp = 0, depth = 0) {
   assertDepth(depth);
   const t = takeToken(input, cursor);
-  const key = t.type === 'punct' ? String(t.value) : t.type;
-  const prefix = PREFIX[key];
-  if (!prefix)
-    throw new Error(`Unexpected token "${t.raw}" at position ${t.pos}`);
-  let left = prefix(input, cursor, t, depth);
+  let left = parsePrefix(input, cursor, t, depth);
 
   while (true) {
     const nxt = peekToken(input, cursor);
@@ -331,13 +372,13 @@ function foldCalcKeyword(name) {
 
 const ADD_BP = 1;
 const MUL_BP = 3;
-/** @param {ParseInput} input @param {Cursor} cursor @param {Token} token @param {string} name @param {string} rawName @return {Node} */
+/** @param {ParseInput} input @param {Cursor} cursor @param {FunctionToken} token @param {string} name @param {string} rawName @return {Node} */
 function parseOpaqueCall(input, cursor, token, name, rawName) {
   const start = token.index + 1;
   const close = input.index.closeOf(token.index, input.end);
   if (close === -1)
     throw new Error(
-      `Unclosed ${name}( at position ${eofPosition(input, cursor)}`
+      `Unclosed ${name}( at position ${eofPositionAt(input, cursor.index)}`
     );
   cursor.skipTo(close + 1);
   return opaqueCall(
@@ -355,9 +396,9 @@ function requireSurroundingWs(input, cursor, token) {
     );
 }
 
-/** @param {ParseInput} input @param {Cursor} cursor @param {Token} t @param {number} depth @return {Node} */
+/** @param {ParseInput} input @param {Cursor} cursor @param {FunctionToken} t @param {number} depth @return {Node} */
 function parseCall(input, cursor, t, depth) {
-  const name = String(t.value);
+  const name = t.value;
   const rawName = t.raw.slice(0, -1);
   if (name.toLowerCase() === 'var')
     return parseVar(input, cursor, t, name, rawName);
@@ -454,20 +495,20 @@ function componentTree(input, start, end, depth = 0) {
   }
   return root;
 }
-/** @param {ParseInput} input @param {Cursor} cursor @param {Token} token @param {string} name @param {string} rawName @return {Node} */
+/** @param {ParseInput} input @param {Cursor} cursor @param {FunctionToken} token @param {string} name @param {string} rawName @return {Node} */
 function parseVar(input, cursor, token, name, rawName) {
   const { tokens } = input;
   const start = token.index + 1;
   const close = input.index.closeOf(token.index, input.end);
   if (close === -1)
     throw new Error(
-      `Unclosed ${name}( at position ${eofPosition(input, cursor)}`
+      `Unclosed ${name}( at position ${eofPositionAt(input, cursor.index)}`
     );
   const comma = input.index.firstTopLevelComma(start, close);
   const property = customProperty(tokens, start, comma === -1 ? close : comma);
   if (!property)
     throw new Error(
-      `Invalid custom property in ${name}() at position ${tokens[start]?.[2] ?? eofPosition(input, cursor)}`
+      `Invalid custom property in ${name}() at position ${tokens[start]?.[2] ?? eofPositionAt(input, cursor.index)}`
     );
   cursor.skipTo(close + 1);
   /** @type {OpaqueComponent[]} */
@@ -478,33 +519,6 @@ function parseVar(input, cursor, token, name, rawName) {
     components.push(...componentTree(input, property.index + 1, close));
   return opaqueCall(name, components, sourceSpelling(rawName, name));
 }
-
-/** @type {Record<string, PrefixParselet>} */
-const PREFIX = {
-  number: (_input, _cursor, t) =>
-    num(normalizeSourceZero(/** @type {number} */ (t.value))),
-  dimension: (_input, _cursor, t) => {
-    const unit = /** @type {string} */ (t.unit).toLowerCase();
-    return dim(
-      normalizeSourceZero(/** @type {number} */ (t.value)),
-      unit,
-      baseOf(unit) || t.rawUnit === unit ? undefined : t.rawUnit
-    );
-  },
-  ident: (_input, _cursor, t) => {
-    const name = String(t.value);
-    return foldCalcKeyword(name) ?? ident(name, sourceSpelling(t.raw, name));
-  },
-  function: parseCall,
-  '(': (input, cursor, _t, depth) => {
-    const e = parseExpr(input, cursor, 0, depth + 1);
-    expectPunct(input, cursor, ')');
-    return e.type === 'Sum' ? { ...e, grouped: true } : e;
-  },
-  '-': (input, cursor, _t, depth) =>
-    negate(parseExpr(input, cursor, 7, depth + 1)),
-  '+': (input, cursor, _t, depth) => parseExpr(input, cursor, 7, depth + 1),
-};
 
 /** @type {Record<string, {lbp: number}>} */
 const INFIX = {
