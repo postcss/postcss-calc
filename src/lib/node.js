@@ -93,43 +93,52 @@ function opaqueCall(name, components, rawName) {
 function mkSum(rawTerms) {
   /** @type {SumTerm[]} */
   const flat = [];
+  let hasNegativeZero = false;
   for (const t of rawTerms) {
-    pushSumTerm(flat, t);
+    if (pushSumTerm(flat, t)) hasNegativeZero = true;
   }
   // `+0 + -0` evaluates to +0. Keep positive zero terms when the sum also
   // contains -0 so simplification can perform that IEEE-754 operation before
   // the canonical zero-elision below.
-  const hasNegativeZero = flat.some(
-    (t) => t.node.type === 'Num' && Object.is(t.node.value, -0)
-  );
-  const terms = flat.filter(
-    (t) => t.node.type !== 'Num' || t.node.value !== 0 || hasNegativeZero
-  );
-  if (terms.length === 0) {
+  let length = 0;
+  for (let i = 0; i < flat.length; i++) {
+    const term = flat[i];
+    if (!hasNegativeZero && term.node.type === 'Num' && term.node.value === 0) {
+      continue;
+    }
+    flat[length++] = term;
+  }
+  flat.length = length;
+  if (length === 0) {
     return num(0);
   }
-  if (terms.length === 1 && terms[0].sign === 1) {
-    return terms[0].node;
+  if (length === 1 && flat[0].sign === 1) {
+    return flat[0].node;
   }
-  return { type: 'Sum', terms };
+  return { type: 'Sum', terms: flat };
 }
 
 /**
  * @param {SumTerm[]} out
  * @param {SumTerm} term
- * @return {void}
+ * @return {boolean} Whether the appended terms contain negative zero.
  */
 function pushSumTerm(out, term) {
   let { sign, node } = term;
 
   if (node.type === 'Sum' && !node.grouped) {
+    let hasNegativeZero = false;
     for (const inner of node.terms) {
-      pushSumTerm(out, {
-        sign: /** @type {1 | -1} */ (sign * inner.sign),
-        node: inner.node,
-      });
+      if (
+        pushSumTerm(out, {
+          sign: /** @type {1 | -1} */ (sign * inner.sign),
+          node: inner.node,
+        })
+      ) {
+        hasNegativeZero = true;
+      }
     }
-    return;
+    return hasNegativeZero;
   }
 
   // sign=-1 around a Num/Dim leaf collapses into the value's sign — the
@@ -140,6 +149,7 @@ function pushSumTerm(out, term) {
   }
 
   out.push({ sign, node });
+  return node.type === 'Num' && Object.is(node.value, -0);
 }
 
 /**

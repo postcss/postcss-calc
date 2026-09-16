@@ -4,6 +4,7 @@
 
 import { serializeComponents } from './opaque.js';
 import { checkCalculationDepth } from './limits.js';
+import { isCalculationFunction } from './functions.js';
 
 /**
  * @typedef {import('./node.js').Node} Node
@@ -473,6 +474,24 @@ function emitMathResult(node, session, wrapper) {
 }
 
 /**
+ * Serialize a scalar result without allocating a render context or buffer.
+ * @param {import('./node.js').Num | import('./node.js').Dim} node
+ * @param {number | false} precision
+ * @param {'standard' | 'unwrap-all'} scalarPolicy
+ * @param {string} wrapper
+ * @return {string}
+ */
+function serializeScalarResult(node, precision, scalarPolicy, wrapper) {
+  const value = roundedScalarValue(node, precision);
+  const unit = node.type === 'Dim' ? (node.rawUnit ?? node.unit) : '';
+  if (isDegenerate(value)) {
+    return `${wrapper}(${degenerateKeyword(value)}${unit ? ` * 1${unit}` : ''})`;
+  }
+  const scalar = serializeNumber(value) + unit;
+  return scalarPolicy === 'standard' ? `${wrapper}(${scalar})` : scalar;
+}
+
+/**
  * @param {Node} node
  * @param {ReturnType<typeof makeContext>} session
  * @param {string[]} [buffer]
@@ -513,12 +532,16 @@ function planSerialize(node, opts) {
 }
 
 /**
- * @param {{tree: Node, status: 'resolved' | 'unresolved', rootName: string, rootSpelling: string, original: string}} result
+ * @param {{tree: Node, status: 'resolved' | 'unresolved', rootName: string, rootSpelling: string, calculation?: boolean, original?: string}} result
  * @param {SerializeOptions} opts
  * @return {{kind: 'original', text: string} | {kind: 'root-call', node: Node, session: ReturnType<typeof makeContext>, callNameOverride: string} | {kind: 'wrapped-expr', node: Node, session: ReturnType<typeof makeContext>, wrapper: string} | {kind: 'math', node: Node, session: ReturnType<typeof makeContext>, wrapper: string}}
  */
 function planSerializeResult(result, opts) {
-  const isCalc = /^(?:-(?:moz|webkit)-)?calc$/i.test(result.rootName);
+  const isCalc = result.calculation ?? isCalculationFunction(result.rootName);
+  const normalizedRootName =
+    result.calculation === undefined
+      ? result.rootName.toLowerCase()
+      : result.rootName;
   const wrapper = isCalc
     ? result.rootSpelling || opts.calcName || 'calc'
     : 'calc';
@@ -527,7 +550,7 @@ function planSerializeResult(result, opts) {
   if (!isCalc && result.status === 'unresolved') {
     if (
       (result.tree.type === 'Call' || result.tree.type === 'OpaqueCall') &&
-      result.tree.name.toLowerCase() === result.rootName.toLowerCase()
+      result.tree.name.toLowerCase() === normalizedRootName
     ) {
       return {
         kind: 'root-call',
@@ -536,7 +559,7 @@ function planSerializeResult(result, opts) {
         callNameOverride: result.rootSpelling,
       };
     }
-    return { kind: 'original', text: result.original };
+    return { kind: 'original', text: result.original ?? '' };
   }
 
   if (session.scalarPolicy === 'standard') {
@@ -580,16 +603,38 @@ function emitOutput(renderSpec) {
  * @return {string}
  */
 function serialize(node, opts = {}) {
+  if (isScalar(node)) {
+    return serializeScalarResult(
+      node,
+      opts.precision ?? 5,
+      normalizeScalarPolicy(opts),
+      opts.calcName ?? 'calc'
+    );
+  }
   checkCalculationDepth(node);
   return emitOutput(planSerialize(node, opts));
 }
 
 /**
- * @param {{tree: Node, status: 'resolved' | 'unresolved', rootName: string, rootSpelling: string, original: string}} result
+ * @param {{tree: Node, status: 'resolved' | 'unresolved', rootName: string, rootSpelling: string, calculation?: boolean, original?: string}} result
  * @param {SerializeOptions} [opts]
  * @return {string}
  */
 function serializeResult(result, opts = {}) {
+  const node = result.tree;
+  if (isScalar(node)) {
+    const isCalc = result.calculation ?? isCalculationFunction(result.rootName);
+    if (!isCalc && result.status === 'unresolved') return result.original ?? '';
+    const wrapper = isCalc
+      ? result.rootSpelling || opts.calcName || 'calc'
+      : 'calc';
+    return serializeScalarResult(
+      node,
+      opts.precision ?? 5,
+      normalizeScalarPolicy(opts),
+      wrapper
+    );
+  }
   checkCalculationDepth(result.tree);
   return emitOutput(planSerializeResult(result, opts));
 }

@@ -40,15 +40,19 @@ function compileCandidate(candidate, ctx) {
     throw new CalculationTypeError();
   }
   const tree = simplify(parsed);
-  const original = ctx.value.slice(candidate.start, candidate.end);
+  const original =
+    analysis.unresolved && !candidate.calculation
+      ? ctx.value.slice(candidate.start, candidate.end)
+      : undefined;
   return {
     start: candidate.start,
     end: candidate.end,
     result: {
       tree,
       status: analysis.unresolved ? 'unresolved' : 'resolved',
-      rootName: candidate.name,
+      rootName: candidate.normalizedName,
       rootSpelling: candidate.rootSpelling,
+      calculation: candidate.calculation,
       original,
     },
   };
