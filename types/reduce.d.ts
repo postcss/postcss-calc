@@ -1,4 +1,3 @@
-import { hasPotentialMathFunction, QUICK_MATH_TEST } from './lib/functions.js';
 export type ReduceCalcOptions = {
     precision?: number | false;
     warnWhenCannotResolve?: boolean;
@@ -35,7 +34,8 @@ export type CalculationResult = {
     status: 'resolved' | 'unresolved';
     rootName: string;
     rootSpelling: string;
-    original: string;
+    calculation: boolean;
+    original: string | undefined;
 };
 /**
  * @typedef {object} ReduceCalcOptions
@@ -67,7 +67,8 @@ export type CalculationResult = {
  * @property {'resolved' | 'unresolved'} status
  * @property {string} rootName
  * @property {string} rootSpelling
- * @property {string} original
+ * @property {boolean} calculation
+ * @property {string | undefined} original
  */
 /**
  * Simplify every supported CSS math function in a component-value string.
@@ -78,5 +79,4 @@ export type CalculationResult = {
  * @return {string}
  */
 declare function reduceCalc(value: string, opts?: ReduceCalcOptions): string;
-export { QUICK_MATH_TEST, hasPotentialMathFunction };
 export default reduceCalc;

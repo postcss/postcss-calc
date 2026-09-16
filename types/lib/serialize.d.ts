@@ -27,7 +27,7 @@ export type SerializeOptions = {
  */
 declare function serialize(node: Node, opts?: SerializeOptions): string;
 /**
- * @param {{tree: Node, status: 'resolved' | 'unresolved', rootName: string, rootSpelling: string, original: string}} result
+ * @param {{tree: Node, status: 'resolved' | 'unresolved', rootName: string, rootSpelling: string, calculation?: boolean, original?: string}} result
  * @param {SerializeOptions} [opts]
  * @return {string}
  */
@@ -36,6 +36,7 @@ declare function serializeResult(result: {
     status: 'resolved' | 'unresolved';
     rootName: string;
     rootSpelling: string;
-    original: string;
+    calculation?: boolean;
+    original?: string;
 }, opts?: SerializeOptions): string;
 export { serialize, serializeResult };

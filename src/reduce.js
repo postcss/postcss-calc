@@ -3,7 +3,7 @@
 // at-rule parameters, or selector text.
 import { tokenize as cssTokenize } from '@csstools/css-tokenizer';
 import { indexBlocks } from './lib/block-index.js';
-import { hasPotentialMathFunction, QUICK_MATH_TEST } from './lib/functions.js';
+import { hasPotentialMathFunction } from './lib/functions.js';
 import { assertDepth } from './lib/limits.js';
 import { findCalculations } from './lib/scan.js';
 import { compileCandidates } from './lib/compile.js';
@@ -101,5 +101,4 @@ function reduceCalc(value, opts) {
   return applyReplacements(value, replacements, options, serializationOptions);
 }
 
-export { QUICK_MATH_TEST, hasPotentialMathFunction };
 export default reduceCalc;
