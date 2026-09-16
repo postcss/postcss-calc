@@ -2,22 +2,34 @@
 // already-derived workload order; this file deliberately has no benchmark
 // state that can leak between blocks.
 import { createHash } from 'node:crypto';
+import { readFileSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
 import { tokenize } from '@csstools/css-tokenizer';
 
-const payload = JSON.parse(process.argv[2] ?? '{}');
+const payload = JSON.parse(
+  process.argv[2] ?? (readFileSync(0, 'utf8') || '{}')
+);
 const sourceRoot = payload.sourceRoot;
 if (typeof sourceRoot !== 'string')
   throw new Error('missing parser source root');
 
 const parser = await import(pathToFileURL(`${sourceRoot}/lib/parser.js`).href);
-const blockIndex = await import(
-  pathToFileURL(`${sourceRoot}/lib/block-index.js`).href
-);
-if (
-  typeof parser.parse !== 'function' ||
-  typeof blockIndex.indexBlocks !== 'function'
-)
+let blockIndex;
+try {
+  blockIndex = await import(
+    pathToFileURL(`${sourceRoot}/lib/block-index.js`).href
+  );
+} catch (error) {
+  if (
+    !(error instanceof Error) ||
+    !('code' in error) ||
+    error.code !== 'ERR_MODULE_NOT_FOUND'
+  ) {
+    throw error;
+  }
+  blockIndex = undefined;
+}
+if (typeof parser.parse !== 'function')
   throw new Error('incompatible baseline parser API');
 
 const TARGET_MS = payload.targetBatchMs ?? 25;
@@ -64,10 +76,11 @@ function consume(value) {
 function makeRun(workload) {
   const tokens = tokenize({ css: workload.source });
   const index =
-    workload.mode === 'hot-shared-index'
+    blockIndex && workload.mode === 'hot-shared-index'
       ? blockIndex.indexBlocks(tokens)
       : undefined;
   return () => {
+    if (!blockIndex) return parser.parse(tokens, 0, tokens.length);
     const currentIndex = index ?? blockIndex.indexBlocks(tokens);
     return parser.parse(tokens, 0, tokens.length, currentIndex);
   };
