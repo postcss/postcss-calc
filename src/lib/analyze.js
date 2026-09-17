@@ -88,7 +88,8 @@ function analyzeProduct(node, depth) {
   let denominator = null;
   let valid = true;
   let structurallyValid = true;
-  let hasUnknown = false;
+  let hasUnknownNumerator = false;
+  let hasUnknownDenominator = false;
   let hasUnresolved = false;
   for (const factor of node.factors) {
     const child = analyzeType(factor.node, depth + 1);
@@ -98,7 +99,8 @@ function analyzeProduct(node, depth) {
       continue;
     }
     if (child.type.kind === 'unknown') {
-      hasUnknown = true;
+      if (factor.exponent === 1) hasUnknownNumerator = true;
+      else hasUnknownDenominator = true;
       continue;
     }
     if (child.type.kind !== 'dimension') continue;
@@ -121,9 +123,24 @@ function analyzeProduct(node, depth) {
   ) {
     return finish(failureType, false, hasUnresolved);
   }
-  // An opaque factor may supply type information that changes how the known
-  // dimensions combine once the known factors are structurally valid.
-  if (hasUnknown) return finish(unknownType, true, hasUnresolved);
+  // An unresolved numerator multiplied by one known numerator dimension can
+  // only leave that dimension in place (when it resolves to a number) or make
+  // the product invalid. It can never make the product a bare number. Keep
+  // that known constraint so a surrounding sum can reject `1px * 1% + 1`.
+  const constrained = constrainedNumerator(
+    hasUnknownNumerator,
+    hasUnknownDenominator,
+    numerator,
+    denominator
+  );
+  if (constrained !== null) {
+    return finish(constrained, true, hasUnresolved);
+  }
+  // Other opaque factors may supply type information that changes how the
+  // known dimensions combine once the known factors are structurally valid.
+  if (hasUnknownNumerator || hasUnknownDenominator) {
+    return finish(unknownType, true, hasUnresolved);
+  }
   if (numerator !== null && denominator !== null) {
     return finish(
       numerator.base === denominator.base ? numberType : failureType,
@@ -133,6 +150,27 @@ function analyzeProduct(node, depth) {
   }
   if (denominator !== null) return finish(failureType, false, hasUnresolved);
   return finish(numerator ?? numberType, valid, hasUnresolved);
+}
+
+/**
+ * @param {boolean} hasUnknownNumerator
+ * @param {boolean} hasUnknownDenominator
+ * @param {CalculationType | null} numerator
+ * @param {CalculationType | null} denominator
+ * @return {CalculationType | null}
+ */
+function constrainedNumerator(
+  hasUnknownNumerator,
+  hasUnknownDenominator,
+  numerator,
+  denominator
+) {
+  return hasUnknownNumerator &&
+    !hasUnknownDenominator &&
+    numerator !== null &&
+    denominator === null
+    ? numerator
+    : null;
 }
 
 /** @param {Extract<Node, {type: 'Call'}>} node @param {number} depth @return {{type: CalculationType, valid: boolean, unresolved: boolean}} */

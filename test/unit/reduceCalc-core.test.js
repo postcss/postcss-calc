@@ -86,15 +86,57 @@ describe('reduceCalc: basic pipeline', () => {
     );
   });
 
-  test('reduceCalc: source signed zero is ordinary zero', () => {
+  test('reduceCalc: source signed zero is ordinary zero and remains a type anchor', () => {
     assert.equal(
       reduceCalc('calc(-0 * var(--x))', { precision: false }),
       'calc(0 * var(--x))'
     );
     assert.equal(
       reduceCalc('calc(-0 + var(--x))', { precision: false }),
-      'calc(var(--x))'
+      'calc(0 + var(--x))'
     );
+  });
+
+  test('reduceCalc: literal and folded zero constrain unresolved sums identically', () => {
+    assert.equal(reduceCalc('calc(var(--x) + 0)'), 'calc(0 + var(--x))');
+    assert.equal(reduceCalc('calc(var(--x) + (0 * 1))'), 'calc(0 + var(--x))');
+  });
+
+  test('reduceCalc: zero anchors do not block reductions of sibling terms', () => {
+    assert.equal(
+      reduceCalc('calc(10 + var(--x) + 20 + (0 * 1))'),
+      'calc(30 + var(--x))'
+    );
+  });
+
+  test('reduceCalc: literal and folded non-finite terms simplify consistently', () => {
+    assert.equal(
+      reduceCalc('calc(var(--x) + infinity)'),
+      'calc(infinity + var(--x))'
+    );
+    assert.equal(
+      reduceCalc('calc(var(--x) + (1 / 0))'),
+      'calc(infinity + var(--x))'
+    );
+    assert.equal(reduceCalc('calc(var(--x) + NaN)'), 'calc(NaN + var(--x))');
+    assert.equal(
+      reduceCalc('calc(var(--x) + (0 / 0))'),
+      'calc(NaN + var(--x))'
+    );
+  });
+
+  test('reduceCalc: grouped zero anchor survives enclosing subtraction', () => {
+    assert.equal(
+      reduceCalc('calc(100 - (var(--x) + (0 * 1)))'),
+      'calc(100 - (0 + var(--x)))'
+    );
+  });
+
+  test('reduceCalc: invalid percentage-dimension products are preserved whole', () => {
+    const single = 'calc(0% * 0 * 0px + (-1 / -infinity * 0))';
+    const multi = 'calc(10px + 20px + 0% * 0 * 0px + (-1 / -infinity * 0))';
+    assert.equal(reduceCalc(single), single);
+    assert.equal(reduceCalc(multi), multi);
   });
 
   test('reduceCalc: preserves arithmetic signed zero inside unresolved calculations', () => {

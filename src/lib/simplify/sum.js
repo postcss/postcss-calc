@@ -97,12 +97,15 @@ function simplifySum(sum, simplify) {
     processTerm(t.sign, simplify(t.node));
   }
 
-  // mkSum drops positive zero-valued Nums, so pushing the numeric total
-  // unconditionally is harmless; a negative zero is deliberately retained.
-  // Zero-valued unit buckets are kept for type info
-  // (WPT calc-serialization-002).
+  // Keep a numeric total, including zero, when the source sum contained a
+  // number. In a mixed or unresolved sum that value constrains the other
+  // terms to <number>; mkSum retains it as a type anchor. A negative zero is
+  // also deliberately retained. Zero-valued unit buckets are kept for type
+  // info (WPT calc-serialization-002).
   /** @type {SumTerm[]} */
-  const terms = [{ sign: 1, node: num(denoise(numTotal, numScale)) }];
+  const terms = hasNum
+    ? [{ sign: /** @type {1} */ (1), node: num(denoise(numTotal, numScale)) }]
+    : [];
   for (const bucket of mergeConvertibleBuckets([...byUnit.values()])) {
     terms.push({
       sign: 1,
