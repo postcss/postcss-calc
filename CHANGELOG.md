@@ -3,14 +3,17 @@
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
 
-## Unreleased
+## 11.2.0 (2026-09-17)
 
-### Bug Fixes
+### Features
 
-- Resolved calculation roots now default to standard serialization inside
-  `calc()`. Use `unwrapSingleValue: true` to emit fully resolved finite scalar
-  results as bare values, since unwrapping can discard browser-applied range clamping or integer
-  rounding.
+- postcss-calc now offers two modes. By default, it tries to follow the spec
+as closely as possible by not unwrapping calc() value. This allows the browser to transform negative and floating point values, especially in cases where only integers are allowed in the CSS property.
+If you want to remove the `calc()` function when it wraps a single value, use `unwrapSingleValue: true`. This allows you to get rid of `calc()` and replace it with a single number wherever that is possible.
+
+### Bug fixes
+- postcss-calc performs rounding in a way that's hopefully closer to the specification
+- fix cases where the `sign()` function was not computed correctly
 
 ### Migration
 
