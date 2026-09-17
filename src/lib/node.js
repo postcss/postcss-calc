@@ -11,10 +11,11 @@
 //   - No Product directly contains another Product (flattened).
 //   - A Sum/Product with one positive element collapses to that element.
 //   - A Sum/Product with no elements collapses to Num(0) / Num(1).
-//   - Positive zero-valued Nums are dropped from sums (they contribute
-//     nothing). Negative zero is retained until calculation evaluation has
-//     finished, because it is an IEEE-754 value with observable math-function
-//     behavior.
+//   - Positive zero-valued Nums are dropped from all-number sums. They are
+//     retained in mixed or unresolved sums because they constrain the other
+//     terms to <number>. Negative zero is retained until calculation
+//     evaluation has finished, because it is an IEEE-754 value with observable
+//     math-function behavior.
 //     Zero-valued Dims are kept — the unit carries type info.
 
 /**
@@ -97,13 +98,19 @@ function mkSum(rawTerms) {
   for (const t of rawTerms) {
     if (pushSumTerm(flat, t)) hasNegativeZero = true;
   }
+  const zeroIsTypeAnchor = flat.some((term) => term.node.type !== 'Num');
   // `+0 + -0` evaluates to +0. Keep positive zero terms when the sum also
   // contains -0 so simplification can perform that IEEE-754 operation before
   // the canonical zero-elision below.
   let length = 0;
   for (let i = 0; i < flat.length; i++) {
     const term = flat[i];
-    if (!hasNegativeZero && term.node.type === 'Num' && term.node.value === 0) {
+    if (
+      !hasNegativeZero &&
+      !zeroIsTypeAnchor &&
+      term.node.type === 'Num' &&
+      term.node.value === 0
+    ) {
       continue;
     }
     flat[length++] = term;

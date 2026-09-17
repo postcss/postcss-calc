@@ -111,6 +111,67 @@ test('analyze: resolves sum type when unresolved term is constrained by a dimens
   });
 });
 
+test('analyze: a percentage product retains its known numerator dimension', () => {
+  assert.deepEqual(analyzeSource('0% * 0 * 0px'), {
+    type: { dimension: 'length' },
+    valid: true,
+    unresolved: true,
+  });
+  assert.deepEqual(analyzeSource('0% * 0 * 0px + 0'), {
+    type: 'unknown',
+    valid: false,
+    unresolved: true,
+  });
+  assert.deepEqual(analyzeSource('0% / 1px'), {
+    type: 'unknown',
+    valid: true,
+    unresolved: true,
+  });
+});
+
+test('analyze: opaque numerator products retain known dimension constraints', () => {
+  assert.deepEqual(analyzeSource('var(--x) * 10px'), {
+    type: { dimension: 'length' },
+    valid: true,
+    unresolved: true,
+  });
+  assert.deepEqual(analyzeSource('var(--x) * 10px + 5'), {
+    type: 'unknown',
+    valid: false,
+    unresolved: true,
+  });
+  assert.deepEqual(analyzeSource('var(--x) * 10s + 5'), {
+    type: 'unknown',
+    valid: false,
+    unresolved: true,
+  });
+  assert.deepEqual(analyzeSource('var(--x) * 10s'), {
+    type: { dimension: 'time' },
+    valid: true,
+    unresolved: true,
+  });
+  assert.deepEqual(analyzeSource('var(--x) * 10deg + 1rad'), {
+    type: { dimension: 'angle' },
+    valid: true,
+    unresolved: true,
+  });
+  assert.deepEqual(analyzeSource('var(--x) * 10hz + 1khz'), {
+    type: { dimension: 'frequency' },
+    valid: true,
+    unresolved: true,
+  });
+  assert.deepEqual(analyzeSource('var(--a) * var(--b) * 10px + 5'), {
+    type: 'unknown',
+    valid: false,
+    unresolved: true,
+  });
+  assert.deepEqual(analyzeSource('10px / var(--x)'), {
+    type: 'unknown',
+    valid: true,
+    unresolved: true,
+  });
+});
+
 test('analyze: rejects sum when multiple incompatible dimensions surround an unresolved term', () => {
   assert.deepEqual(analyzeSource('10px + var(--x) + 5s'), {
     type: 'unknown',

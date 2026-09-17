@@ -46,18 +46,21 @@ describe('Complex calculations', () => {
 
 describe('Subtraction from zero', () => {
   test(
-    'should reduce substraction from zero',
-    testValue('calc( 0 - 10px)', 'calc(-10px)')
+    'preserves an invalid subtraction of a length from a number',
+    testValue('calc( 0 - 10px)', 'calc( 0 - 10px)')
   );
 
   test(
-    'should reduce subtracted expression from zero',
-    testValue('calc( 0 - calc(1px + 1em) )', 'calc(-1px - 1em)')
+    'preserves an invalid subtraction of a mixed length expression from a number',
+    testValue('calc( 0 - calc(1px + 1em) )', 'calc( 0 - calc(1px + 1em) )')
   );
 
   test(
-    'should reduce substracted expression from zero (1)',
-    testValue('calc( 0 - (100vw - 10px) / 2 )', 'calc(-50vw + 5px)')
+    'preserves an invalid subtraction of a divided length from a number',
+    testValue(
+      'calc( 0 - (100vw - 10px) / 2 )',
+      'calc( 0 - (100vw - 10px) / 2 )'
+    )
   );
 
   test(

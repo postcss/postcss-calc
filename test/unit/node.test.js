@@ -7,6 +7,7 @@ import {
   num,
   dim,
   ident,
+  call,
   opaqueCall,
   mkSum,
   mkProduct,
@@ -129,6 +130,15 @@ describe('mkSum:', () => {
     assert.deepEqual(result, { type: 'Num', value: 5 });
   });
 
+  test('mkSum: zero-valued Num is retained as a mixed-sum type anchor', () => {
+    const result = mkSum([
+      { sign: 1, node: num(0) },
+      { sign: 1, node: ident('x') },
+    ]);
+    assert.equal(result.type, 'Sum');
+    assert.deepEqual(result.terms[0], { sign: 1, node: num(0) });
+  });
+
   test('mkSum: negative zero Num is retained until evaluation finishes', () => {
     const result = mkSum([
       { sign: 1, node: num(-0) },
@@ -145,6 +155,38 @@ describe('mkSum:', () => {
     ]);
     assert.equal(result.type, 'Sum');
     assert.equal(result.terms.length, 2);
+  });
+
+  test('mkSum: positive zero is retained beside a concrete dimension', () => {
+    assert.deepEqual(
+      mkSum([
+        { sign: 1, node: num(0) },
+        { sign: 1, node: dim(10, 'px') },
+      ]),
+      {
+        type: 'Sum',
+        terms: [
+          { sign: 1, node: num(0) },
+          { sign: 1, node: dim(10, 'px') },
+        ],
+      }
+    );
+  });
+
+  test('mkSum: positive zero is retained beside a Call node', () => {
+    assert.deepEqual(
+      mkSum([
+        { sign: 1, node: num(0) },
+        { sign: 1, node: call('sin', [num(0)]) },
+      ]),
+      {
+        type: 'Sum',
+        terms: [
+          { sign: 1, node: num(0) },
+          { sign: 1, node: call('sin', [num(0)]) },
+        ],
+      }
+    );
   });
 
   test('mkSum: all-zero Nums collapse entirely to Num(0)', () => {
