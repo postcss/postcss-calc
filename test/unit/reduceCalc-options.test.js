@@ -27,6 +27,46 @@ describe('reduceCalc: precision', () => {
   test('reduceCalc: precision 0 rounds to whole numbers', () => {
     assert.equal(reduceCalc('calc(1in + 10px)', { precision: 0 }), 'calc(1in)');
   });
+
+  test('reduceCalc: precision rounds large fractional results without drift', () => {
+    // The serializer previously perturbed the rounding boundary for shifted
+    // values beyond Number.MAX_SAFE_INTEGER.
+    assert.equal(
+      reduceCalc('calc(312834450754803.44 + 0)', { precision: 1 }),
+      'calc(312834450754803.4)'
+    );
+    assert.equal(
+      reduceCalc('calc(312834450754803.44 + 0)', { precision: 6 }),
+      'calc(312834450754803.44)'
+    );
+  });
+
+  test('reduceCalc: precision beyond the shortest representation leaves the value unchanged', () => {
+    // Rounding finer than the shortest decimal representation must not drift
+    // the value; differential testing found drift here before.
+    assert.equal(
+      reduceCalc('calc(7341.0297734398655 + 0)', { precision: 14 }),
+      'calc(7341.0297734398655)'
+    );
+  });
+
+  test('reduceCalc: precision rounding carries through all nines', () => {
+    assert.equal(
+      reduceCalc('calc(999.995 + 0)', { precision: 2 }),
+      'calc(1000)'
+    );
+    assert.equal(
+      reduceCalc('calc(999999999999.995 + 0)', { precision: 2 }),
+      'calc(1000000000000)'
+    );
+  });
+
+  test('reduceCalc: precision rounds sub-1 midpoints away from zero', () => {
+    assert.equal(reduceCalc('calc(0.05 + 0)', { precision: 1 }), 'calc(.1)');
+    assert.equal(reduceCalc('calc(0.005 + 0)', { precision: 2 }), 'calc(.01)');
+    // 0.004 rounds to zero at 1 place but is above the noise floor.
+    assert.equal(reduceCalc('calc(0.004 + 0)', { precision: 1 }), 'calc(.004)');
+  });
 });
 
 // --- Option combinations -------------------------------------------------

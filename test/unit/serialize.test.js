@@ -150,6 +150,59 @@ describe('serialize: numbers', () => {
     assert.equal(serialize(num(-1.000005), { precision: 5 }), 'calc(-1.00001)');
   });
 
+  test('serialize: rounds large fractional magnitudes without float drift', () => {
+    // Scaling through Number(text + 'e' + p) loses the rounding boundary once
+    // the shifted value exceeds Number.MAX_SAFE_INTEGER.
+    assert.equal(
+      serialize(num(312834450754803.44), { precision: 1 }),
+      'calc(312834450754803.4)'
+    );
+    assert.equal(
+      serialize(num(312834450754803.44), { precision: 6 }),
+      'calc(312834450754803.44)'
+    );
+    assert.equal(
+      serialize(dim(-312834450754803.44, 'px'), { precision: 1 }),
+      'calc(-312834450754803.4px)'
+    );
+    assert.equal(
+      serialize(num(39969.492943459234), { precision: 11 }),
+      'calc(39969.49294345923)'
+    );
+  });
+
+  test('serialize: carries a rounding carry through trailing nines', () => {
+    // Rounding up 999.995 must propagate the carry across all nines to 1000.
+    assert.equal(serialize(num(999.995), { precision: 2 }), 'calc(1000)');
+    assert.equal(serialize(num(-999.995), { precision: 2 }), 'calc(-1000)');
+    // All-nines carry combined with digit-string rounding beyond the safe
+    // shift range.
+    assert.equal(
+      serialize(num(999999999999.995), { precision: 2 }),
+      'calc(1000000000000)'
+    );
+  });
+
+  test('serialize: rounds sub-1 midpoints away from zero and preserves sub-precision values', () => {
+    assert.equal(serialize(num(0.05), { precision: 1 }), 'calc(.1)');
+    assert.equal(serialize(num(-0.05), { precision: 1 }), 'calc(-.1)');
+    assert.equal(serialize(num(0.005), { precision: 2 }), 'calc(.01)');
+    // 0.004 rounds to zero at 1 place but exceeds the noise floor, so the
+    // value is preserved rather than collapsed to 0.
+    assert.equal(serialize(num(0.004), { precision: 1 }), 'calc(.004)');
+    assert.equal(serialize(num(-0.004), { precision: 1 }), 'calc(-.004)');
+  });
+
+  test('serialize: leaves values unchanged when precision exceeds the shortest representation', () => {
+    // The shortest decimal of 7341.0297734398655 has 14 fractional digits,
+    // so rounding at precision 14 must return the value untouched instead of
+    // rescaling through digit strings.
+    assert.equal(
+      serialize(num(7341.0297734398655), { precision: 14 }),
+      'calc(7341.0297734398655)'
+    );
+  });
+
   test('serialize: precision 0 rounds to integers away from zero', () => {
     assert.equal(serialize(num(1.5), { precision: 0 }), 'calc(2)');
     assert.equal(serialize(num(-1.5), { precision: 0 }), 'calc(-2)');
