@@ -294,6 +294,80 @@ describe('serialize: numbers', () => {
     );
   });
 
+  describe('serialize: sub-precision negative terms in sums and grouped sums', () => {
+    test('sub-precision negative number term serializes as 0 in sums', () => {
+      const ast = mkSum([
+        { sign: 1, node: num(-1e-20) },
+        { sign: 1, node: opaqueCall('var', [ident('--x')]) },
+      ]);
+      assert.equal(serialize(ast), 'calc(0 + var(--x))');
+    });
+
+    test('sub-precision negative number term with precision: false retains negative value in sums', () => {
+      const ast = mkSum([
+        { sign: 1, node: num(-1e-20) },
+        { sign: 1, node: opaqueCall('var', [ident('--x')]) },
+      ]);
+      assert.equal(
+        serialize(ast, { precision: false }),
+        'calc(-1e-20 + var(--x))'
+      );
+    });
+
+    test('sub-precision negative number term serializes as 0 in grouped sums', () => {
+      const ast = {
+        type: /** @type {const} */ ('Sum'),
+        grouped: true,
+        terms: [
+          { sign: 1, node: num(-1e-20) },
+          { sign: 1, node: opaqueCall('var', [ident('--x')]) },
+        ],
+      };
+      assert.equal(serialize(ast), 'calc(0 + var(--x))');
+    });
+
+    test('sub-precision negative number term with precision: false retains grouped negative sum inversion', () => {
+      const ast = {
+        type: /** @type {const} */ ('Sum'),
+        grouped: true,
+        terms: [
+          { sign: 1, node: num(-1e-20) },
+          { sign: 1, node: opaqueCall('var', [ident('--x')]) },
+        ],
+      };
+      assert.equal(
+        serialize(ast, { precision: false }),
+        'calc(-(1e-20 - var(--x)))'
+      );
+    });
+
+    test('negated grouped sum with non-leading sub-precision negative term serializes with positive sign', () => {
+      const ast = {
+        type: /** @type {const} */ ('Sum'),
+        grouped: true,
+        terms: [
+          { sign: 1, node: dim(-10, 'px') },
+          { sign: 1, node: dim(-1e-20, 'em') },
+          { sign: 1, node: opaqueCall('var', [ident('--x')]) },
+        ],
+      };
+      assert.equal(serialize(ast), 'calc(-(10px + 0em - var(--x)))');
+    });
+
+    test('negated grouped sum with non-leading sub-precision positive term serializes with positive sign', () => {
+      const ast = {
+        type: /** @type {const} */ ('Sum'),
+        grouped: true,
+        terms: [
+          { sign: 1, node: dim(-10, 'px') },
+          { sign: 1, node: dim(1e-20, 'em') },
+          { sign: 1, node: opaqueCall('var', [ident('--x')]) },
+        ],
+      };
+      assert.equal(serialize(ast), 'calc(-(10px + 0em - var(--x)))');
+    });
+  });
+
   test('serialize: custom calcName', () => {
     const ast = mkSum([
       { sign: 1, node: dim(1, 'px') },

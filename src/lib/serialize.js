@@ -250,15 +250,13 @@ function needsParentheses(node, parentPrecedence, groupedRequired) {
  * @param {ReturnType<typeof makeContext>} session
  * @param {number} [parentPrecedence]
  * @param {boolean} [groupedRequired]
- * @param {number} [scalarValueOverride]
  * @return {void}
  */
 function emitNode(
   node,
   session,
   parentPrecedence = 0,
-  groupedRequired = false,
-  scalarValueOverride
+  groupedRequired = false
 ) {
   const parenthesized = needsParentheses(
     node,
@@ -266,22 +264,21 @@ function emitNode(
     groupedRequired
   );
   if (parenthesized) session.buffer.push('(');
-  emitNodeBody(node, session, scalarValueOverride);
+  emitNodeBody(node, session);
   if (parenthesized) session.buffer.push(')');
 }
 
 /**
  * @param {Node} node
  * @param {ReturnType<typeof makeContext>} session
- * @param {number} [scalarValueOverride]
  * @return {void}
  */
-function emitNodeBody(node, session, scalarValueOverride) {
+function emitNodeBody(node, session) {
   const buffer = session.buffer;
   switch (node.type) {
     case 'Num':
     case 'Dim':
-      emitScalar(node, session, scalarValueOverride);
+      emitScalar(node, session);
       return;
     case 'Ident':
       buffer.push(node.rawName ?? node.name);
@@ -333,17 +330,30 @@ function emitOpaqueCall(node, session, callNameOverride) {
 }
 
 /**
+ * Whether a scalar node is strictly negative after precision rounding
+ * (excluding signed zero and sub-precision values that round to zero).
+ * @param {Node} node
+ * @param {number | false} precision
+ * @return {node is import('./node.js').Num | import('./node.js').Dim}
+ */
+function isEffectivelyNegative(node, precision) {
+  return (
+    isScalar(node) &&
+    !Object.is(node.value, -0) &&
+    Number.isFinite(node.value) &&
+    round(node.value, precision) < 0
+  );
+}
+
+/**
  * @param {import('./node.js').SumTerm} term
  * @param {1 | -1} multiplier
+ * @param {number | false} precision
  * @return {1 | -1}
- * */
-function termSign(term, multiplier) {
+ */
+function termSign(term, multiplier, precision) {
   let sign = /** @type {1 | -1} */ (term.sign * multiplier);
-  if (
-    isScalar(term.node) &&
-    Number.isFinite(term.node.value) &&
-    term.node.value < 0
-  ) {
+  if (isEffectivelyNegative(term.node, precision)) {
     sign = /** @type {1 | -1} */ (-sign);
   }
   return sign;
@@ -353,14 +363,13 @@ function termSign(term, multiplier) {
  * @param {import('./node.js').SumTerm} term
  * @param {ReturnType<typeof makeContext>} session
  * @param {1 | -1} sign
- * @param {number | undefined} scalarValueOverride
  * @return {void}
  */
-function emitSumTerm(term, session, sign, scalarValueOverride) {
+function emitSumTerm(term, session, sign) {
   if (sign === 1) {
-    emitNode(term.node, session, SUM_PRECEDENCE, true, scalarValueOverride);
+    emitNode(term.node, session, SUM_PRECEDENCE, true);
   } else {
-    emitLeadingNeg(term.node, session, scalarValueOverride);
+    emitLeadingNeg(term.node, session);
   }
 }
 
@@ -375,25 +384,38 @@ function emitSumTerms(terms, session, multiplier = 1) {
   for (let i = 0; i < terms.length; i++) {
     const term = terms[i];
     const termNode = term.node;
-    const scalar = isScalar(termNode);
-    const negativeScalar =
-      scalar && Number.isFinite(termNode.value) && termNode.value < 0;
-    let sign = /** @type {1 | -1} */ (term.sign * multiplier);
-    if (negativeScalar) sign = /** @type {1 | -1} */ (-sign);
-    const scalarValueOverride = negativeScalar ? -termNode.value : undefined;
-    if (i === 0) {
-      if (scalar) {
-        if (sign === -1) buffer.push('-');
-        emitScalar(termNode, session, scalarValueOverride);
+    if (isScalar(termNode)) {
+      const effectiveVal = term.sign * multiplier * termNode.value;
+      if (Object.is(effectiveVal, -0)) {
+        if (i > 0) buffer.push(' + ');
+        emitSignedZero(buffer, termNode);
+      } else if (isDegenerate(effectiveVal)) {
+        const sign = /** @type {1 | -1} */ (term.sign * multiplier);
+        if (i === 0) {
+          if (sign === -1) buffer.push('-');
+          emitScalar(termNode, session);
+        } else {
+          buffer.push(sign === 1 ? ' + ' : ' - ');
+          emitScalar(termNode, session);
+        }
       } else {
-        emitSumTerm(term, session, sign, scalarValueOverride);
+        const rounded = round(effectiveVal, session.precision);
+        if (rounded < 0) {
+          if (i === 0) buffer.push('-');
+          else buffer.push(' - ');
+          emitRoundedScalar(termNode, buffer, -rounded);
+        } else {
+          if (i > 0) buffer.push(' + ');
+          emitRoundedScalar(termNode, buffer, rounded);
+        }
       }
       continue;
     }
-    buffer.push(sign === 1 ? ' + ' : ' - ');
-    if (scalar) {
-      emitScalar(termNode, session, scalarValueOverride);
+    const sign = /** @type {1 | -1} */ (term.sign * multiplier);
+    if (i === 0) {
+      emitSumTerm(term, session, sign);
     } else {
+      buffer.push(sign === 1 ? ' + ' : ' - ');
       emitNode(termNode, session, SUM_PRECEDENCE, true);
     }
   }
@@ -407,10 +429,9 @@ function emitSum(sum, session) {
 /**
  * @param {Node} node
  * @param {ReturnType<typeof makeContext>} session
- * @param {number} [scalarValueOverride]
  * @return {void}
  */
-function emitLeadingNeg(node, session, scalarValueOverride) {
+function emitLeadingNeg(node, session) {
   if (
     node.type === 'Product' &&
     node.factors.length > 0 &&
@@ -424,13 +445,7 @@ function emitLeadingNeg(node, session, scalarValueOverride) {
     return;
   }
   session.buffer.push('-');
-  emitNode(
-    node,
-    session,
-    UNARY_PRECEDENCE,
-    false,
-    isScalar(node) ? scalarValueOverride : undefined
-  );
+  emitNode(node, session, UNARY_PRECEDENCE, false);
 }
 
 /**
@@ -485,7 +500,7 @@ function emitRootExpr(node, session) {
     node.type === 'Sum' &&
     node.grouped &&
     node.terms.length > 1 &&
-    termSign(node.terms[0], 1) === -1
+    termSign(node.terms[0], 1, session.precision) === -1
   ) {
     session.buffer.push('-(');
     emitSumTerms(node.terms, session, -1);
@@ -526,7 +541,7 @@ function emitMathResult(node, session, wrapper) {
     node.type === 'Sum' &&
     node.grouped &&
     node.terms.length > 1 &&
-    termSign(node.terms[0], 1) === -1
+    termSign(node.terms[0], 1, session.precision) === -1
   ) {
     session.buffer.push(wrapper, '(-(');
     emitSumTerms(node.terms, session, -1);
