@@ -65,7 +65,7 @@
     "typescript": "~7.0.2"
   },
   "dependencies": {
-    "@csstools/css-tokenizer": "^4.0.0"
+    "@csstools/css-tokenizer": "^4.0.1"
   },
   "peerDependencies": {
     "postcss": "^8.5.28"
