@@ -16,7 +16,6 @@ import { parse } from '../../src/lib/parser.js';
 import { simplify } from '../../src/lib/simplify.js';
 import { analyze } from '../../src/lib/analyze.js';
 import { serialize } from '../../src/lib/serialize.js';
-import { checkCalculationType } from '../../src/lib/calculation-type.js';
 import {
   astArb,
   astArbWithDegenerate,
@@ -152,7 +151,7 @@ test('property: -(-x) ≡ simplify(x)', () => {
     // The structural generator intentionally combines arbitrary dimensions,
     // which can otherwise produce invalid sums such as `-0 + 0px`.
     fc.property(
-      astArb(3).filter((ast) => checkCalculationType(ast).kind !== 'failure'),
+      astArb(3).filter((ast) => analyze(ast).valid),
       (ast) => {
         const doubleNeg = negate(negate(ast));
         const lhs = simplify(doubleNeg);
