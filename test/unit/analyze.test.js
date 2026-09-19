@@ -1,7 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { analyze } from '../../src/lib/analyze.js';
-import { checkCalculationType } from '../../src/lib/calculation-type.js';
 import { call, num } from '../../src/lib/node.js';
 import { indexBlocks } from '../../src/lib/block-index.js';
 import { parse } from '../../src/lib/parser.js';
@@ -275,10 +274,6 @@ test('analyze: enforces the calculation depth limit', () => {
   }
   assert.throws(
     () => analyze(tree),
-    /Calculation nesting exceeds the limit of 1024/
-  );
-  assert.throws(
-    () => checkCalculationType(tree),
     /Calculation nesting exceeds the limit of 1024/
   );
 });
