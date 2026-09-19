@@ -29,14 +29,67 @@ const UNARY_PRECEDENCE = ATOMIC_PRECEDENCE;
 const NOISE_FLOOR = 1e-12;
 
 /**
- * Decimal rounding with "round half away from zero" (e.g. 1.005 at precision 2 -> 1.01).
+ * Divide a decimal digit string by 10^k, rounding half away from zero, and
+ * return the resulting integer digit string. `digits` has no leading zeros.
+ * @param {string} digits
+ * @param {number} k
+ * @return {string}
+ */
+function divideByPowerOfTen(digits, k) {
+  // 0x30/0x35/0x39 are the char codes of '0'/'5'/'9'.
+  if (digits.length <= k) {
+    return digits.length === k && digits.charCodeAt(0) >= 0x35 ? '1' : '0';
+  }
+  const cut = digits.length - k;
+  if (digits.charCodeAt(cut) < 0x35) return digits.slice(0, cut);
+  // Round up and propagate the carry through trailing nines.
+  let index = cut - 1;
+  while (index >= 0 && digits.charCodeAt(index) === 0x39) index--;
+  if (index < 0) return `1${'0'.repeat(cut)}`;
+  return `${digits.slice(0, index)}${String.fromCharCode(
+    digits.charCodeAt(index) + 1
+  )}${'0'.repeat(cut - index - 1)}`;
+}
+
+/**
+ * Round the shortest decimal representation of a non-negative double to `p`
+ * fractional digits, half away from zero.
  *
- * Binary floating-point (IEEE-754) cannot represent many decimal fractions exactly
- * (e.g. 1.005 is binary 1.004999999999999893...), causing arithmetic formulas like
- * `Math.round(v * 100) / 100` to round down to 1.00. Exponential notation string shifting
- * (`1.005e2` -> `100.5`) lets the ECMAScript string-to-number parser read the exact
- * intended decimal value before rounding.
+ * `Number(text + 'e' + p)` reads the exact intended decimal (so `1.005` at
+ * precision 2 becomes `1.01`), but it is only exact while the shifted value
+ * fits in `Number.MAX_SAFE_INTEGER`; beyond that the intermediate double
+ * rounds and can move the rounding boundary (e.g. `312834450754803.44` at
+ * precision 1 or 6 drifted to `312834450754803.5`). Round the decimal digits
+ * directly instead.
  *
+ * @param {number} abs
+ * @param {number} p
+ * @return {number}
+ */
+function roundDecimal(abs, p) {
+  const text = String(abs);
+  const eIdx = text.indexOf('e');
+  const mantissa = eIdx === -1 ? text : text.slice(0, eIdx);
+  let exponent = eIdx === -1 ? 0 : Number(text.slice(eIdx + 1));
+  const dot = mantissa.indexOf('.');
+  let digits = mantissa;
+  if (dot !== -1) {
+    digits = mantissa.slice(0, dot) + mantissa.slice(dot + 1);
+    exponent -= mantissa.length - dot - 1;
+  }
+
+  // value = digits * 10^exponent, so the shortest decimal has -exponent
+  // fractional digits when it is smaller than 1.
+  if (exponent >= -p) return abs;
+
+  let start = 0;
+  while (start < digits.length - 1 && digits.charCodeAt(start) === 0x30)
+    start++;
+  const rounded = divideByPowerOfTen(digits.slice(start), -(exponent + p));
+  return Number(`${rounded}e-${p}`);
+}
+
+/**
  * @param {number} v
  * @param {number | false} prec
  * @return {number}
@@ -53,36 +106,9 @@ function round(v, prec) {
   // or exponent overflows into Infinity/NaN (e.g. exponent + prec > 308).
   const p = Math.min(100, Math.max(0, Math.trunc(prec)));
   const sign = v < 0 ? -1 : 1;
-  let rounded;
-
-  if (p === 0) {
-    // Fast path: rounding to integer with "round half away from zero".
-    rounded = sign * Math.round(abs);
-  } else {
-    // Avoid .split('e') allocations: for numbers between 1e-6 and MAX_SAFE_INTEGER,
-    // String(abs) never contains exponential notation ('e').
-    const absStr = String(abs);
-    const eIdx = absStr.indexOf('e');
-    let shifted;
-    if (eIdx === -1) {
-      shifted = Math.round(Number(absStr + 'e' + p));
-    } else {
-      const mantissa = absStr.slice(0, eIdx);
-      const exponent = Number(absStr.slice(eIdx + 1));
-      shifted = Math.round(Number(mantissa + 'e' + (exponent + p)));
-    }
-
-    // shifted is an integer. It only contains exponential notation ('e') if >= 1e21.
-    if (shifted >= 1e21) {
-      const shiftedStr = String(shifted);
-      const seIdx = shiftedStr.indexOf('e');
-      const sMantissa = shiftedStr.slice(0, seIdx);
-      const sExponent = Number(shiftedStr.slice(seIdx + 1));
-      rounded = sign * Number(sMantissa + 'e' + (sExponent - p));
-    } else {
-      rounded = sign * Number(shifted + 'e-' + p);
-    }
-  }
+  // Fast path: rounding to integer with "round half away from zero".
+  const rounded =
+    p === 0 ? sign * Math.round(abs) : sign * roundDecimal(abs, p);
 
   // Preserve non-zero values smaller than precision (e.g. 1/1000000) from collapsing
   // to zero, while still snapping true floating-point dust (< 1e-12) to zero.
