@@ -81,13 +81,13 @@ test('property: simplification preserves analysis invariants on degenerate trees
   );
 });
 
-test('property: percentage division can refine its coarse type', () => {
+test('property: percentage division is typed as a number before simplification', () => {
   const tokens = tokenize({ css: '10% / 5%' });
   const ast = parse(tokens, 0, tokens.length, indexBlocks(tokens));
   const before = analyze(ast);
   const after = analyze(simplify(ast));
   assert.deepEqual(before, {
-    type: 'unknown',
+    type: 'number',
     valid: true,
     unresolved: true,
   });

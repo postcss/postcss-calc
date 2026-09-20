@@ -1,16 +1,32 @@
 import { baseOf } from './convertUnits.js';
-import { addTypes, isFailure, mathFunctions } from './functions.js';
+import {
+  addTypes,
+  failureType,
+  isFailure,
+  isPercentage,
+  mathFunctions,
+  numberType,
+  percentageType,
+  unknownType,
+} from './functions.js';
 import { assertDepth } from './limits.js';
 
 /** @typedef {import('./node.js').Node} Node */
 /** @typedef {import('./functions.js').CalculationType} CalculationType */
+/** @typedef {Extract<CalculationType, {kind: 'dimension'}>} DimensionType */
 
 /** @typedef {'number' | 'unknown' | {dimension: string | null}} AnalysisType */
 /** @typedef {{type: AnalysisType, valid: boolean, unresolved: boolean}} Analysis */
-
-/** @type {CalculationType} */ const numberType = { kind: 'number' };
-/** @type {CalculationType} */ const unknownType = { kind: 'unknown' };
-/** @type {CalculationType} */ const failureType = { kind: 'failure' };
+/**
+ * @typedef {Object} ProductFactors
+ * @property {boolean} valid
+ * @property {boolean} structurallyValid
+ * @property {boolean} hasUnresolved
+ * @property {DimensionType | null} numerator
+ * @property {DimensionType | null} denominator
+ * @property {boolean} hasOpaqueNumerator
+ * @property {boolean} hasOpaqueDenominator
+ */
 
 /**
  * Analyze the original complete tree and return its root summary. Analysis
@@ -34,10 +50,11 @@ function analyzeType(node, depth = 0) {
     case 'Num':
       return resolved(numberType);
     case 'Dim':
-      // Percentages are contextual. Unknown units are opaque, while known
-      // families can still reject px + seconds.
+      // Percentages are contextual; their percent-ness is tracked so a
+      // `% / %` product cancels to a number. Unknown units are opaque, while
+      // known families can still reject px + seconds.
       return node.unit === '%'
-        ? finish(unknownType, true, true)
+        ? finish(percentageType, true, true)
         : resolved({ kind: 'dimension', base: baseOf(node.unit) });
     case 'Ident':
       return markUnresolved(unknownType);
@@ -56,6 +73,7 @@ function analyzeType(node, depth = 0) {
 function analyzeSum(node, depth) {
   let type = null;
   let hasUnknown = false;
+  let hasPercentage = false;
   let valid = true;
   let hasUnresolved = false;
   for (const term of node.terms) {
@@ -65,7 +83,11 @@ function analyzeSum(node, depth) {
     if (isFailure(child.type)) {
       type = failureType;
     } else if (child.type.kind === 'unknown') {
-      hasUnknown = true;
+      // A pure percentage sum stays percentage-typed so a surrounding
+      // product can cancel `% / %`; any other opaque term must widen the
+      // sum back to unknown.
+      if (isPercentage(child.type)) hasPercentage = true;
+      else hasUnknown = true;
     } else if (type === null) {
       type = child.type;
     } else if (!isFailure(type)) {
@@ -75,11 +97,10 @@ function analyzeSum(node, depth) {
   if (type !== null && isFailure(type)) {
     return finish(failureType, false, hasUnresolved);
   }
-  return finish(
-    type ?? (hasUnknown ? unknownType : numberType),
-    valid,
-    hasUnresolved
-  );
+  let fallback = numberType;
+  if (hasUnknown) fallback = unknownType;
+  else if (hasPercentage) fallback = percentageType;
+  return finish(type ?? fallback, valid, hasUnresolved);
 }
 
 /** @param {Extract<Node, {type: 'Product'}>} node @param {number} depth @return {{type: CalculationType, valid: boolean, unresolved: boolean}} */
@@ -88,8 +109,13 @@ function analyzeProduct(node, depth) {
   let denominator = null;
   let valid = true;
   let structurallyValid = true;
-  let hasUnknownNumerator = false;
-  let hasUnknownDenominator = false;
+  // Opaque factors (unknowns and pure percentages) are counted per side so
+  // the pass below can decide whether any unknown remains after cancelling
+  // `% / %` pairs.
+  let opaqueNumerator = 0;
+  let opaqueDenominator = 0;
+  let percentageNumerator = 0;
+  let percentageDenominator = 0;
   let hasUnresolved = false;
   for (const factor of node.factors) {
     const child = analyzeType(factor.node, depth + 1);
@@ -99,8 +125,13 @@ function analyzeProduct(node, depth) {
       continue;
     }
     if (child.type.kind === 'unknown') {
-      if (factor.exponent === 1) hasUnknownNumerator = true;
-      else hasUnknownDenominator = true;
+      if (factor.exponent === 1) {
+        opaqueNumerator++;
+        if (isPercentage(child.type)) percentageNumerator++;
+      } else {
+        opaqueDenominator++;
+        if (isPercentage(child.type)) percentageDenominator++;
+      }
       continue;
     }
     if (child.type.kind !== 'dimension') continue;
@@ -112,10 +143,36 @@ function analyzeProduct(node, depth) {
       else denominator = child.type;
     }
   }
+  // A percentage divided by a percentage is always a plain number: both
+  // operands resolve in the same context, so their contextual type cancels.
+  // Consume one such pair before judging the remaining unknowns so a
+  // surrounding sum does not mistake `% / %` for a length-compatible term.
+  const cancelled = Math.min(percentageNumerator, percentageDenominator);
+  const hasOpaqueNumerator = opaqueNumerator - cancelled > 0;
+  const hasOpaqueDenominator = opaqueDenominator - cancelled > 0;
+  return finishProduct({
+    valid,
+    structurallyValid,
+    hasUnresolved,
+    numerator,
+    denominator,
+    hasOpaqueNumerator,
+    hasOpaqueDenominator,
+  });
+}
+
+/**
+ * Classify a product once its factors are analyzed. Opaque factors can supply
+ * missing type information, but they cannot make an already-invalid
+ * combination of known dimensions valid.
+ * @param {ProductFactors} factors
+ * @return {{type: CalculationType, valid: boolean, unresolved: boolean}}
+ */
+function finishProduct(factors) {
+  const { valid, structurallyValid, hasUnresolved } = factors;
   if (!valid) return finish(failureType, false, hasUnresolved);
-  // Opaque factors can supply missing type information, but they cannot make
-  // an already-invalid combination of known dimensions valid.
   if (!structurallyValid) return finish(failureType, false, hasUnresolved);
+  const { numerator, denominator } = factors;
   if (
     numerator !== null &&
     denominator !== null &&
@@ -127,18 +184,13 @@ function analyzeProduct(node, depth) {
   // only leave that dimension in place (when it resolves to a number) or make
   // the product invalid. It can never make the product a bare number. Keep
   // that known constraint so a surrounding sum can reject `1px * 1% + 1`.
-  const constrained = constrainedNumerator(
-    hasUnknownNumerator,
-    hasUnknownDenominator,
-    numerator,
-    denominator
-  );
+  const constrained = constrainedNumerator(factors);
   if (constrained !== null) {
     return finish(constrained, true, hasUnresolved);
   }
   // Other opaque factors may supply type information that changes how the
   // known dimensions combine once the known factors are structurally valid.
-  if (hasUnknownNumerator || hasUnknownDenominator) {
+  if (factors.hasOpaqueNumerator || factors.hasOpaqueDenominator) {
     return finish(unknownType, true, hasUnresolved);
   }
   if (numerator !== null && denominator !== null) {
@@ -153,23 +205,15 @@ function analyzeProduct(node, depth) {
 }
 
 /**
- * @param {boolean} hasUnknownNumerator
- * @param {boolean} hasUnknownDenominator
- * @param {CalculationType | null} numerator
- * @param {CalculationType | null} denominator
- * @return {CalculationType | null}
+ * @param {ProductFactors} factors
+ * @return {DimensionType | null}
  */
-function constrainedNumerator(
-  hasUnknownNumerator,
-  hasUnknownDenominator,
-  numerator,
-  denominator
-) {
-  return hasUnknownNumerator &&
-    !hasUnknownDenominator &&
-    numerator !== null &&
-    denominator === null
-    ? numerator
+function constrainedNumerator(factors) {
+  return factors.hasOpaqueNumerator &&
+    !factors.hasOpaqueDenominator &&
+    factors.numerator !== null &&
+    factors.denominator === null
+    ? factors.numerator
     : null;
 }
 

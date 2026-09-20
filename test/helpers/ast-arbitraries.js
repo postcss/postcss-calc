@@ -3,6 +3,12 @@
 import fc from 'fast-check';
 import { call, dim, ident, mkSum, mkProduct, num } from '../../src/lib/node.js';
 import { serialize } from '../../src/lib/serialize.js';
+// '%' participates in leaf generation, so the differential generator can
+// build `% / %` products, which we reduce to a number (CSS Values 4 §10.9)
+// while @csstools/css-calc leaves them opaque. That divergence is
+// intentional and invisible to checkAgreement: it canonicalizes both
+// outputs through our own pipeline. Explicit %/% expectations live in the
+// analyze unit tests and the WPT typed-arithmetic conformance cases.
 const KNOWN_UNITS = ['px', 'em', 'rem', 'vw', 's', 'ms', 'deg', 'turn', '%'];
 const numLeaf = fc.integer({ min: -100, max: 100 }).map((v) => num(v));
 const dimLeaf = fc
