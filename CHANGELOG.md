@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## 11.2.1 (2026-09-20)
+
+### Bug fixes
+
+- do not emit invalid minus unary operator (the browser discards values like calc(-(-12px))
+- improve rounding so it is more spec-compliant in edge cases
+- preserve invalid declarations with unary minus, instead of converting them to valid declarations
 
 ## 11.2.0 (2026-09-17)
 
