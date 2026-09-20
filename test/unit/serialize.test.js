@@ -103,14 +103,14 @@ describe('serialize: numbers', () => {
   });
 
   test('serialize: single-term Sum with opaque gets calc() function', () => {
-    // `-var(--x)` needs calc() so the leading minus isn't ambiguous.
+    // `-1 * var(--x)` needs calc() so the leading minus isn't ambiguous.
     const ast = mkSum([
       {
         sign: -1,
         node: opaqueCall('var', [ident('--x')]),
       },
     ]);
-    assert.equal(serialize(ast), 'calc(-var(--x))');
+    assert.equal(serialize(ast), 'calc(-1 * var(--x))');
   });
 
   test('serialize: precision option applied to numbers and dimensions', () => {
@@ -337,7 +337,7 @@ describe('serialize: numbers', () => {
       };
       assert.equal(
         serialize(ast, { precision: false }),
-        'calc(-(1e-20 - var(--x)))'
+        'calc(-1 * (1e-20 - var(--x)))'
       );
     });
 
@@ -351,7 +351,7 @@ describe('serialize: numbers', () => {
           { sign: 1, node: opaqueCall('var', [ident('--x')]) },
         ],
       };
-      assert.equal(serialize(ast), 'calc(-(10px + 0em - var(--x)))');
+      assert.equal(serialize(ast), 'calc(-1 * (10px + 0em - var(--x)))');
     });
 
     test('negated grouped sum with non-leading sub-precision positive term serializes with positive sign', () => {
@@ -364,7 +364,7 @@ describe('serialize: numbers', () => {
           { sign: 1, node: opaqueCall('var', [ident('--x')]) },
         ],
       };
-      assert.equal(serialize(ast), 'calc(-(10px + 0em - var(--x)))');
+      assert.equal(serialize(ast), 'calc(-1 * (10px + 0em - var(--x)))');
     });
   });
 
@@ -551,10 +551,10 @@ describe('serialize: mutation-targeted tests', () => {
       },
     ]);
     assert.equal(serialize(withCoefficient), 'calc(-2 * x)');
-    assert.equal(serialize(withoutCoefficient), 'calc(-(a * b))');
+    assert.equal(serialize(withoutCoefficient), 'calc(-1 * a * b)');
     assert.equal(
       serialize(call('min', [withCoefficient, withoutCoefficient])),
-      'min(-2 * x, -(a * b))'
+      'min(-2 * x, -1 * a * b)'
     );
   });
 
@@ -624,8 +624,8 @@ describe('serialize: mutation-targeted tests', () => {
     assert.equal(serialize(num(-5)), 'calc(-5)');
   });
 
-  test('serialize: single-term Sum with sign=-1 and opaque call → calc(-call)', () => {
-    // `-var(--x)` shape — only reachable as a directly-constructed Sum
+  test('serialize: single-term Sum with sign=-1 and opaque call → calc(-1 * call)', () => {
+    // `-1 * var(--x)` shape — only reachable as a directly-constructed Sum
     // (parser never produces it; mkSum would collapse if leaf).
     const ast = {
       type: 'Sum',
@@ -636,12 +636,11 @@ describe('serialize: mutation-targeted tests', () => {
         },
       ],
     };
-    assert.equal(serialize(ast), 'calc(-var(--x))');
+    assert.equal(serialize(ast), 'calc(-1 * var(--x))');
   });
 
-  test('serialize: single-term Sum with sign=-1 and Product needs outer parens', () => {
-    // `-(a * b)` must wrap the product so unary `-` binds the whole thing
-    // on re-parse (otherwise `-a * b` = `(-a) * b`).
+  test('serialize: single-term Sum with sign=-1 and Product serializes as -1 * factors', () => {
+    // `-1 * a * b` serializes without extra parentheses because multiplication is associative.
     const ast = {
       type: 'Sum',
       terms: [
@@ -657,7 +656,7 @@ describe('serialize: mutation-targeted tests', () => {
         },
       ],
     };
-    assert.equal(serialize(ast), 'calc(-(a * b))');
+    assert.equal(serialize(ast), 'calc(-1 * a * b)');
   });
 
   test('serialize: multi-term Sum with trailing zero-valued Dim', () => {
@@ -678,6 +677,75 @@ describe('serialize: mutation-targeted tests', () => {
       factors: [{ exponent: -1, node: dim(2, 'px') }],
     };
     assert.equal(serialize(ast), 'calc(1 / 2px)');
+  });
+
+  test('serialize: negated Product with leading denominator emits -1 / value', () => {
+    // Negation of `1 / 2px` cannot fold into a signed Dim leaf, so it must
+    // serialize as `-1 / 2px` rather than distributing over the denominator.
+    const ast = mkSum([
+      {
+        sign: -1,
+        node: mkProduct([{ exponent: -1, node: dim(2, 'px') }]),
+      },
+    ]);
+    assert.equal(serialize(ast), 'calc(-1 / 2px)');
+  });
+
+  test('serialize: negating a Product with leading zero coefficient emits calc(-1 * 0) times the rest', () => {
+    // The negated coefficient is -0, which must take the signed-zero path
+    // (calc(-1 * 0)) instead of collapsing to plain `0` or `1`.
+    const ast = mkSum([
+      {
+        sign: -1,
+        node: mkProduct([
+          { exponent: 1, node: num(0) },
+          { exponent: 1, node: opaqueCall('var', [ident('--x')]) },
+        ]),
+      },
+    ]);
+    assert.equal(serialize(ast), 'calc(calc(-1 * 0) * var(--x))');
+  });
+
+  test('serialize: negating a Product with leading -0 coefficient emits positive zero times the rest', () => {
+    // Negating -0 yields +0, so the signed-zero path must not trigger.
+    const ast = mkSum([
+      {
+        sign: -1,
+        node: mkProduct([
+          { exponent: 1, node: num(-0) },
+          { exponent: 1, node: opaqueCall('var', [ident('--x')]) },
+        ]),
+      },
+    ]);
+    assert.equal(serialize(ast), 'calc(0 * var(--x))');
+  });
+
+  test('serialize: negating a Product with leading Infinity coefficient emits -infinity times the rest', () => {
+    // The negated coefficient is -Infinity and must take the degenerate
+    // keyword path rather than the finite rounding path.
+    const ast = mkSum([
+      {
+        sign: -1,
+        node: mkProduct([
+          { exponent: 1, node: num(Infinity) },
+          { exponent: 1, node: opaqueCall('var', [ident('--x')]) },
+        ]),
+      },
+    ]);
+    assert.equal(serialize(ast), 'calc(-infinity * var(--x))');
+  });
+
+  test('serialize: negating a Product with leading -Infinity coefficient emits infinity times the rest', () => {
+    const ast = mkSum([
+      {
+        sign: -1,
+        node: mkProduct([
+          { exponent: 1, node: num(-Infinity) },
+          { exponent: 1, node: opaqueCall('var', [ident('--x')]) },
+        ]),
+      },
+    ]);
+    assert.equal(serialize(ast), 'calc(infinity * var(--x))');
   });
 });
 

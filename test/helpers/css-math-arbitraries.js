@@ -73,8 +73,8 @@ export const opaqueGroupedCalcArb = fc
   .chain(([a, b]) =>
     fc.constantFrom(
       {
-        input: `calc(-(var(${a}) + var(${b})))`,
-        expected: `calc(-(var(${a}) + var(${b})))`,
+        input: `calc((var(${a}) + var(${b})) * -1)`,
+        expected: `calc(-1 * (var(${a}) + var(${b})))`,
       },
       {
         input: `calc(var(${a}) - (var(${b}) + 10px))`,

@@ -215,7 +215,7 @@ function negate(node) {
   }
   if (node.type === 'Sum') {
     // A grouped sum may contain opaque terms whose meaning depends on the
-    // surrounding context. Keep the group intact so `-(a + b)` cannot turn
+    // surrounding context. Keep the group intact so `-1 * (a + b)` cannot turn
     // into `-a - b` while it is still unresolved.
     if (node.grouped) {
       return mkSum([{ sign: -1, node }]);

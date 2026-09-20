@@ -1,16 +1,7 @@
 // Pratt parser over native @csstools/css-tokenizer tokens.
 import { TokenType as CssType } from '@csstools/css-tokenizer';
 import { baseOf } from './convertUnits.js';
-import {
-  call,
-  dim,
-  ident,
-  mkProduct,
-  mkSum,
-  negate,
-  num,
-  opaqueCall,
-} from './node.js';
+import { call, dim, ident, mkProduct, mkSum, num, opaqueCall } from './node.js';
 import { isCalculationFunction, isSupportedMathFunction } from './functions.js';
 import { assertDepth } from './limits.js';
 import { CSS_NUMBER_PREFIX } from './regex.js';
@@ -293,11 +284,10 @@ function parsePrefix(input, cursor, token, depth) {
             ? { ...expression, grouped: true }
             : expression;
         }
-        case '-':
-          return negate(parseExpr(input, cursor, 7, depth + 1));
-        case '+':
-          return parseExpr(input, cursor, 7, depth + 1);
       }
+    // No unary `+`/`-` production exists in the <calc-value> grammar; a
+    // sign is only valid inside a number/dimension token or as a binary
+    // operator. `-(...)` therefore fails to parse and is preserved.
   }
   throw new Error(`Unexpected token "${token.raw}" at position ${token.pos}`);
 }

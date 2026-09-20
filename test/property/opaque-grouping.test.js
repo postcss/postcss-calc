@@ -54,7 +54,11 @@ test('opaque grouping: nested groups and var() fallbacks preserve serialization'
     'calc(var(--a) - (var(--b) - (var(--c) + var(--d))))'
   );
   assert.equal(
-    out('calc(-(var(--a, calc(1px + 2px)) + var(--b, 4px)))'),
-    'calc(-(var(--a, calc(3px)) + var(--b, 4px)))'
+    out('calc(-1 * (var(--a, calc(1px + 2px)) + var(--b, 4px)))'),
+    'calc(-1 * (var(--a, calc(3px)) + var(--b, 4px)))'
+  );
+  assert.equal(
+    out('calc((var(--a, calc(1px + 2px)) + var(--b, 4px)) * -1)'),
+    'calc(-1 * (var(--a, calc(3px)) + var(--b, 4px)))'
   );
 });

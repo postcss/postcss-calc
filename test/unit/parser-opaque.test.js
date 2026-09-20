@@ -161,42 +161,11 @@ describe('parser: opaque expressions and invalid syntax', () => {
             },
           ],
         },
-        ', calc(1PX+2PX), ',
-        {
-          type: 'Call',
-          name: 'calc',
-          args: [
-            {
-              type: 'Sum',
-              terms: [
-                {
-                  sign: -1,
-                  node: {
-                    type: 'Sum',
-                    terms: [
-                      {
-                        sign: 1,
-                        node: {
-                          type: 'OpaqueCall',
-                          name: 'var',
-                          components: [{ type: 'Ident', name: '--x' }],
-                        },
-                      },
-                      {
-                        sign: 1,
-                        node: { type: 'Dim', value: 1, unit: 'px' },
-                      },
-                    ],
-                    grouped: true,
-                  },
-                },
-              ],
-            },
-          ],
-        },
-        ' ',
+        ', calc(1PX+2PX), calc(-(var(--x) + 1px)) ',
       ],
     });
+    // `calc(-( ... ))` has no unary-minus production, so the nested calc()
+    // degrades to raw opaque text and round-trips byte-for-byte.
     assert.equal(serialize(node), input);
   });
 

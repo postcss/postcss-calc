@@ -23,12 +23,18 @@ describe('corpus selection:', () => {
     const second = selectCorpusExpressions([...FIXTURE].reverse(), 20);
     assert.deepEqual(first, second);
     assert.equal(first.total, FIXTURE.length);
-    assert.equal(first.eligible, FIXTURE.length - 1);
+    assert.equal(first.eligible, FIXTURE.length - 2);
     assert.ok(first.selected.includes(FIXTURE[0]));
-    assert.ok(first.selected.includes(FIXTURE[1]));
-    assert.deepEqual(first.parserRejected, ['calc(1px +)']);
+    assert.ok(first.selected.includes(FIXTURE[2]));
+    // Rejected by the parser: the malformed operator and the unary-minus
+    // form that has no <calc-value> production. Sorted by stable hash.
+    assert.deepEqual(first.parserRejected, [
+      'calc(1px +)',
+      'calc(-(var(--a) + var(--b)))',
+    ]);
     assert.ok(!first.routineInputs.includes('calc(1px +)'));
     assert.ok(!first.allInputs.includes('calc(1px +)'));
+    assert.ok(!first.routineInputs.includes('calc(-(var(--a) + var(--b)))'));
   });
 
   test('corpus selection: structural and literal buckets distinguish boundaries', () => {

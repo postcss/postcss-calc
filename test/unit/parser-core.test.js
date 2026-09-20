@@ -162,29 +162,38 @@ describe('parser: long arithmetic chains', () => {
 
 // --- Unary + / - prefix ---------------------------------------------------
 describe('parser: unary operators', () => {
-  test('parser: unary - on Num absorbs into value', () => {
+  test('parser: signed Num token absorbs its sign into the value', () => {
     assert.equal(ast('-5'), '-5');
   });
 
-  test('parser: unary - on Dim absorbs into value', () => {
+  test('parser: signed Dim token absorbs its sign into the value', () => {
     assert.equal(ast('-10px'), '-10px');
   });
 
-  test('parser: double unary - cancels', () => {
-    // Bare `--5` tokenizes as a single ident per CSS Syntax L3 (leading
-    // `-` followed by `-` starts an ident), so use a grouped form to
-    // exercise two unary-minus parses.
-    assert.equal(ast('-(-5)'), '5');
-  });
-
-  test('parser: unary + is a no-op', () => {
+  test('parser: unary + on a signed Num token is a no-op', () => {
     assert.equal(ast('+5'), '5');
   });
 
-  test('parser: unary - on opaque wraps in single-term negative Sum', () => {
-    // `-x` tokenizes as one ident per CSS Syntax L3. Parenthesize so the
-    // leading `-` lives next to a `(` and stays a punctuator.
-    assert.equal(ast('-(x)'), '(+ (- x))');
+  test('parser: unary - before a parenthesized sum is rejected', () => {
+    // The <calc-value> grammar has no unary sign production; a `-` punct
+    // can only be a binary operator. Browsers reject `calc(-(...))`.
+    assert.throws(() => ast('-(-5)'), {
+      message: 'Unexpected token "-" at position 0',
+    });
+  });
+
+  test('parser: unary - before an opaque value is rejected', () => {
+    // `-x` tokenizes as one ident per CSS Syntax L3, so parenthesize to
+    // keep the leading `-` a punctuator.
+    assert.throws(() => ast('-(x)'), {
+      message: 'Unexpected token "-" at position 0',
+    });
+  });
+
+  test('parser: unary + before a parenthesized sum is rejected', () => {
+    assert.throws(() => ast('+(x)'), {
+      message: 'Unexpected token "+" at position 0',
+    });
   });
 });
 

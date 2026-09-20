@@ -33,12 +33,15 @@ describe('sum simplification and grouping', () => {
     assert.equal(out('calc(50px - (20px - 30px))'), 'calc(60px)');
   });
 
-  test('simplify: preserves grouping through unary negation', () => {
+  test('simplify: preserves grouping through multiplication by -1', () => {
     assert.equal(
-      out('calc(-(var(--a) + var(--b)))'),
-      'calc(-(var(--a) + var(--b)))'
+      out('calc((var(--a) + var(--b)) * -1)'),
+      'calc(-1 * (var(--a) + var(--b)))'
     );
-    assert.equal(out('calc(-(10px + var(--a)))'), 'calc(-(10px + var(--a)))');
+    assert.equal(
+      out('calc(-1 * (10px + var(--a)))'),
+      'calc(-1 * (10px + var(--a)))'
+    );
   });
 
   test('simplify: preserves opaque sums subtracted as a group', () => {
