@@ -104,13 +104,32 @@ describe('plugin: basic pipeline', () => {
     );
   });
 
-  test('plugin: preserves grouping through unary negation', async () => {
+  test('plugin: preserves the unparsable unary minus form byte-for-byte', async () => {
+    // `-(...)` is invalid CSS math syntax; the plugin must not repair it.
     const { css } = await process(
       'a{a:calc(-(var(--a) + var(--b)));b:calc(-(10px + var(--a)))}'
     );
     assert.equal(
       css,
       'a{a:calc(-(var(--a) + var(--b)));b:calc(-(10px + var(--a)))}'
+    );
+  });
+
+  test('plugin: preserves the unparsable unary plus form byte-for-byte', async () => {
+    // `+(...)` is invalid CSS math syntax; the plugin must not repair it.
+    const { css } = await process(
+      'a{a:calc(+(10px + 20px));b:calc(+var(--x))}'
+    );
+    assert.equal(css, 'a{a:calc(+(10px + 20px));b:calc(+var(--x))}');
+  });
+
+  test('plugin: preserves grouping through explicit -1 multiplication', async () => {
+    const { css } = await process(
+      'a{a:calc((var(--a) + var(--b)) * -1);b:calc(-1 * (10px + var(--a)))}'
+    );
+    assert.equal(
+      css,
+      'a{a:calc(-1 * (var(--a) + var(--b)));b:calc(-1 * (10px + var(--a)))}'
     );
   });
 

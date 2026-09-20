@@ -175,22 +175,22 @@ describe('reduceCalc: basic pipeline', () => {
 
     test('negated grouped sum with leading sub-precision negative term serializes with positive sign', () => {
       assert.equal(
-        reduceCalc('calc(-(-1e-20 + var(--x)))'),
-        'calc(-(0 + var(--x)))'
+        reduceCalc('calc(-1 * (-1e-20 + var(--x)))'),
+        'calc(-1 * (0 + var(--x)))'
       );
     });
 
     test('negated grouped sum with non-leading sub-precision negative term serializes with positive sign', () => {
       assert.equal(
         reduceCalc('calc((-10px + var(--x) - 1e-20em))'),
-        'calc(-(10px + 0em - var(--x)))'
+        'calc(-1 * (10px + 0em - var(--x)))'
       );
     });
 
     test('negated grouped sum with non-leading sub-precision positive term serializes with positive sign', () => {
       assert.equal(
         reduceCalc('calc((-10px + var(--x) + 1e-20em))'),
-        'calc(-(10px + 0em - var(--x)))'
+        'calc(-1 * (10px + 0em - var(--x)))'
       );
     });
 
@@ -204,7 +204,7 @@ describe('reduceCalc: basic pipeline', () => {
     test('precision: false retains grouped negative sum inversion', () => {
       assert.equal(
         reduceCalc('calc((-1e-20 + var(--x)))', { precision: false }),
-        'calc(-(1e-20 - var(--x)))'
+        'calc(-1 * (1e-20 - var(--x)))'
       );
     });
 
@@ -253,14 +253,14 @@ describe('reduceCalc: basic pipeline', () => {
     test('negated grouped sum serializes a negated positive zero term as arithmetic negative zero', () => {
       assert.equal(
         reduceCalc('calc((-1em + var(--x) + 0px))'),
-        'calc(-(1em + calc(-1 * 0px) - var(--x)))'
+        'calc(-1 * (1em + calc(-1 * 0px) - var(--x)))'
       );
     });
 
     test('negated grouped sum serializes a negated negative zero term as positive zero', () => {
       assert.equal(
         reduceCalc('calc((-1em + var(--x) - 0px))'),
-        'calc(-(1em + 0px - var(--x)))'
+        'calc(-1 * (1em + 0px - var(--x)))'
       );
     });
   });
@@ -398,7 +398,9 @@ describe('reduceCalc: basic pipeline', () => {
     assert.equal(reduceCalc('calc(2 / 1)'), 'calc(2)');
   });
 
-  test('reduceCalc: preserves grouping through unary negation', () => {
+  test('reduceCalc: preserves the unparsable unary minus form byte-for-byte', () => {
+    // `-(...)` has no production in the <calc-value> grammar; browsers drop
+    // the declaration, so the reducer must not rewrite it into valid CSS.
     assert.equal(
       reduceCalc('calc(-(var(--a) + var(--b)))'),
       'calc(-(var(--a) + var(--b)))'
@@ -406,6 +408,30 @@ describe('reduceCalc: basic pipeline', () => {
     assert.equal(
       reduceCalc('calc(-(10px + var(--a)))'),
       'calc(-(10px + var(--a)))'
+    );
+  });
+
+  test('reduceCalc: preserves the unparsable unary plus form byte-for-byte', () => {
+    // `+(...)` has no production in the <calc-value> grammar; browsers drop
+    // the declaration, so the reducer must not rewrite it into valid CSS.
+    assert.equal(reduceCalc('calc(+(10px + 20px))'), 'calc(+(10px + 20px))');
+    assert.equal(reduceCalc('calc(+var(--x))'), 'calc(+var(--x))');
+    assert.equal(
+      reduceCalc('calc(+(var(--a) + var(--b)))'),
+      'calc(+(var(--a) + var(--b)))'
+    );
+  });
+
+  test('reduceCalc: unary plus on a signed number token simplifies to the bare value', () => {
+    // A leading `+` before a <number>/<dimension> token is a valid no-op, so
+    // this form is parsed and reduced rather than preserved verbatim.
+    assert.equal(reduceCalc('calc(+10px)'), 'calc(10px)');
+  });
+
+  test('reduceCalc: preserves grouping through explicit -1 multiplication', () => {
+    assert.equal(
+      reduceCalc('calc((var(--a) + var(--b)) * -1)'),
+      'calc(-1 * (var(--a) + var(--b)))'
     );
   });
 

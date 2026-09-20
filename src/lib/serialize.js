@@ -5,6 +5,7 @@
 import { serializeComponents } from './opaque.js';
 import { checkCalculationDepth } from './limits.js';
 import { isCalculationFunction } from './functions.js';
+import { num } from './node.js';
 
 /**
  * @typedef {import('./node.js').Node} Node
@@ -23,8 +24,8 @@ import { isCalculationFunction } from './functions.js';
 const SUM_PRECEDENCE = 1;
 const PRODUCT_PRECEDENCE = 2;
 const ATOMIC_PRECEDENCE = 3;
-// Unary minus binds more tightly than a sum but has the same atomic boundary
-// for deciding whether `-x` needs parentheses.
+// Negation (-1 * ...) binds more tightly than a sum but has the same atomic boundary
+// for deciding whether the operand needs parentheses.
 const UNARY_PRECEDENCE = ATOMIC_PRECEDENCE;
 const NOISE_FLOOR = 1e-12;
 
@@ -189,20 +190,21 @@ function emitFiniteScalar(node, session, value) {
  */
 function emitScalar(node, session, value) {
   const buffer = session.buffer;
-  if (Object.is(node.value, -0)) emitSignedZero(buffer, node);
-  else if (isDegenerate(node.value)) {
+  const effective = value ?? node.value;
+  if (Object.is(effective, -0)) emitSignedZero(buffer, node);
+  else if (isDegenerate(effective)) {
     if (node.type === 'Dim') {
       buffer.push(
         'calc(',
-        degenerateKeyword(node.value),
+        degenerateKeyword(effective),
         ' * 1',
         node.rawUnit ?? node.unit,
         ')'
       );
     } else {
-      buffer.push(degenerateKeyword(node.value));
+      buffer.push(degenerateKeyword(effective));
     }
-  } else emitFiniteScalar(node, session, value);
+  } else emitFiniteScalar(node, session, effective);
 }
 
 /**
@@ -432,19 +434,20 @@ function emitSum(sum, session) {
  * @return {void}
  */
 function emitLeadingNeg(node, session) {
-  if (
-    node.type === 'Product' &&
-    node.factors.length > 0 &&
-    node.factors[0].exponent === 1 &&
-    node.factors[0].node.type === 'Num' &&
-    Number.isFinite(node.factors[0].node.value) &&
-    node.factors[0].node.value !== 0
-  ) {
-    const head = node.factors[0].node;
-    emitProductFactors(node.factors, session, 1, -head.value, head);
+  if (node.type === 'Product') {
+    if (
+      node.factors.length > 0 &&
+      node.factors[0].exponent === 1 &&
+      node.factors[0].node.type === 'Num'
+    ) {
+      const head = node.factors[0].node;
+      emitProductFactors(node.factors, session, 1, -head.value, head);
+      return;
+    }
+    emitProductFactors(node.factors, session, 0, -1, num(-1));
     return;
   }
-  session.buffer.push('-');
+  session.buffer.push('-1 * ');
   emitNode(node, session, UNARY_PRECEDENCE, false);
 }
 
@@ -502,7 +505,7 @@ function emitRootExpr(node, session) {
     node.terms.length > 1 &&
     termSign(node.terms[0], 1, session.precision) === -1
   ) {
-    session.buffer.push('-(');
+    session.buffer.push('-1 * (');
     emitSumTerms(node.terms, session, -1);
     session.buffer.push(')');
     return;
@@ -543,7 +546,7 @@ function emitMathResult(node, session, wrapper) {
     node.terms.length > 1 &&
     termSign(node.terms[0], 1, session.precision) === -1
   ) {
-    session.buffer.push(wrapper, '(-(');
+    session.buffer.push(wrapper, '(-1 * (');
     emitSumTerms(node.terms, session, -1);
     session.buffer.push('))');
     return;
