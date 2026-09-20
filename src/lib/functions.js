@@ -14,13 +14,23 @@ import { simplifyLog } from './simplify/log.js';
 import { simplifyHypot } from './simplify/hypot.js';
 
 /** @typedef {import('./node.js').Node} Node */
-/** @typedef {{kind: 'number'} | {kind: 'dimension', base: string | null} | {kind: 'unknown'} | {kind: 'failure'}} CalculationType */
+/**
+ * `percent` marks a value that resolves in the same percentage context as its
+ * peers (a pure percentage). It is only produced at leaves, by abs(), and by
+ * homogeneous sums and calls — never by a product, where an unpaired
+ * percentage could no longer cancel against anything.
+ * @typedef {{kind: 'number'} | {kind: 'dimension', base: string | null} | {kind: 'unknown', percent?: true} | {kind: 'failure'}} CalculationType
+ */
 /** @typedef {(name: string, args: Node[]) => Node} MathSimplifier */
 /** @typedef {(args: CalculationType[], nodes: Node[]) => CalculationType} TypeAnalyzer */
 /** @typedef {{analyze: TypeAnalyzer, simplify?: MathSimplifier, isKeyword?: (node: Node, index: number) => boolean, calculation?: boolean}} MathFunction */
 
 /** @type {CalculationType} */ const numberType = { kind: 'number' };
 /** @type {CalculationType} */ const unknownType = { kind: 'unknown' };
+/** @type {CalculationType} */ const percentageType = {
+  kind: 'unknown',
+  percent: true,
+};
 /** @type {CalculationType} */ const failureType = { kind: 'failure' };
 
 /** @param {CalculationType} type @return {boolean} */
@@ -28,10 +38,23 @@ function isFailure(type) {
   return type.kind === 'failure';
 }
 
+/** @param {CalculationType} type @return {boolean} */
+function isPercentage(type) {
+  return type.kind === 'unknown' && type.percent === true;
+}
+
 /** @param {CalculationType} a @param {CalculationType} b @return {CalculationType} */
 function addTypes(a, b) {
   if (isFailure(a) || isFailure(b)) return failureType;
-  if (a.kind === 'unknown' || b.kind === 'unknown') return unknownType;
+  if (a.kind === 'unknown' || b.kind === 'unknown') {
+    // A pure percentage keeps its contextual type so a surrounding product
+    // can cancel `% / %`; mixing it with any other opaque operand loses the
+    // guarantee that it resolves in the same context as its peers. A known
+    // number + percentage sum is likewise kept unknown and valid: the spec
+    // resolves the percentage against its surrounding context, which this
+    // coarse type model does not track.
+    return isPercentage(a) && isPercentage(b) ? percentageType : unknownType;
+  }
   if (a.kind === 'number' && b.kind === 'number') return numberType;
   if (a.kind === 'dimension' && b.kind === 'dimension') {
     if (a.base === null || b.base === null) return unknownType;
@@ -129,9 +152,11 @@ function analyzeRound(args, nodes) {
 /** @param {CalculationType[]} args @return {CalculationType} */
 function analyzeAtan2(args) {
   const type = matchingArguments(args, 2, 2);
-  return isFailure(type) || type.kind === 'unknown'
-    ? type
-    : { kind: 'dimension', base: 'angle' };
+  if (isFailure(type)) return type;
+  // The type table gives atan2() «["angle" → 1]»; an unresolved result is
+  // plain unknown, never the percentage of its arguments.
+  if (type.kind === 'unknown') return unknownType;
+  return { kind: 'dimension', base: 'angle' };
 }
 
 /** @param {CalculationType[]} args @return {CalculationType} */
@@ -354,11 +379,16 @@ function hasPotentialMathFunction(value) {
 
 export {
   addTypes,
-  mathFunctions,
-  lookupMathFunction,
-  QUICK_MATH_TEST,
-  isFailure,
-  isCalculationFunction,
-  isSupportedMathFunction,
+  failureType,
   hasPotentialMathFunction,
+  isCalculationFunction,
+  isFailure,
+  isPercentage,
+  isSupportedMathFunction,
+  lookupMathFunction,
+  mathFunctions,
+  numberType,
+  percentageType,
+  QUICK_MATH_TEST,
+  unknownType,
 };

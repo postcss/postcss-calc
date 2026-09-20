@@ -246,6 +246,22 @@ describe('WPT min/max percentages', () => {
   });
 });
 
+// --- typed_arithmetic.html -----------------------------------------------
+// https://github.com/web-platform-tests/wpt/blob/master/css/css-values/typed_arithmetic.html
+// CSS Values 4 §10.9: percentages in one calculation share a context, so a
+// `% / %` ratio is a plain <number> and reduces to its scalar quotient.
+describe('WPT typed arithmetic', () => {
+  test('WPT typed-arithmetic: percent over percent is one', () => {
+    // WPT specified: `1`.
+    assert.equal(out('calc(10% / 10%)'), 'calc(1)');
+  });
+
+  test('WPT typed-arithmetic: percent over percent keeps its quotient', () => {
+    // WPT specified: `0.5`.
+    assert.equal(out('calc(10% / 20%)'), 'calc(.5)');
+  });
+});
+
 // --- calc-serialization-002.html (subset) --------------------------------
 // https://github.com/web-platform-tests/wpt/blob/master/css/css-values/calc-serialization-002.html
 // Most cases here use Chrome's canonical reordering + px-normalization so
