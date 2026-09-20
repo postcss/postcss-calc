@@ -160,16 +160,19 @@ function control() {
   };
   const run = makeRun(workload);
   const repetitions = 50;
-  for (let i = 0; i < 5; i++) timedBatch(run, repetitions);
+  // The first batches after process start are slower (JIT and frequency
+  // ramp).  Warm to a steady state before sampling so before/after ratios
+  // measure drift during the run rather than process startup.
+  for (let i = 0; i < 10; i++) timedBatch(run, repetitions);
   const samples = [];
   const elapsedMs = [];
-  for (let i = 0; i < 3; i++) {
+  for (let i = 0; i < 5; i++) {
     const batch = timedBatch(run, repetitions);
     samples.push(batch.perRun);
     elapsedMs.push(batch.elapsed);
   }
   samples.sort((a, b) => a - b);
-  return { medianMs: samples[1], samplesMs: elapsedMs };
+  return { medianMs: samples[2], samplesMs: elapsedMs };
 }
 
 const before = control();
