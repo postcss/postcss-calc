@@ -10,7 +10,12 @@ reanalysis.
   benchmark for arithmetic shapes. `benchmark-nested-fallbacks.js` does the
   same for nested `var()` fallbacks. Both accept `--baseline`, `--blocks`,
   `--max-attempts`, `--seed`, and `--output`, and write schema-v2 artifacts under
-  `reports/benchmarks/`.
+  `reports/benchmarks/`. The default arithmetic grid uses four logarithmically
+  spaced sizes with uniform doubling steps (`2,000` to `16,000`) and a tuned
+  batch schedule so a controlled run completes under 5 minutes while preserving
+  the paired fresh-process blocks, balanced process order, stratified interval,
+  doubling-growth gate, and family-adjusted precision gate; request more
+  `--blocks` to trade time for power.
 - Parser benchmark exit codes are `0` pass, `1` regression, `2` inconclusive,
   `3` benchmark/correctness/infrastructure failure, and `64` invalid usage or
   artifact. Twenty blocks are the minimum operational floor, not a guarantee

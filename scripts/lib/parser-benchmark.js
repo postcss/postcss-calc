@@ -10,8 +10,6 @@ import {
   DECISION_INTERVAL_METHOD,
   DRIFT_THRESHOLD,
   GROWTH_THRESHOLD,
-  MAX_WARMUPS,
-  MEASURED_BATCHES,
   linearRegression,
   logRatio,
   materializeBaseline,
@@ -27,8 +25,17 @@ import {
   validateSchemaV2Artifact,
 } from './benchmark.js';
 
-const SIZES = [500, 1_000, 2_000, 4_000, 8_000, 16_000];
+// Four logarithmically spaced sizes with uniform doubling steps (2x)
+// keep the scaling claims (slope and doubling growth) sound and well-powered
+// while holding the default 20-block run to under five minutes.
+const SIZES = [2_000, 4_000, 8_000, 16_000];
 const DEPTHS = [16, 32, 64, 128, 256, 512];
+// 16ms batch targets provide ample separation above the timer resolution floor
+// while keeping worker durations concise.
+const PARSER_TARGET_BATCH_MS = 16;
+const PARSER_WARMUP_MINIMUM = 4;
+const PARSER_WARMUP_MAXIMUM = 8;
+const PARSER_MEASURED_BATCHES = 5;
 const SCRIPT_ROOT = dirname(dirname(fileURLToPath(import.meta.url)));
 const WORKER = join(SCRIPT_ROOT, 'parser-benchmark-worker.js');
 
@@ -160,10 +167,8 @@ function analyzeParser(
     endpoints.push(endpoint);
   }
 
-  const largest = endpoints.filter(
-    (endpoint) =>
-      endpoint.key.endsWith(':16000') || endpoint.key.endsWith(':512')
-  );
+  const largestKeys = largestSizeKeys(artifact.workloadKeys);
+  const largest = endpoints.filter((endpoint) => largestKeys.has(endpoint.key));
   const slopes = analyzeSlopes(artifact, blocks, config);
   const growthData = analyzeGrowth(artifact, blocks);
   const familyRows = blocks.map((_, index) => [
@@ -599,17 +604,18 @@ function analyzeGrowth(artifact, blocks) {
   for (const [group, items] of groups) {
     items.sort((a, b) => a.size - b.size);
     for (let i = 1; i < items.length; i++) {
+      const doublings = Math.log2(items[i].size / items[i - 1].size);
       const base = [];
       const cand = [];
       for (const block of blocks) {
-        base.push(
+        const baseRatio =
           median(findWorkload(block, 'baseline', items[i].key).measured) /
-            median(findWorkload(block, 'baseline', items[i - 1].key).measured)
-        );
-        cand.push(
+          median(findWorkload(block, 'baseline', items[i - 1].key).measured);
+        const candRatio =
           median(findWorkload(block, 'candidate', items[i].key).measured) /
-            median(findWorkload(block, 'candidate', items[i - 1].key).measured)
-        );
+          median(findWorkload(block, 'candidate', items[i - 1].key).measured);
+        base.push(doublings === 1 ? baseRatio : baseRatio ** (1 / doublings));
+        cand.push(doublings === 1 ? candRatio : candRatio ** (1 / doublings));
       }
       logs.push(cand.map(Math.log));
       results.push({
@@ -665,6 +671,16 @@ function parseKey(key) {
   if (parts.length === 3) return { key, shape: parts[0], mode: parts[1], size };
   return { key, shape: 'nested-fallbacks', mode: parts[0], size };
 }
+function largestSizeKeys(workloadKeys) {
+  const maximum = new Map();
+  for (const key of workloadKeys) {
+    const { shape, mode, size } = parseKey(key);
+    const group = `${shape}:${mode}`;
+    maximum.set(group, Math.max(maximum.get(group) ?? 0, size));
+  }
+  return new Set([...maximum].map(([group, size]) => `${group}:${size}`));
+}
+
 function findWorkload(block, revision, key) {
   return block.revisions
     .find((item) => item.revision === revision)
@@ -700,10 +716,10 @@ export function runParserBenchmark({
     requestedBlocks: blocks,
     minimumBlocks: MIN_VALID_BLOCKS,
     maxAttempts,
-    targetBatchMs: 25,
-    warmupMinimum: 5,
-    warmupMaximum: MAX_WARMUPS,
-    measuredBatchCount: MEASURED_BATCHES,
+    targetBatchMs: PARSER_TARGET_BATCH_MS,
+    warmupMinimum: PARSER_WARMUP_MINIMUM,
+    warmupMaximum: PARSER_WARMUP_MAXIMUM,
+    measuredBatchCount: PARSER_MEASURED_BATCHES,
     driftThreshold: DRIFT_THRESHOLD,
     bootstrapResamples: 100_000,
     confidence: 0.95,
