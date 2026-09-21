@@ -50,9 +50,6 @@ function analyzeType(node, depth = 0) {
     case 'Num':
       return resolved(numberType);
     case 'Dim':
-      // Percentages are contextual; their percent-ness is tracked so a
-      // `% / %` product cancels to a number. Unknown units are opaque, while
-      // known families can still reject px + seconds.
       return node.unit === '%'
         ? finish(percentageType, true, true)
         : resolved({ kind: 'dimension', base: baseOf(node.unit) });
@@ -83,9 +80,6 @@ function analyzeSum(node, depth) {
     if (isFailure(child.type)) {
       type = failureType;
     } else if (child.type.kind === 'unknown') {
-      // A pure percentage sum stays percentage-typed so a surrounding
-      // product can cancel `% / %`; any other opaque term must widen the
-      // sum back to unknown.
       if (isPercentage(child.type)) hasPercentage = true;
       else hasUnknown = true;
     } else if (type === null) {
