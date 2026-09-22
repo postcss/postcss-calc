@@ -104,6 +104,11 @@ export function classifyCorpusExpression(input) {
   }
 }
 
+function sortByHash(a, b) {
+  const hashDiff = stableHash(a) - stableHash(b);
+  return hashDiff || a.localeCompare(b);
+}
+
 /**
  * Keep one hash-selected representative of every parser shape, plus one more
  * when a different literal compatibility bucket exists.  A stable globally
@@ -150,10 +155,6 @@ export function selectCorpusExpressions(
     }
   }
 
-  const sortByHash = (a, b) => {
-    const hashDiff = stableHash(a) - stableHash(b);
-    return hashDiff || a.localeCompare(b);
-  };
   return {
     total: inputs.length,
     eligible: eligible.length,
