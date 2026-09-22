@@ -3,201 +3,203 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { spawnSync } from 'node:child_process';
 import {
   compareParserBenchmarks,
   exitCodeFor,
+  reanalyzeParserBenchmark,
 } from '../../scripts/compare-parser-benchmarks.js';
+import { syntheticParserArtifact } from '../helpers/benchmark-artifact.js';
+import {
+  CORPUS_INTERVAL_METHOD,
+  DECISION_CONFIG_VERSION,
+  PRECISION_METHOD,
+} from '../../scripts/lib/benchmark.js';
 
-const arithmeticKeys = ['additive', 'multiplicative'].flatMap((kind) =>
-  ['cold-index', 'hot-shared-index'].flatMap((mode) =>
-    [1_000, 2_000, 4_000, 8_000].map((size) => `${kind}:${mode}:${size}`)
-  )
-);
-const nestedKeys = ['cold-index', 'hot-shared-index'].flatMap((mode) =>
-  [50, 100, 200, 400].map((depth) => `${mode}:${depth}`)
-);
+test('exitCodeFor maps benchmark analysis statuses to exit codes', () => {
+  assert.equal(exitCodeFor('pass'), 0);
+  assert.equal(exitCodeFor('regression'), 1);
+  assert.equal(exitCodeFor('postcss-calc faster'), 0);
+  assert.equal(exitCodeFor('postcss-calc slower'), 0);
+  assert.equal(exitCodeFor('correctness-failure'), 3);
+  assert.equal(exitCodeFor('inconclusive'), 2);
+  assert.equal(exitCodeFor('unknown'), 2);
+});
 
-function makeResult(benchmark = 'arithmetic-chains', medianMs = 1) {
-  const keys = benchmark === 'arithmetic-chains' ? arithmeticKeys : nestedKeys;
-  return {
-    schema: 1,
-    benchmark,
-    measurements: keys.map((key) => {
-      const parts = key.split(':');
-      if (benchmark === 'arithmetic-chains') {
-        const [kind, mode, size] = parts;
-        return { kind, mode, size: Number(size), medianMs };
-      }
-      const [mode, depth] = parts;
-      return { mode, depth: Number(depth), medianMs };
-    }),
-  };
-}
-
-function runComparator(benchmark, edit = () => {}) {
+test('reanalyzes schema-v2 parser benchmark artifacts', () => {
   const directory = mkdtempSync(join(tmpdir(), 'postcss-calc-benchmark-'));
   try {
-    const results = Array.from({ length: 6 }, () => makeResult(benchmark));
-    edit(results);
-    const paths = results.map((value, index) => {
-      const path = join(directory, `run-${index}.json`);
-      writeFileSync(path, `BENCHMARK_RESULT ${JSON.stringify(value)}\n`);
-      return path;
+    const artifact = syntheticParserArtifact({
+      rows: Array.from({ length: 20 }, () => ({
+        baseline: [1, 2],
+        candidate: [1, 2],
+      })),
+      workloadKeys: ['additive:cold-index:1000', 'additive:cold-index:2000'],
     });
-    return compareParserBenchmarks(paths);
+    const artifactPath = join(directory, 'parser-artifact.json');
+    writeFileSync(artifactPath, JSON.stringify(artifact));
+
+    const result = reanalyzeParserBenchmark(artifactPath);
+    assert.equal(result.schema, 2);
+    assert.equal(result.benchmark, 'parser-simulation');
+    assert.equal(result.analysis.status, 'pass');
+
+    const analysisOnly = compareParserBenchmarks(artifactPath);
+    assert.deepEqual(analysisOnly, result.analysis);
   } finally {
     rmSync(directory, { recursive: true, force: true });
   }
-}
-
-test('benchmark comparator rejects a run with a missing key', () => {
-  assert.throws(
-    () =>
-      runComparator('arithmetic-chains', (runs) => {
-        runs[3].measurements.pop();
-      }),
-    /missing measurement keys/
-  );
 });
 
-test('schema-v2 correctness failures use the correctness exit code', () => {
-  assert.equal(exitCodeFor('pass'), 0);
-  assert.equal(exitCodeFor('regression'), 1);
-  assert.equal(exitCodeFor('inconclusive'), 2);
-  assert.equal(exitCodeFor('correctness-failure'), 3);
+test('reanalyzes schema-v2 corpus benchmark artifacts', () => {
+  const directory = mkdtempSync(join(tmpdir(), 'postcss-calc-benchmark-'));
+  try {
+    const groups = ['exact', 'sum'];
+    const artifact = {
+      schema: 2,
+      benchmark: 'corpus',
+      seed: 123,
+      config: {
+        decisionConfigVersion: DECISION_CONFIG_VERSION,
+        requestedBlocks: 20,
+        minimumBlocks: 20,
+        maxAttempts: 20,
+        targetBatchMs: 25,
+        warmupMinimum: 0,
+        warmupMaximum: 0,
+        measuredBatchCount: 6,
+        driftThreshold: 0.15,
+        bootstrapResamples: 1_000,
+        confidence: 0.95,
+        runtimeNonRegressionMargin: 1.1,
+        equivalenceMargin: 1.1,
+        precisionMargin: 1.1,
+        precisionMethod: PRECISION_METHOD,
+        growthThreshold: 2.5,
+        orderInteractionThreshold: Math.log(1.1),
+        intervalMethod: CORPUS_INTERVAL_METHOD,
+        replicates: 20,
+        batches: 6,
+        calibrationOrderBalanced: true,
+      },
+      corpus: { lengthStrata: {}, rootShapeCounts: { sum: 2 } },
+      correctness: {
+        accepted: 2,
+        counts: Object.fromEntries(
+          [
+            'accepted',
+            'both-failed',
+            'known-divergence',
+            'malformed-input',
+            'parser-rejected',
+            'reference-rejected',
+            'unexpected-divergence',
+          ].map((c) => [c, c === 'accepted' ? 2 : 0])
+        ),
+        categoryHashes: Object.fromEntries(
+          [
+            'accepted',
+            'both-failed',
+            'known-divergence',
+            'malformed-input',
+            'parser-rejected',
+            'reference-rejected',
+            'unexpected-divergence',
+          ].map((c) => [c, c])
+        ),
+        inputHash: 'inputs',
+      },
+      replicates: Array.from({ length: 20 }, (_, replicate) => ({
+        replicate,
+        calibrationOrder: replicate < 10 ? 'ours-first' : 'reference-first',
+        permutation: [0, 1],
+        batches: Array.from({ length: 6 }, (unusedBatch, batch) => ({
+          order: batch < 3 ? 'ours-first' : 'reference-first',
+          measurements: groups.map((group) => ({
+            group,
+            repetitions: 1,
+            calibrationOrder: replicate < 10 ? 'ours-first' : 'reference-first',
+            calibrationSamplesMs: [{ oursMs: 1, referenceMs: 1 }],
+            ours: { ms: 1, elapsedMs: 1, checksum: 1 },
+            reference: { ms: 1, elapsedMs: 1, checksum: 1 },
+          })),
+        })),
+      })),
+    };
+    const artifactPath = join(directory, 'corpus-artifact.json');
+    writeFileSync(artifactPath, JSON.stringify(artifact));
+
+    const result = reanalyzeParserBenchmark(artifactPath);
+    assert.equal(result.schema, 2);
+    assert.equal(result.benchmark, 'corpus');
+    assert.ok(result.analysis);
+    assert.equal(typeof result.analysis.status, 'string');
+    assert.ok(result.analysis.practical);
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
 });
 
-test('benchmark comparator rejects an empty measurement run', () => {
-  assert.throws(
-    () =>
-      runComparator('arithmetic-chains', (runs) => {
-        runs[0].measurements = [];
-      }),
-    /missing measurement keys/
-  );
-});
-
-test('benchmark comparator rejects duplicate keys', () => {
-  assert.throws(
-    () =>
-      runComparator('arithmetic-chains', (runs) => {
-        runs[3].measurements.push(runs[3].measurements[0]);
-      }),
-    /duplicate measurement key/
-  );
-});
-
-test('benchmark comparator rejects schema mismatches', () => {
-  assert.throws(
-    () =>
-      runComparator('arithmetic-chains', (runs) => {
-        runs[1].schema = 2;
-      }),
-    /same schema and benchmark/
-  );
-});
-
-test('benchmark comparator rejects zero and negative timings', () => {
-  for (const medianMs of [0, -1]) {
+test('rejects non-schema-v2 artifacts and non-string paths', () => {
+  const directory = mkdtempSync(join(tmpdir(), 'postcss-calc-benchmark-'));
+  try {
+    const invalidPath = join(directory, 'v1-artifact.json');
+    writeFileSync(invalidPath, JSON.stringify({ schema: 1 }));
     assert.throws(
-      () =>
-        runComparator('arithmetic-chains', (runs) => {
-          runs[0].measurements[0].medianMs = medianMs;
-        }),
-      /invalid medianMs.*finite and > 0/
+      () => reanalyzeParserBenchmark(invalidPath),
+      /artifact must use schema 2/
     );
+    assert.throws(
+      () => compareParserBenchmarks([invalidPath]),
+      /Usage: node scripts\/compare-parser-benchmarks\.js <schema-v2-artifact>/
+    );
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
   }
 });
 
-test('benchmark comparator rejects non-finite computed ratios', () => {
-  const comparison = runComparator('arithmetic-chains', (runs) => {
-    for (const run of runs.slice(0, 3)) run.measurements[0].medianMs = 1e-308;
-    for (const run of runs.slice(3)) run.measurements[0].medianMs = 1e308;
-  });
-  assert.ok(
-    comparison.failures.includes('additive:cold-index:1000: non-finite ratio')
-  );
-  assert.equal(
-    comparison.summaries.some(
-      (summary) => summary.key === 'additive:cold-index:1000'
-    ),
-    false
-  );
-});
-
-test('benchmark comparator rejects non-finite computed growth', () => {
-  const comparison = runComparator('nested-fallbacks', (runs) => {
-    for (const run of runs) {
-      for (const measurement of run.measurements) {
-        if (measurement.depth === 100) measurement.medianMs = 1e-308;
-        if (measurement.depth === 200) measurement.medianMs = 1e308;
-      }
-    }
-  });
-  assert.deepEqual(comparison.failures, [
-    'cold-index 100->200: non-finite growth',
-    'hot-shared-index 100->200: non-finite growth',
-  ]);
-});
-
-test('benchmark comparator reports largest-case regressions for every arithmetic kind and mode', () => {
-  for (const key of arithmeticKeys.filter((candidate) =>
-    candidate.endsWith(':8000')
-  )) {
-    const comparison = runComparator('arithmetic-chains', (runs) => {
-      for (const run of runs.slice(3)) {
-        const measurement = run.measurements.find(
-          (candidate) =>
-            `${candidate.kind}:${candidate.mode}:${candidate.size}` === key
-        );
-        measurement.medianMs = 2;
-      }
+test('CLI outputs analysis and exits with expected codes', () => {
+  const directory = mkdtempSync(join(tmpdir(), 'postcss-calc-benchmark-'));
+  try {
+    const artifact = syntheticParserArtifact({
+      rows: Array.from({ length: 20 }, () => ({
+        baseline: [1, 2],
+        candidate: [1, 2],
+      })),
+      workloadKeys: ['additive:cold-index:1000', 'additive:cold-index:2000'],
     });
-    assert.deepEqual(comparison.failures, [
-      `${key}: 2.00x baseline (limit 1.10x)`,
-    ]);
-  }
-});
+    const artifactPath = join(directory, 'parser-artifact.json');
+    writeFileSync(artifactPath, JSON.stringify(artifact));
 
-test('benchmark comparator covers nested-fallbacks measurements and modes', () => {
-  const comparison = runComparator('nested-fallbacks');
-  assert.deepEqual(comparison.failures, []);
-  assert.equal(comparison.summaries.length, nestedKeys.length);
+    const scriptPath = join(
+      process.cwd(),
+      'scripts/compare-parser-benchmarks.js'
+    );
 
-  for (const key of nestedKeys.filter((candidate) =>
-    candidate.endsWith(':400')
-  )) {
-    const regression = runComparator('nested-fallbacks', (runs) => {
-      for (const run of runs.slice(3)) {
-        const measurement = run.measurements.find(
-          (candidate) => `${candidate.mode}:${candidate.depth}` === key
-        );
-        measurement.medianMs = 2;
-      }
+    const validRun = spawnSync(process.execPath, [scriptPath, artifactPath], {
+      encoding: 'utf8',
     });
-    assert.deepEqual(regression.failures, [
-      `${key}: 2.00x baseline (limit 1.10x)`,
-    ]);
-  }
-});
+    assert.equal(validRun.status, 0);
+    assert.match(validRun.stdout, /Parser benchmark: pass/);
 
-test('benchmark comparator fails a 2.5x doubling-growth regression', () => {
-  const comparison = runComparator('nested-fallbacks', (runs) => {
-    for (const run of runs.slice(3)) {
-      for (const measurement of run.measurements) {
-        if (measurement.depth === 200) measurement.medianMs = 0.1;
-        if (measurement.depth === 400) measurement.medianMs = 1;
+    const noArgs = spawnSync(process.execPath, [scriptPath], {
+      encoding: 'utf8',
+    });
+    assert.equal(noArgs.status, 64);
+    assert.match(noArgs.stderr, /Usage:/);
+
+    const invalidArtifactPath = join(directory, 'bad.json');
+    writeFileSync(invalidArtifactPath, JSON.stringify({ schema: 1 }));
+    const invalidRun = spawnSync(
+      process.execPath,
+      [scriptPath, invalidArtifactPath],
+      {
+        encoding: 'utf8',
       }
-    }
-  });
-  assert.deepEqual(comparison.failures, [
-    'cold-index 200->400: 10.00x growth (limit 2.50x)',
-    'hot-shared-index 200->400: 10.00x growth (limit 2.50x)',
-  ]);
-});
-
-test('benchmark comparator accepts complete matching arithmetic runs', () => {
-  const comparison = runComparator('arithmetic-chains');
-  assert.deepEqual(comparison.failures, []);
-  assert.equal(comparison.summaries.length, arithmeticKeys.length);
+    );
+    assert.equal(invalidRun.status, 64);
+    assert.match(invalidRun.stderr, /artifact must use schema 2/);
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
 });
