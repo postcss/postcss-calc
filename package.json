@@ -57,8 +57,8 @@
   },
   "devDependencies": {
     "@csstools/css-calc": "^3.4.0",
-    "@types/node": "^26.6.1",
-    "fast-check": "^4.10.1",
+    "@types/node": "^26.6.2",
+    "fast-check": "^4.10.2",
     "oxfmt": "^0.68.0",
     "oxlint": "^1.83.0",
     "postcss": "^8.5.28",
