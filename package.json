@@ -56,8 +56,8 @@
     }
   },
   "devDependencies": {
-    "@csstools/css-calc": "^3.4.0",
-    "@types/node": "^26.6.2",
+    "@csstools/css-calc": "^3.4.1",
+    "@types/node": "^26.6.3",
     "fast-check": "^4.10.2",
     "oxfmt": "^0.70.0",
     "oxlint": "^1.85.0",
@@ -65,7 +65,7 @@
     "typescript": "~7.0.2"
   },
   "dependencies": {
-    "@csstools/css-tokenizer": "^4.0.1"
+    "@csstools/css-tokenizer": "^4.0.2"
   },
   "peerDependencies": {
     "postcss": "^8.5.28"
