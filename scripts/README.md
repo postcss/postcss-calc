@@ -1,13 +1,16 @@
 # Benchmark scripts
 
 These scripts are deliberately outside the ordinary test suite. Run them on a
-controlled machine with `node scripts/<name>.js` (or the corresponding pnpm
+controlled machine with `node scripts/benchmark/<name>.js` (or the corresponding pnpm
 command). Benchmark artifacts are schema-v2 JSON files and retain raw
 observations, configuration, provenance, and enough information for offline
 reanalysis.
 
-- **`benchmark-arithmetic-chains.js`** — runs the fresh-process, paired parser
-  benchmark for arithmetic shapes. `benchmark-nested-fallbacks.js` does the
+For a detailed explanation of the statistical methodology, experiment design,
+and software architecture, see [BENCHMARKS.md](../BENCHMARKS.md).
+
+- **`benchmark/benchmark-arithmetic-chains.js`** — runs the fresh-process, paired parser
+  benchmark for arithmetic shapes. `benchmark/benchmark-nested-fallbacks.js` does the
   same for nested `var()` fallbacks. Both accept `--baseline`, `--blocks`,
   `--max-attempts`, `--seed`, and `--output`, and write schema-v2 artifacts under
   `reports/benchmarks/`. The default arithmetic grid uses four logarithmically
@@ -24,20 +27,20 @@ reanalysis.
   requires every gated runtime, slope, and growth endpoint to meet its
   predeclared precision target; the requested block count is never increased
   from an observed effect during a run.
-- **`compare-parser-benchmarks.js`** — reanalyzes one schema-v2 parser
+- **`benchmark/compare-parser-benchmarks.js`** — reanalyzes one schema-v2 parser
   artifact and applies the uncertainty-aware runtime, slope, and growth gates.
-- **`benchmark-serialization.js`** — measures buffered serializer scaling for wide sums/products, nested calls, and nested opaque fallbacks.
+- **`benchmark/benchmark-serialization.js`** — measures buffered serializer scaling for wide sums/products, nested calls, and nested opaque fallbacks.
 - **`harvest-github.js`** — scrapes real-world `calc()` expressions from
   public GitHub into `test/corpus/github/expressions.txt`.
 - **`split-corpus.js`** — splits that file into `github-pure.txt` (feeds
-  `benchmark.js`/`show-divergences.js` below), `preprocessor.txt`, and
+  `benchmark/benchmark-corpus.js`/`show-divergences.js` below), `preprocessor.txt`, and
   `invalid.txt` (the latter two are used by real CI resilience tests).
 - **`lib/corpus.js`** — shared loader for `github-pure.txt`.
-- **`benchmark.js`** — (`pnpm benchmark:corpus`) validates and times our
+- **`benchmark/benchmark-corpus.js`** — (`pnpm benchmark:corpus`) validates and times our
   pipeline against `@csstools/css-calc` over the pure corpus in fresh
   processes. It is report-only for speed; correctness and infrastructure
   failures are nonzero.
-- **`benchmark-plugin.js`** — measures PostCSS processing; awaiting
+- **`benchmark/benchmark-plugin.js`** — measures PostCSS processing; awaiting
   `.process(...)` already includes result serialization, so the benchmark does
   not add a redundant `result.css` read.
 - **`show-divergences.js`** — buckets where our output disagrees with

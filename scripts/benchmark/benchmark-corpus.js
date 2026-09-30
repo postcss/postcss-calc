@@ -1,5 +1,5 @@
 // Correctness-aware fresh-process corpus benchmark against @csstools/css-calc.
-import { runCorpusBenchmark, parseArgs } from './lib/corpus-benchmark.js';
+import { runCorpusBenchmark, parseArgs } from './corpus-benchmark.js';
 
 try {
   const result = runCorpusBenchmark(parseArgs(process.argv.slice(2)));

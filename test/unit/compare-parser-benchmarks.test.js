@@ -8,13 +8,13 @@ import {
   compareParserBenchmarks,
   exitCodeFor,
   reanalyzeParserBenchmark,
-} from '../../scripts/compare-parser-benchmarks.js';
+} from '../../scripts/benchmark/compare-parser-benchmarks.js';
 import { syntheticParserArtifact } from '../helpers/benchmark-artifact.js';
 import {
   CORPUS_INTERVAL_METHOD,
   DECISION_CONFIG_VERSION,
   PRECISION_METHOD,
-} from '../../scripts/lib/benchmark.js';
+} from '../../scripts/benchmark/benchmark.js';
 
 test('exitCodeFor maps benchmark analysis statuses to exit codes', () => {
   assert.equal(exitCodeFor('pass'), 0);
@@ -151,7 +151,7 @@ test('rejects non-schema-v2 artifacts and non-string paths', () => {
     );
     assert.throws(
       () => compareParserBenchmarks([invalidPath]),
-      /Usage: node scripts\/compare-parser-benchmarks\.js <schema-v2-artifact>/
+      /Usage: node scripts\/benchmark\/compare-parser-benchmarks\.js <schema-v2-artifact>/
     );
   } finally {
     rmSync(directory, { recursive: true, force: true });
@@ -173,7 +173,7 @@ test('CLI outputs analysis and exits with expected codes', () => {
 
     const scriptPath = join(
       process.cwd(),
-      'scripts/compare-parser-benchmarks.js'
+      'scripts/benchmark/compare-parser-benchmarks.js'
     );
 
     const validRun = spawnSync(process.execPath, [scriptPath, artifactPath], {

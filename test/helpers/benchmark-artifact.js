@@ -3,7 +3,7 @@ import {
   DECISION_CONFIG_VERSION,
   DECISION_INTERVAL_METHOD,
   PRECISION_METHOD,
-} from '../../scripts/lib/benchmark.js';
+} from '../../scripts/benchmark/benchmark.js';
 
 export const SYNTHETIC_DECISION_CONFIG = {
   decisionConfigVersion: DECISION_CONFIG_VERSION,

@@ -1,8 +1,8 @@
-import { runParserBenchmark } from './lib/parser-benchmark.js';
+import { runParserBenchmark } from './parser-benchmark.js';
 
 try {
   const result = await runParserBenchmark({
-    benchmark: 'arithmetic-chains',
+    benchmark: 'nested-fallbacks',
     ...parseOptions(process.argv.slice(2)),
   });
   console.log(`Parser benchmark: ${result.artifact.analysis.status}`);

@@ -2,12 +2,12 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { resolve } from 'node:path';
-import { analyzeParser } from './lib/parser-benchmark.js';
-import { analyzeCorpus } from './lib/corpus-benchmark.js';
-import { validateSchemaV2Artifact } from './lib/benchmark.js';
+import { analyzeParser } from './parser-benchmark.js';
+import { analyzeCorpus } from './corpus-benchmark.js';
+import { validateSchemaV2Artifact } from './benchmark.js';
 
 const usage =
-  'Usage: node scripts/compare-parser-benchmarks.js <schema-v2-artifact>';
+  'Usage: node scripts/benchmark/compare-parser-benchmarks.js <schema-v2-artifact>';
 
 function readArtifact(path) {
   const artifact = JSON.parse(readFileSync(path, 'utf8'));

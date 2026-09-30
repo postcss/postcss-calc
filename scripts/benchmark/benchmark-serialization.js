@@ -7,7 +7,7 @@ import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { serialize as serializeWorktree } from '../src/lib/serialize.js';
+import { serialize as serializeWorktree } from '../../src/lib/serialize.js';
 import {
   num,
   dim,
@@ -16,7 +16,7 @@ import {
   opaqueCall,
   mkSum,
   mkProduct,
-} from '../src/lib/node.js';
+} from '../../src/lib/node.js';
 
 const WIDE_SIZES = [1_024, 16_384, 65_536];
 const OTHER_SIZES = [128, 256, 512];
@@ -33,7 +33,7 @@ function median(values) {
   return sorted[Math.floor(sorted.length / 2)];
 }
 
-/** @param {number} size @return {import('../src/lib/node.js').Node} */
+/** @param {number} size @return {import('../../src/lib/node.js').Node} */
 function wideSum(size) {
   return mkSum(
     Array.from({ length: size }, (_, index) => ({
@@ -43,7 +43,7 @@ function wideSum(size) {
   );
 }
 
-/** @param {number} size @return {import('../src/lib/node.js').Node} */
+/** @param {number} size @return {import('../../src/lib/node.js').Node} */
 function wideProduct(size) {
   return mkProduct(
     Array.from({ length: size }, (_, index) => ({
@@ -53,7 +53,7 @@ function wideProduct(size) {
   );
 }
 
-/** @param {number} size @return {import('../src/lib/node.js').Node} */
+/** @param {number} size @return {import('../../src/lib/node.js').Node} */
 function nestedCalls(size) {
   let node = ident('--x');
   for (let i = 0; i < Math.max(2, Math.ceil(size / 4)); i++) {
@@ -62,7 +62,7 @@ function nestedCalls(size) {
   return node;
 }
 
-/** @param {number} size @return {import('../src/lib/node.js').Node} */
+/** @param {number} size @return {import('../../src/lib/node.js').Node} */
 function nestedOpaqueFallbacks(size) {
   let node = opaqueCall('var', [ident('--x'), ', ', dim(1, 'px')]);
   const depth = Math.max(2, Math.ceil(size / 4));
@@ -73,8 +73,8 @@ function nestedOpaqueFallbacks(size) {
 }
 
 /**
- * @param {(node: import('../src/lib/node.js').Node, opts: {precision: false}) => string} serialize
- * @param {import('../src/lib/node.js').Node} node
+ * @param {(node: import('../../src/lib/node.js').Node, opts: {precision: false}) => string} serialize
+ * @param {import('../../src/lib/node.js').Node} node
  * @param {number} repetitions
  * @param {boolean} materialize
  * @return {number} elapsed milliseconds
@@ -98,9 +98,9 @@ function clampRepetitions(repetitions) {
  * serializers use the same repetition count for each sample, so their times
  * are exposed to the same short-lived runtime effects.
  *
- * @param {(node: import('../src/lib/node.js').Node, opts: {precision: false}) => string} worktreeSerializer
- * @param {(node: import('../src/lib/node.js').Node, opts: {precision: false}) => string} headSerializer
- * @param {import('../src/lib/node.js').Node} node
+ * @param {(node: import('../../src/lib/node.js').Node, opts: {precision: false}) => string} worktreeSerializer
+ * @param {(node: import('../../src/lib/node.js').Node, opts: {precision: false}) => string} headSerializer
+ * @param {import('../../src/lib/node.js').Node} node
  * @param {boolean} materialize
  * @return {{worktree: number, head: number}}
  */
@@ -141,7 +141,7 @@ function benchmarkPair(worktreeSerializer, headSerializer, node, materialize) {
   return { worktree: median(worktreeSamples), head: median(headSamples) };
 }
 
-/** @return {Promise<typeof import('../src/lib/serialize.js')>} */
+/** @return {Promise<typeof import('../../src/lib/serialize.js')>} */
 async function loadHeadSerializer() {
   const root = mkdtempSync(join(tmpdir(), 'postcss-calc-serialize-'));
   try {

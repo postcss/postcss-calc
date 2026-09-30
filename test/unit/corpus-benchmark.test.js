@@ -8,12 +8,12 @@ import {
   analyzeCorpus,
   CORPUS_EQUIVALENCE_MARGIN,
   groupResults,
-} from '../../scripts/lib/corpus-benchmark.js';
+} from '../../scripts/benchmark/corpus-benchmark.js';
 import {
   CORPUS_INTERVAL_METHOD,
   DECISION_CONFIG_VERSION,
   PRECISION_METHOD,
-} from '../../scripts/lib/benchmark.js';
+} from '../../scripts/benchmark/benchmark.js';
 
 function artifact(ratioForReplicate) {
   const groups = ['exact', 'sum'];
@@ -226,7 +226,7 @@ test('corpus worker verifies public reducer outputs and hashes their content', (
     return spawnSync(
       process.execPath,
       [
-        join(process.cwd(), 'scripts/corpus-benchmark-worker.js'),
+        join(process.cwd(), 'scripts/benchmark/corpus-benchmark-worker.js'),
         JSON.stringify(payload),
       ],
       { encoding: 'utf8' }
