@@ -1,5 +1,6 @@
 /* oxlint-disable no-bitwise */
 import {
+  CORPUS_INTERVAL_METHOD,
   DECISION_CONFIG_VERSION,
   DECISION_INTERVAL_METHOD,
   PRECISION_METHOD,
@@ -25,6 +26,39 @@ export const SYNTHETIC_DECISION_CONFIG = {
   orderInteractionThreshold: Math.log(1.1),
   intervalMethod: DECISION_INTERVAL_METHOD,
 };
+
+export const CORPUS_DECISION_CONFIG = {
+  ...SYNTHETIC_DECISION_CONFIG,
+  warmupMinimum: 0,
+  warmupMaximum: 0,
+  measuredBatchCount: 6,
+  intervalMethod: CORPUS_INTERVAL_METHOD,
+  replicates: 20,
+  batches: 6,
+  calibrationOrderBalanced: true,
+};
+
+const CORPUS_CATEGORIES = [
+  'accepted',
+  'both-failed',
+  'known-divergence',
+  'malformed-input',
+  'parser-rejected',
+  'reference-rejected',
+  'unexpected-divergence',
+];
+
+/** Correctness block for a corpus artifact with two accepted inputs. */
+export function corpusCorrectness() {
+  return {
+    accepted: 2,
+    counts: Object.fromEntries(
+      CORPUS_CATEGORIES.map((c) => [c, c === 'accepted' ? 2 : 0])
+    ),
+    categoryHashes: Object.fromEntries(CORPUS_CATEGORIES.map((c) => [c, c])),
+    inputHash: 'inputs',
+  };
+}
 
 /**
  * Build a parser artifact from already-generated observations. `rows` contains

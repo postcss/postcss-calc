@@ -2,14 +2,11 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { analyze } from '../../src/lib/analyze.js';
 import { call, num } from '../../src/lib/node.js';
-import { indexBlocks } from '../../src/lib/block-index.js';
-import { parse } from '../../src/lib/parser.js';
 import reduceCalc from '../../src/reduce.js';
-import { tokenize } from '@csstools/css-tokenizer';
+import { parseSource } from '../helpers/parse-source.js';
 
 function analyzeSource(source) {
-  const tokens = tokenize({ css: source });
-  return analyze(parse(tokens, 0, tokens.length, indexBlocks(tokens)));
+  return analyze(parseSource(source));
 }
 
 test('analyze: a non-percentage denominator survives percentage ratio cancellation', () => {

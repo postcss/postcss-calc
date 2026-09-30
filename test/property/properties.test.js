@@ -10,9 +10,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import fc from 'fast-check';
-import { tokenize } from '@csstools/css-tokenizer';
-import { indexBlocks } from '../../src/lib/block-index.js';
-import { parse } from '../../src/lib/parser.js';
 import { simplify } from '../../src/lib/simplify.js';
 import { analyze } from '../../src/lib/analyze.js';
 import { serialize } from '../../src/lib/serialize.js';
@@ -21,69 +18,70 @@ import {
   astArbWithDegenerate,
   numericAstArb,
 } from '../helpers/arbitraries.js';
+import { parseSource } from '../helpers/parse-source.js';
 import { num, mkProduct, mkSum, negate } from '../../src/lib/node.js';
 const NUM_RUNS = 500;
 function str(n) {
   return serialize(n, { precision: false });
 }
-// --- Idempotence ---------------------------------------------------------
-// simplify(x) must equal simplify(simplify(x)). Canonical-form + one-pass
-// simplify should make this trivially true.
-test('property: simplify is idempotent', () => {
-  fc.assert(
-    fc.property(astArb(4), (ast) => {
-      const once = simplify(ast);
-      const twice = simplify(once);
-      return str(once) === str(twice);
-    }),
-    { numRuns: NUM_RUNS }
-  );
-});
+// --- Idempotence and round-trip ------------------------------------------
+// simplify(x) must equal simplify(simplify(x)), and serialize(simplify(x))
+// parsed+simplified back must be indistinguishable at the string level.
+// Checked for the regular generator and for one with Infinity / NaN /
+// FP-imprecise leaves mixed in (§10.13 paths and IEEE-754 propagation).
+for (const [label, arb] of [
+  ['', astArb(4)],
+  [' under degenerate / float leaves', astArbWithDegenerate(4)],
+]) {
+  test(`property: simplify is idempotent${label}`, () => {
+    fc.assert(
+      fc.property(arb, (ast) => {
+        const once = simplify(ast);
+        return str(once) === str(simplify(once));
+      }),
+      { numRuns: NUM_RUNS }
+    );
+  });
+  test(`property: simplify → serialize → parse → simplify is a fixed point${label}`, () => {
+    fc.assert(
+      fc.property(arb, (ast) => {
+        const str1 = str(simplify(ast));
+        return str1 === str(simplify(parseSource(str1)));
+      }),
+      { numRuns: NUM_RUNS }
+    );
+  });
+}
 // --- Analysis/simplification contract -----------------------------------
 // Analysis summarizes the original tree, while simplification may refine
 // coarse unknown types. It must not invalidate a valid tree, change a known
 // type, or introduce unresolved state.
-test('property: simplification preserves analysis invariants', () => {
-  fc.assert(
-    fc.property(astArb(4), (ast) => {
-      const before = analyze(ast);
-      if (!before.valid) return true;
-      const after = analyze(simplify(ast));
-      assert.deepEqual(after.valid, true);
-      if (before.type !== 'unknown') {
-        assert.deepEqual(after.type, before.type);
-      }
-      if (!before.unresolved) {
-        assert.deepEqual(after.unresolved, false);
-      }
-      return true;
-    }),
-    { numRuns: NUM_RUNS }
-  );
-});
-
-test('property: simplification preserves analysis invariants on degenerate trees', () => {
-  fc.assert(
-    fc.property(astArbWithDegenerate(3), (ast) => {
-      const before = analyze(ast);
-      if (!before.valid) return true;
-      const after = analyze(simplify(ast));
-      assert.deepEqual(after.valid, true);
-      if (before.type !== 'unknown') {
-        assert.deepEqual(after.type, before.type);
-      }
-      if (!before.unresolved) {
-        assert.deepEqual(after.unresolved, false);
-      }
-      return true;
-    }),
-    { numRuns: NUM_RUNS }
-  );
-});
+for (const [label, arb] of [
+  ['', astArb(4)],
+  [' on degenerate trees', astArbWithDegenerate(3)],
+]) {
+  test(`property: simplification preserves analysis invariants${label}`, () => {
+    fc.assert(
+      fc.property(arb, (ast) => {
+        const before = analyze(ast);
+        if (!before.valid) return true;
+        const after = analyze(simplify(ast));
+        assert.deepEqual(after.valid, true);
+        if (before.type !== 'unknown') {
+          assert.deepEqual(after.type, before.type);
+        }
+        if (!before.unresolved) {
+          assert.deepEqual(after.unresolved, false);
+        }
+        return true;
+      }),
+      { numRuns: NUM_RUNS }
+    );
+  });
+}
 
 test('property: percentage division is typed as a number before simplification', () => {
-  const tokens = tokenize({ css: '10% / 5%' });
-  const ast = parse(tokens, 0, tokens.length, indexBlocks(tokens));
+  const ast = parseSource('10% / 5%');
   const before = analyze(ast);
   const after = analyze(simplify(ast));
   assert.deepEqual(before, {
@@ -100,20 +98,6 @@ test('property: percentage division is typed as a number before simplification',
 // --- Parse-serialize round-trip ------------------------------------------
 // serialize(simplify(x)) parsed+simplified back must be indistinguishable
 // from the first simplified form at the string level.
-test('property: simplify → serialize → parse → simplify is a fixed point', () => {
-  fc.assert(
-    fc.property(astArb(4), (ast) => {
-      const first = simplify(ast);
-      const str1 = str(first);
-      const tokens = tokenize({ css: str1 });
-      const second = simplify(
-        parse(tokens, 0, tokens.length, indexBlocks(tokens))
-      );
-      return str1 === str(second);
-    }),
-    { numRuns: NUM_RUNS }
-  );
-});
 // --- Multiplicative identity ---------------------------------------------
 test('property: x * 1 ≡ simplify(x)', () => {
   fc.assert(
@@ -159,33 +143,6 @@ test('property: -(-x) ≡ simplify(x)', () => {
         return str(lhs) === str(rhs);
       }
     ),
-    { numRuns: NUM_RUNS }
-  );
-});
-// --- Degenerate / float stress -------------------------------------------
-// Same invariants as above but with Infinity / NaN / FP-imprecise leaves
-// mixed in. Catches regressions in §10.13 paths and IEEE-754 propagation.
-test('property: simplify is idempotent under degenerate / float leaves', () => {
-  fc.assert(
-    fc.property(astArbWithDegenerate(4), (ast) => {
-      const once = simplify(ast);
-      const twice = simplify(once);
-      return str(once) === str(twice);
-    }),
-    { numRuns: NUM_RUNS }
-  );
-});
-test('property: round-trip stable under degenerate / float leaves', () => {
-  fc.assert(
-    fc.property(astArbWithDegenerate(4), (ast) => {
-      const first = simplify(ast);
-      const str1 = str(first);
-      const tokens = tokenize({ css: str1 });
-      const second = simplify(
-        parse(tokens, 0, tokens.length, indexBlocks(tokens))
-      );
-      return str1 === str(second);
-    }),
     { numRuns: NUM_RUNS }
   );
 });

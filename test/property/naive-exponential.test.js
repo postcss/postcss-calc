@@ -10,23 +10,9 @@
 // random gen to roll them.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { tokenize } from '@csstools/css-tokenizer';
-import { indexBlocks } from '../../src/lib/block-index.js';
-import { parse } from '../../src/lib/parser.js';
-import { simplify } from '../../src/lib/simplify.js';
-import { serialize } from '../../src/lib/serialize.js';
-const out = (s) => {
-  const tokens = tokenize({ css: s });
-  return serialize(
-    simplify(parse(tokens, 0, tokens.length, indexBlocks(tokens))),
-    { precision: 10 }
-  );
-};
-const scalarText = (text) =>
-  text.startsWith('calc(') && text.endsWith(')')
-    ? text.slice('calc('.length, -1)
-    : text;
-const numeric = (text) => Number.parseFloat(scalarText(text));
+import { out as pipeline } from '../helpers/out.js';
+import { numeric } from '../helpers/numeric.js';
+const out = (s) => pipeline(s, { precision: 10 });
 // --- §10.5 oracle rows for pow / sqrt / exp / log / hypot --------------
 const POW_INPUTS = [
   [2, 3],

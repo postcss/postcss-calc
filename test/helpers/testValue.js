@@ -19,3 +19,24 @@ export function testValue(fixture, expected, opts = {}) {
     assert.strictEqual(result.css, expected);
   };
 }
+
+export function testCss(fixture, expected, opts = {}) {
+  return async () => {
+    const result = await postcss(reduceCalc(opts)).process(
+      fixture,
+      postcssOpts
+    );
+    assert.strictEqual(result.css, expected);
+  };
+}
+
+export function testCssDoesNotThrow(fixture, expected, opts = {}) {
+  return async () => {
+    const result = await postcss(reduceCalc(opts)).process(
+      fixture,
+      postcssOpts
+    );
+    assert.strictEqual(result.css, expected);
+    assert.strictEqual(result.warnings().length, 0);
+  };
+}

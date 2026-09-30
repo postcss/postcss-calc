@@ -8,11 +8,11 @@ import { indexBlocks } from '../../src/lib/block-index.js';
 import { parse } from '../../src/lib/parser.js';
 import { serialize } from '../../src/lib/serialize.js';
 import { sexpr } from '../helpers/sexpr.js';
+import { parseSource } from '../helpers/parse-source.js';
 
 /** Parse input, return its S-expression. */
 const ast = (input) => {
-  const tokens = tokenize({ css: input });
-  return sexpr(parse(tokens, 0, tokens.length, indexBlocks(tokens)));
+  return sexpr(parseSource(input));
 };
 // --- Opaque non-math functions -------------------------------------------
 //
@@ -21,60 +21,47 @@ const ast = (input) => {
 // updated for every future CSS function.
 describe('parser: opaque expressions and invalid syntax', () => {
   test('parser: anchor() with `<name> <side>` parses as opaque single arg', () => {
-    const tokens = tokenize({ css: 'anchor(--foo top)' });
     assert.equal(
-      serialize(parse(tokens, 0, tokens.length, indexBlocks(tokens))),
+      serialize(parseSource('anchor(--foo top)')),
       'anchor(--foo top)'
     );
   });
 
   test('parser: anchor() with `implicit <side>` keyword name', () => {
-    const tokens = tokenize({ css: 'anchor(implicit bottom)' });
     assert.equal(
-      serialize(parse(tokens, 0, tokens.length, indexBlocks(tokens))),
+      serialize(parseSource('anchor(implicit bottom)')),
       'anchor(implicit bottom)'
     );
   });
 
   test('parser: anchor() with comma-separated fallback', () => {
-    const tokens = tokenize({ css: 'anchor(--foo top, 50px)' });
     assert.equal(
-      serialize(parse(tokens, 0, tokens.length, indexBlocks(tokens))),
+      serialize(parseSource('anchor(--foo top, 50px)')),
       'anchor(--foo top, 50px)'
     );
   });
 
   test('parser: anchor-size() also takes space-separated args', () => {
-    const tokens = tokenize({ css: 'anchor-size(--foo height)' });
     assert.equal(
-      serialize(parse(tokens, 0, tokens.length, indexBlocks(tokens))),
+      serialize(parseSource('anchor-size(--foo height)')),
       'anchor-size(--foo height)'
     );
   });
 
   test('parser: anchor() composes inside calc() arithmetic', () => {
-    const tokens = tokenize({ css: 'calc(anchor(--foo top) - 42px)' });
     assert.equal(
-      serialize(parse(tokens, 0, tokens.length, indexBlocks(tokens))),
+      serialize(parseSource('calc(anchor(--foo top) - 42px)')),
       'calc(anchor(--foo top) - 42px)'
     );
   });
 
   test('parser: anchor() with single side keyword', () => {
-    const tokens = tokenize({ css: 'anchor(top)' });
-    assert.equal(
-      serialize(parse(tokens, 0, tokens.length, indexBlocks(tokens))),
-      'anchor(top)'
-    );
+    assert.equal(serialize(parseSource('anchor(top)')), 'anchor(top)');
   });
 
   test('parser: anchor arguments preserve escaped lexical spelling', () => {
     const input = String.raw`anchor(--x\ top left)`;
-    const tokens = tokenize({ css: input });
-    assert.equal(
-      serialize(parse(tokens, 0, tokens.length, indexBlocks(tokens))),
-      input
-    );
+    assert.equal(serialize(parseSource(input)), input);
   });
 
   test('parser: arbitrary non-math function contents stay opaque', () => {
@@ -83,11 +70,7 @@ describe('parser: opaque expressions and invalid syntax', () => {
       'future-fn("x", [a b] {c: #fff})',
       'unknown(1px + 2px)',
     ]) {
-      const tokens = tokenize({ css: input });
-      assert.equal(
-        serialize(parse(tokens, 0, tokens.length, indexBlocks(tokens))),
-        input
-      );
+      assert.equal(serialize(parseSource(input)), input);
     }
   });
 
@@ -113,8 +96,7 @@ describe('parser: opaque expressions and invalid syntax', () => {
   });
 
   test('parser: opaque component trees retain nested math ASTs', () => {
-    const tokens = tokenize({ css: 'unknown(calc(1px + 2px))' });
-    const node = parse(tokens, 0, tokens.length, indexBlocks(tokens));
+    const node = parseSource('unknown(calc(1px + 2px))');
     assert.equal(node.type, 'OpaqueCall');
     if (node.type === 'OpaqueCall') {
       assert.equal(node.components.length, 1);
@@ -130,8 +112,7 @@ describe('parser: opaque expressions and invalid syntax', () => {
 
   test('parser: opaque trees preserve raw and nested component structure', () => {
     const input = String.raw`f( /*lead*/ \66 oo\20 bar, raw([x, y], {z: q}), c\61 lc(1px + var(--x)), calc(1PX+2PX), calc(-(var(--x) + 1px)) )`;
-    const tokens = tokenize({ css: input });
-    const node = parse(tokens, 0, tokens.length, indexBlocks(tokens));
+    const node = parseSource(input);
 
     assert.deepEqual(node, {
       type: 'OpaqueCall',
@@ -170,11 +151,7 @@ describe('parser: opaque expressions and invalid syntax', () => {
   });
 
   test('parser: unclosed anchor() throws', () => {
-    const tokens = tokenize({ css: 'anchor(--foo top' });
-    assert.throws(
-      () => parse(tokens, 0, tokens.length, indexBlocks(tokens)),
-      /Unclosed anchor\(/
-    );
+    assert.throws(() => parseSource('anchor(--foo top'), /Unclosed anchor\(/);
   });
   // --- Calc-keyword folding -------------------------------------------------
   test('parser: `pi` folds to Math.PI', () => {
@@ -197,20 +174,15 @@ describe('parser: opaque expressions and invalid syntax', () => {
   });
   // --- Strict whitespace around +/- ----------------------------------------
   test('parser: `1px + 2px` is valid', () => {
-    const tokens = tokenize({ css: '1px + 2px' });
-    assert.doesNotThrow(() =>
-      parse(tokens, 0, tokens.length, indexBlocks(tokens))
-    );
+    assert.doesNotThrow(() => parseSource('1px + 2px'));
   });
   test('parser: a signed token after whitespace still fails at its position', () => {
-    const tokens = tokenize({ css: '1 +2' });
-    assert.throws(() => parse(tokens, 0, tokens.length, indexBlocks(tokens)), {
+    assert.throws(() => parseSource('1 +2'), {
       message: '"+" must be surrounded by whitespace at position 2',
     });
   });
   test('parser: a unary plus after multiplication has the canonical AST', () => {
-    const tokens = tokenize({ css: '1 * +2' });
-    assert.deepEqual(parse(tokens, 0, tokens.length, indexBlocks(tokens)), {
+    assert.deepEqual(parseSource('1 * +2'), {
       type: 'Num',
       value: 2,
     });
@@ -219,9 +191,8 @@ describe('parser: opaque expressions and invalid syntax', () => {
   // cases (no/before-only/after-only) must throw the same way.
   for (const input of ['1px+2px', '1px +2px', '1px+ 2px']) {
     test(`parser: \`${input}\` throws (asymmetric whitespace around +)`, () => {
-      const tokens = tokenize({ css: input });
       assert.throws(
-        () => parse(tokens, 0, tokens.length, indexBlocks(tokens)),
+        () => parseSource(input),
         /must be surrounded by whitespace/
       );
     });
@@ -232,13 +203,9 @@ describe('parser: opaque expressions and invalid syntax', () => {
       ['1px +2px', 4],
       ['1px+ 2px', 3],
     ]) {
-      const tokens = tokenize({ css: input });
-      assert.throws(
-        () => parse(tokens, 0, tokens.length, indexBlocks(tokens)),
-        {
-          message: `"+" must be surrounded by whitespace at position ${position}`,
-        }
-      );
+      assert.throws(() => parseSource(input), {
+        message: `"+" must be surrounded by whitespace at position ${position}`,
+      });
     }
   });
   test('parser: * / do not require whitespace (spec allows both)', () => {
@@ -275,41 +242,24 @@ describe('parser: opaque expressions and invalid syntax', () => {
   test('parser: trailing operator throws (whitespace-before-EOF fails)', () => {
     // `1 +` has space before `+` but nothing after — EOF has ws=false, so
     // the strict-whitespace check fires before the unexpected-token path.
-    const tokens = tokenize({ css: '1 +' });
     assert.throws(
-      () => parse(tokens, 0, tokens.length, indexBlocks(tokens)),
+      () => parseSource('1 +'),
       /must be surrounded by whitespace|Unexpected token/
     );
   });
   test('parser: unclosed paren expects )', () => {
-    const tokens = tokenize({ css: '(1 + 2' });
-    assert.throws(
-      () => parse(tokens, 0, tokens.length, indexBlocks(tokens)),
-      /Expected/
-    );
+    assert.throws(() => parseSource('(1 + 2'), /Expected/);
   });
   test('parser: stacked operators throw', () => {
-    const tokens = tokenize({ css: '1 * * 2' });
-    assert.throws(
-      () => parse(tokens, 0, tokens.length, indexBlocks(tokens)),
-      /Unexpected token/
-    );
+    assert.throws(() => parseSource('1 * * 2'), /Unexpected token/);
   });
   // --- expect() failures (unclosed groups) -----------------------------------
   test('parser: unclosed paren throws with expected-token message', () => {
-    const tokens = tokenize({ css: '(1 + 2' });
-    assert.throws(
-      () => parse(tokens, 0, tokens.length, indexBlocks(tokens)),
-      /Expected \)/
-    );
+    assert.throws(() => parseSource('(1 + 2'), /Expected \)/);
   });
 
   test('parser: unclosed call throws with expected-token message', () => {
-    const tokens = tokenize({ css: 'min(1, 2' });
-    assert.throws(
-      () => parse(tokens, 0, tokens.length, indexBlocks(tokens)),
-      /Expected \)/
-    );
+    assert.throws(() => parseSource('min(1, 2'), /Expected \)/);
   });
 
   test('parser: unclosed var throws with unclosed message and position', () => {
@@ -321,18 +271,10 @@ describe('parser: opaque expressions and invalid syntax', () => {
   });
   // --- Trailing tokens ------------------------------------------------------
   test('parse: rejects input with trailing tokens after a complete expression', () => {
-    const tokens = tokenize({ css: '1 2' });
-    assert.throws(
-      () => parse(tokens, 0, tokens.length, indexBlocks(tokens)),
-      /Unexpected token/
-    );
+    assert.throws(() => parseSource('1 2'), /Unexpected token/);
   });
   test('parse: empty input throws', () => {
-    const tokens = tokenize({ css: '' });
-    assert.throws(
-      () => parse(tokens, 0, tokens.length, indexBlocks(tokens)),
-      /Unexpected token/
-    );
+    assert.throws(() => parseSource(''), /Unexpected token/);
   });
 
   test('parser: punctuation helper methods match and expect punctuation tokens', () => {

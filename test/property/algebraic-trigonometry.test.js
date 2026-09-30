@@ -11,16 +11,12 @@ import { describe, test } from 'node:test';
 import fc from 'fast-check';
 import { simplify } from '../../src/lib/simplify.js';
 import { serialize } from '../../src/lib/serialize.js';
+import { numeric } from '../helpers/numeric.js';
 import { call, num } from '../../src/lib/node.js';
 
 const NUM_RUNS = 500;
 
 const out = (n) => serialize(simplify(n), { precision: 10 });
-const scalarText = (text) =>
-  text.startsWith('calc(') && text.endsWith(')')
-    ? text.slice('calc('.length, -1)
-    : text;
-const numeric = (text) => Number.parseFloat(scalarText(text));
 
 // --- trig laws (§10.4) ---------------------------------------------------
 //

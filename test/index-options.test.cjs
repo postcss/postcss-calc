@@ -1,22 +1,7 @@
 'use strict';
 
 const { describe, test } = require('node:test');
-const assert = require('node:assert/strict');
-const postcss = require('postcss');
-const reduceCalc = (opts = {}) => require('../src/index.js')(opts);
-const { testValue } = require('./helpers/testValue.js');
-
-const postcssOpts = { from: undefined };
-
-function testCss(fixture, expected, opts = {}) {
-  return async () => {
-    const result = await postcss(reduceCalc(opts)).process(
-      fixture,
-      postcssOpts
-    );
-    assert.strictEqual(result.css, expected);
-  };
-}
+const { testValue, testCss } = require('./helpers/testValue.js');
 
 describe('Discard zero values', () => {
   test(

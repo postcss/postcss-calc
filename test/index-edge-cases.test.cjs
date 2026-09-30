@@ -1,24 +1,8 @@
 'use strict';
 
 const { describe, test } = require('node:test');
-const assert = require('node:assert/strict');
-const postcss = require('postcss');
-const reduceCalc = (opts = {}) => require('../src/index.js')(opts);
-const { testValue } = require('./helpers/testValue.js');
+const { testValue, testCssDoesNotThrow } = require('./helpers/testValue.js');
 
-const postcssOpts = { from: undefined };
-
-function testCssDoesNotThrow(fixture, expected, opts = {}) {
-  return async () => {
-    const result = await postcss(reduceCalc(opts)).process(
-      fixture,
-      postcssOpts
-    );
-    assert.strictEqual(result.css, expected);
-    const warnings = result.warnings();
-    assert.strictEqual(warnings.length, 0);
-  };
-}
 describe('Throw', () => {
   test(
     'should not throw an exception when unknow function exist in calc',
