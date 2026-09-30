@@ -2,7 +2,7 @@
 // adapter overhead as well as the calculation pipeline; benchmark.js keeps
 // the parser/expression benchmark separate.
 import postcss from 'postcss';
-import plugin from '../src/index.js';
+import plugin from '../../src/index.js';
 
 const WARMUP_RUNS = 3;
 // Keep an even count; the common harness migration uses these as paired blocks.

@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
 import { calc as referenceCalc } from '@csstools/css-calc';
-import { ourOutput as canonicalizeOutput } from './lib/corpus-policy.js';
+import { ourOutput as canonicalizeOutput } from '../lib/corpus-policy.js';
 /* oxlint-disable no-bitwise */
 
 const payload = JSON.parse(

@@ -4,8 +4,8 @@ import assert from 'node:assert/strict';
 import {
   bootstrapStratifiedMaxT,
   seededRandom,
-} from '../../scripts/lib/benchmark.js';
-import { analyzeParser } from '../../scripts/lib/parser-benchmark.js';
+} from '../../scripts/benchmark/benchmark.js';
+import { analyzeParser } from '../../scripts/benchmark/parser-benchmark.js';
 import { syntheticParserArtifact } from '../helpers/benchmark-artifact.js';
 
 const FULL = process.env.POSTCSS_CALC_FULL_CALIBRATION === '1';
