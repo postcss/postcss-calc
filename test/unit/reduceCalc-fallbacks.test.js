@@ -22,6 +22,18 @@ describe('reduceCalc: nested fallbacks and prefixes', () => {
     );
   });
 
+  test('reduceCalc: reduces var() fallbacks with very many components', () => {
+    const count = 150_000;
+    /** @type {Error[]} */
+    const errors = [];
+    const output = reduceCalc(
+      `calc(var(--x, ${'calc(1px + 1px) '.repeat(count)}) + 1px)`,
+      { onParseError: (error) => errors.push(error) }
+    );
+    assert.deepEqual(errors, []);
+    assert.equal(output, `calc(1px + var(--x, ${'calc(2px) '.repeat(count)}))`);
+  });
+
   test('reduceCalc: mixed relative and convertible absolute units fold correctly regardless of order', () => {
     assert.equal(reduceCalc('calc(1em + 1px + 1in)'), 'calc(1em + 97px)');
     assert.equal(reduceCalc('calc(1px + 1em + 1in)'), 'calc(97px + 1em)');
