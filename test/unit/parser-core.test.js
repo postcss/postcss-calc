@@ -8,11 +8,11 @@ import { indexBlocks } from '../../src/lib/block-index.js';
 import { parse } from '../../src/lib/parser.js';
 import { serialize } from '../../src/lib/serialize.js';
 import { sexpr } from '../helpers/sexpr.js';
+import { parseSource } from '../helpers/parse-source.js';
 
 /** Parse input, return its S-expression. */
 const ast = (input) => {
-  const tokens = tokenize({ css: input });
-  return sexpr(parse(tokens, 0, tokens.length, indexBlocks(tokens)));
+  return sexpr(parseSource(input));
 };
 
 test('parser: accepts a bounded range of a shared native token stream', () => {
@@ -48,8 +48,7 @@ test('parser: bounded virtual EOF scans trailing trivia before reporting its pos
 });
 
 test('parser: native EOF scans trailing trivia and keeps its exact position', () => {
-  const tokens = tokenize({ css: '1 +   ' });
-  assert.throws(() => parse(tokens, 0, tokens.length, indexBlocks(tokens)), {
+  assert.throws(() => parseSource('1 +   '), {
     message: 'Unexpected token "" at position 6',
   });
 });
@@ -96,8 +95,7 @@ describe('parser: values', () => {
 
   test('parser: signed textual zero forms normalize to positive zero', () => {
     for (const source of ['-0', '-.0', '-0e10', '-0px', '-.0E-3%']) {
-      const tokens = tokenize({ css: source });
-      const leaf = parse(tokens, 0, tokens.length, indexBlocks(tokens));
+      const leaf = parseSource(source);
       assert.ok(leaf.type === 'Num' || leaf.type === 'Dim');
       assert.equal(leaf.value, 0, source);
       assert.equal(Object.is(leaf.value, -0), false, source);
@@ -140,8 +138,7 @@ describe('parser: long arithmetic chains', () => {
 
   test('parser: long additive chain has one canonical Sum', () => {
     const input = Array(termCount).fill('1').join(' + ');
-    const tokens = tokenize({ css: input });
-    const tree = parse(tokens, 0, tokens.length, indexBlocks(tokens));
+    const tree = parseSource(input);
 
     assert.equal(tree.type, 'Sum');
     assert.equal(tree.terms.length, termCount);
@@ -151,8 +148,7 @@ describe('parser: long arithmetic chains', () => {
   test('parser: long multiplicative chain has one canonical Product', () => {
     // Use 2 rather than 1: `mkProduct` correctly removes factors of one.
     const input = Array(termCount).fill('2').join(' * ');
-    const tokens = tokenize({ css: input });
-    const tree = parse(tokens, 0, tokens.length, indexBlocks(tokens));
+    const tree = parseSource(input);
 
     assert.equal(tree.type, 'Product');
     assert.equal(tree.factors.length, termCount);
@@ -229,8 +225,7 @@ describe('parser: function calls', () => {
   });
 
   test('parser: native function tokens preserve escaped opaque names', () => {
-    const tokens = tokenize({ css: String.raw`f\,n(1px)` });
-    const tree = parse(tokens, 0, tokens.length, indexBlocks(tokens));
+    const tree = parseSource(String.raw`f\,n(1px)`);
     assert.equal(serialize(tree), String.raw`f\,n(1px)`);
   });
 
@@ -240,18 +235,13 @@ describe('parser: function calls', () => {
       String.raw`var(--x\,fallback)`,
       String.raw`var(--x\ fallback)`,
     ]) {
-      const tokens = tokenize({ css: input });
-      assert.equal(
-        serialize(parse(tokens, 0, tokens.length, indexBlocks(tokens))),
-        input
-      );
+      assert.equal(serialize(parseSource(input)), input);
     }
   });
 
   test('parser: custom dimension preserves escaped unit spelling', () => {
-    const tokens = tokenize({ css: String.raw`10\foo` });
     assert.equal(
-      serialize(parse(tokens, 0, tokens.length, indexBlocks(tokens))),
+      serialize(parseSource(String.raw`10\foo`)),
       String.raw`calc(10\foo)`
     );
   });

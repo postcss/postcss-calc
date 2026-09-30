@@ -10,10 +10,9 @@ import {
   groupResults,
 } from '../../scripts/benchmark/corpus-benchmark.js';
 import {
-  CORPUS_INTERVAL_METHOD,
-  DECISION_CONFIG_VERSION,
-  PRECISION_METHOD,
-} from '../../scripts/benchmark/benchmark.js';
+  CORPUS_DECISION_CONFIG,
+  corpusCorrectness,
+} from '../helpers/benchmark-artifact.js';
 
 function artifact(ratioForReplicate) {
   const groups = ['exact', 'sum'];
@@ -66,48 +65,8 @@ function artifact(ratioForReplicate) {
 
 function strictArtifact(ratioForReplicate) {
   const value = artifact(ratioForReplicate);
-  const categories = [
-    'accepted',
-    'both-failed',
-    'known-divergence',
-    'malformed-input',
-    'parser-rejected',
-    'reference-rejected',
-    'unexpected-divergence',
-  ];
-  value.config = {
-    decisionConfigVersion: DECISION_CONFIG_VERSION,
-    requestedBlocks: 20,
-    minimumBlocks: 20,
-    maxAttempts: 20,
-    targetBatchMs: 25,
-    warmupMinimum: 0,
-    warmupMaximum: 0,
-    measuredBatchCount: 6,
-    driftThreshold: 0.15,
-    bootstrapResamples: 1_000,
-    confidence: 0.95,
-    runtimeNonRegressionMargin: 1.1,
-    equivalenceMargin: 1.1,
-    precisionMargin: 1.1,
-    precisionMethod: PRECISION_METHOD,
-    growthThreshold: 2.5,
-    orderInteractionThreshold: Math.log(1.1),
-    intervalMethod: CORPUS_INTERVAL_METHOD,
-    replicates: 20,
-    batches: 6,
-    calibrationOrderBalanced: true,
-  };
-  value.correctness = {
-    accepted: 2,
-    counts: Object.fromEntries(
-      categories.map((category) => [category, category === 'accepted' ? 2 : 0])
-    ),
-    categoryHashes: Object.fromEntries(
-      categories.map((category) => [category, category])
-    ),
-    inputHash: 'inputs',
-  };
+  value.config = CORPUS_DECISION_CONFIG;
+  value.correctness = corpusCorrectness();
   value.corpus = { lengthStrata: {}, rootShapeCounts: { sum: 2 } };
   delete value.analysis;
   return value;

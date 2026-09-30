@@ -10,23 +10,20 @@
 // random gen to roll them.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { tokenize } from '@csstools/css-tokenizer';
-import { indexBlocks } from '../../src/lib/block-index.js';
-import { parse } from '../../src/lib/parser.js';
-import { simplify } from '../../src/lib/simplify.js';
-import { serialize } from '../../src/lib/serialize.js';
-const out = (s) => {
-  const tokens = tokenize({ css: s });
-  return serialize(
-    simplify(parse(tokens, 0, tokens.length, indexBlocks(tokens))),
-    { precision: 10 }
-  );
-};
-const scalarText = (text) =>
-  text.startsWith('calc(') && text.endsWith(')')
-    ? text.slice('calc('.length, -1)
-    : text;
-const numeric = (text) => Number.parseFloat(scalarText(text));
+import { out as pipeline } from '../helpers/out.js';
+import { numeric } from '../helpers/numeric.js';
+const out = (s) => pipeline(s, { precision: 10 });
+// NaN must match NaN; otherwise allow tiny FP drift between algorithm shapes.
+function assertAgrees(expected, got) {
+  if (Number.isNaN(expected)) {
+    assert.ok(Number.isNaN(got), `expected NaN, got ${got}`);
+  } else {
+    assert.ok(
+      Math.abs(expected - got) < 1e-9,
+      `naive=${expected}, prod=${got}`
+    );
+  }
+}
 // --- Naive reference impls ----------------------------------------------
 //
 // These use a *different* algorithmic shape from `simplify.ts`:
@@ -134,15 +131,7 @@ for (const row of rows) {
       const expected = naiveRound(strategy, row.a, row.b);
       const got = numeric(out(`round(${strategy}, ${row.a}, ${row.b})`));
       // NaN === NaN check via Object.is.
-      if (Number.isNaN(expected)) {
-        assert.ok(Number.isNaN(got), `expected NaN, got ${got}`);
-      } else {
-        // Allow tiny FP drift between algorithm shapes.
-        assert.ok(
-          Math.abs(expected - got) < 1e-9,
-          `naive=${expected}, prod=${got}`
-        );
-      }
+      assertAgrees(expected, got);
     });
   }
 }
@@ -153,26 +142,12 @@ for (const row of rows) {
   test(`oracle: mod(${row.a}, ${row.b}) [${row.desc}]`, () => {
     const expected = naiveMod(row.a, row.b);
     const got = numeric(out(`mod(${row.a}, ${row.b})`));
-    if (Number.isNaN(expected)) {
-      assert.ok(Number.isNaN(got), `expected NaN, got ${got}`);
-    } else {
-      assert.ok(
-        Math.abs(expected - got) < 1e-9,
-        `naive=${expected}, prod=${got}`
-      );
-    }
+    assertAgrees(expected, got);
   });
   test(`oracle: rem(${row.a}, ${row.b}) [${row.desc}]`, () => {
     const expected = naiveRem(row.a, row.b);
     const got = numeric(out(`rem(${row.a}, ${row.b})`));
-    if (Number.isNaN(expected)) {
-      assert.ok(Number.isNaN(got), `expected NaN, got ${got}`);
-    } else {
-      assert.ok(
-        Math.abs(expected - got) < 1e-9,
-        `naive=${expected}, prod=${got}`
-      );
-    }
+    assertAgrees(expected, got);
   });
 }
 // --- abs / sign — small but covers signed zero -------------------------
