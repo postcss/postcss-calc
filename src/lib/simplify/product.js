@@ -50,6 +50,34 @@ function isScalarSum(opaque) {
 }
 
 /**
+ * Whether a folded quotient prints exactly. A quotient distributed over a
+ * scalar Sum is judged term by term, so `(3px + 6em) / 3` still folds.
+ * @param {number} value
+ * @param {ProductFactor[]} opaque
+ * @param {boolean} distributable
+ * @param {number | false} precision
+ * @return {boolean}
+ */
+function foldsExactly(value, opaque, distributable, precision) {
+  if (!Number.isFinite(value) || isExact(value, precision)) {
+    return true;
+  }
+  if (!distributable) {
+    return false;
+  }
+  const sum = /** @type {import('../node.js').Sum} */ (opaque[0].node);
+  return sum.terms.every((t) =>
+    isExact(
+      value *
+        /** @type {import('../node.js').Num | import('../node.js').Dim} */ (
+          t.node
+        ).value,
+      precision
+    )
+  );
+}
+
+/**
  * Emit an inexact quotient as `numerator * dims * opaque / denominator`, with
  * integer parts reduced by their gcd. A lone Dim absorbs the numerator.
  * @param {number} numerator
@@ -166,8 +194,9 @@ function foldFactors(items, start, end, simplify, precision) {
   // unreduced — consumers don't rely on it and the spec doesn't require it.
   const cancelled = tryCancelPair(dims, precision);
   if (cancelled !== null) {
-    coeff *= cancelled.factor;
-    numerator *= cancelled.factor;
+    coeff *= cancelled.numerator / cancelled.denominator;
+    numerator *= cancelled.numerator;
+    denominator *= cancelled.denominator;
   }
   const divides = denominator !== 1 || cancelled !== null;
   const remainingDims = cancelled ? cancelled.remaining : dims;
@@ -178,10 +207,11 @@ function foldFactors(items, start, end, simplify, precision) {
       ? remainingDims[0]
       : null;
   const value = loneDim === null ? coeff : chainValue(scalarChain);
+  const distributable = remainingDims.length === 0 && isScalarSum(opaque);
 
   // An inexact quotient stays symbolic when its numerator and denominator
   // print exactly; otherwise it is folded and rounded at serialization.
-  if (divides && Number.isFinite(value) && !isExact(value, precision)) {
+  if (divides && !foldsExactly(value, opaque, distributable, precision)) {
     const rational = rationalProduct(
       numerator,
       denominator,
@@ -198,7 +228,7 @@ function foldFactors(items, start, end, simplify, precision) {
   // §10.10 distributive multiplication: `0.5 * (100vw - 10px)` → `50vw - 5px`.
   // Only distribute when every Sum term is Num/Dim — partial distribution
   // over opaque terms matches neither the legacy implementation nor csstools.
-  if (remainingDims.length === 0 && isScalarSum(opaque)) {
+  if (distributable) {
     const sum = /** @type {import('../node.js').Sum} */ (opaque[0].node);
     const distributed = sum.terms.map((t) => ({
       sign: t.sign,

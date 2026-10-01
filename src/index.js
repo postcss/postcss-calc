@@ -65,12 +65,13 @@ function applyTransform(
 function pluginCreator(opts) {
   /** @type {ResolvedOptions} */
   const options = {
-    precision: 5,
     warnWhenCannotResolve: false,
     mediaQueries: false,
     selectors: false,
     unwrapSingleValue: false,
     ...opts,
+    // An explicit `precision: undefined` keeps the default.
+    precision: opts?.precision ?? 5,
   };
 
   return {

@@ -106,3 +106,10 @@ test(
     'calc(var(--xxx, var(--yyy)) / 2)'
   )
 );
+
+test(
+  'should keep the default precision when precision is undefined',
+  testCss('a{width:calc(100% / 3)}', 'a{width:calc(100% / 3)}', {
+    precision: undefined,
+  })
+);
