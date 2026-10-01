@@ -252,3 +252,11 @@ export function astToCalc(ast) {
   const inner = serialize(ast, { precision: false });
   return inner.startsWith('calc(') ? inner : `calc(${inner})`;
 }
+
+// Finite numeric leaf [-1000, 1000] (including 0) — domain for algebraic laws.
+export const finiteNum = fc
+  .integer({ min: -1000, max: 1000 })
+  .map((v) => num(v));
+
+// Strictly positive numeric leaf [1, 1000] — domain for divisors, moduli, and steps.
+export const positiveNum = fc.integer({ min: 1, max: 1000 }).map((v) => num(v));

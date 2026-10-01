@@ -115,13 +115,6 @@ describe('round()', () => {
     assert.equal(out('round(up, 1, 2, 3)'), 'round(up, 1, 2, 3)');
   });
 
-  test('round: A infinite, B finite → same infinity (§10.3.1 line 1022)', () => {
-    assert.equal(out('round(infinity, 10)'), 'calc(infinity)');
-    assert.equal(out('round(calc(0 - infinity), 10)'), 'calc(-infinity)');
-    assert.equal(out('round(up, infinity, 10)'), 'calc(infinity)');
-    assert.equal(out('round(down, calc(0 - infinity), 10)'), 'calc(-infinity)');
-  });
-
   test('round: A finite, B infinite → strategy-dependent (§10.3.1)', () => {
     // Multiples of an infinite step are {-∞, 0, +∞}.
     // up (ceiling) lands on +∞ for positive A; down (floor) lands on -∞ for

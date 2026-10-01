@@ -1,6 +1,6 @@
 import { describe, test } from 'node:test';
 import assert from 'node:assert/strict';
-import { serialize as serializeSource } from '../../src/lib/serialize.js';
+import { serialize } from '../../src/lib/serialize.js';
 import {
   num,
   dim,
@@ -10,8 +10,6 @@ import {
   mkSum,
   mkProduct,
 } from '../../src/lib/node.js';
-
-const serialize = (node, opts = {}) => serializeSource(node, opts);
 
 describe('serialize: core syntax and expressions', () => {
   test('serialize: single number uses standard calculation syntax', () => {

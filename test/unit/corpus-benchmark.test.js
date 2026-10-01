@@ -12,41 +12,12 @@ import {
 import {
   CORPUS_DECISION_CONFIG,
   corpusCorrectness,
+  syntheticCorpusArtifact,
 } from '../helpers/benchmark-artifact.js';
 
 function artifact(ratioForReplicate) {
-  const groups = ['exact', 'sum'];
-  const replicates = Array.from({ length: 20 }, (_, replicate) => ({
-    replicate,
-    calibrationOrder: replicate < 10 ? 'ours-first' : 'reference-first',
-    permutation: [0, 1],
-    batches: Array.from({ length: 6 }, (unusedBatch, batch) => ({
-      order: batch < 3 ? 'ours-first' : 'reference-first',
-      measurements: groups.map((group) => {
-        const ratio = ratioForReplicate(replicate);
-        return {
-          group,
-          repetitions: 1,
-          calibrationOrder: replicate < 10 ? 'ours-first' : 'reference-first',
-          calibrationSamplesMs: [{ oursMs: ratio, referenceMs: 1 }],
-          ours: {
-            ms: ratio,
-            elapsedMs: ratio,
-            checksum: group === 'exact' ? 1 : 2,
-          },
-          reference: {
-            ms: 1,
-            elapsedMs: 1,
-            checksum: group === 'exact' ? 1 : 2,
-          },
-        };
-      }),
-    })),
-  }));
-  return {
-    schema: 2,
-    benchmark: 'corpus',
-    seed: 123,
+  return syntheticCorpusArtifact({
+    ratioForReplicate,
     config: {
       requestedBlocks: 20,
       minimumBlocks: 20,
@@ -59,8 +30,7 @@ function artifact(ratioForReplicate) {
       rootShapeCounts: { sum: 2 },
     },
     correctness: { accepted: 2 },
-    replicates,
-  };
+  });
 }
 
 function strictArtifact(ratioForReplicate) {

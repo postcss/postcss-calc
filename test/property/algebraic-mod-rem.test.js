@@ -9,19 +9,10 @@
 // non-degenerate values.
 import { describe, test } from 'node:test';
 import fc from 'fast-check';
-import { simplify } from '../../src/lib/simplify.js';
-import { serialize } from '../../src/lib/serialize.js';
-import { numeric } from '../helpers/numeric.js';
 import { call, num, ident } from '../../src/lib/node.js';
-
-const NUM_RUNS = 500;
-
-const out = (n) => serialize(simplify(n), { precision: 10 });
-
-// Finite, non-zero numeric leaf — domain for most laws.
-const finiteNum = fc.integer({ min: -1000, max: 1000 }).map(num);
-
-const positiveNum = fc.integer({ min: 1, max: 1000 }).map(num);
+import { numeric } from '../helpers/numeric.js';
+import { NUM_RUNS, outAst as out } from '../helpers/laws.js';
+import { finiteNum, positiveNum } from '../helpers/arbitraries.js';
 
 // --- mod / rem laws ------------------------------------------------------
 test('law: mod range — 0 ≤ mod(x, B) < B (for B > 0, finite x)', () => {

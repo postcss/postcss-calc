@@ -7,13 +7,8 @@ import { tokenize } from '@csstools/css-tokenizer';
 import { indexBlocks } from '../../src/lib/block-index.js';
 import { parse } from '../../src/lib/parser.js';
 import { serialize } from '../../src/lib/serialize.js';
-import { sexpr } from '../helpers/sexpr.js';
-import { parseSource } from '../helpers/parse-source.js';
+import { parseSource, parseSexpr as ast } from '../helpers/parse-source.js';
 
-/** Parse input, return its S-expression. */
-const ast = (input) => {
-  return sexpr(parseSource(input));
-};
 // --- Opaque non-math functions -------------------------------------------
 //
 // Non-math functions use CSS component-value syntax rather than the math
