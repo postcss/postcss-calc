@@ -96,7 +96,7 @@ describe('Reduce', () => {
 
   test(
     'should reduce multiplication',
-    // constant fold `2*2 → 4`; coefficient first.
+    // constant fold `2*2 → 4`; the grouped sum stays a single factor.
     testValue('calc(((var(--a) + 4px) * 2) * 2)', 'calc(4 * (4px + var(--a)))')
   );
 
@@ -111,7 +111,7 @@ describe('Reduce', () => {
 
   test(
     'should reduce division',
-    // constant fold `1/2/2 → .25` + reciprocal; coefficient first.
+    // constant fold `1/2/2 → .25`; the grouped sum stays a single factor.
     testValue(
       'calc(((var(--a) + 4px) / 2) / 2)',
       'calc(.25 * (4px + var(--a)))'

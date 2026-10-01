@@ -1,4 +1,4 @@
-import { mkSum, mkProduct, num, dim } from '../node.js';
+import { mkSum, mkProduct, mkGroup, num, dim } from '../node.js';
 import { tryCancelPair } from './cancel.js';
 import { isExact } from './exact.js';
 
@@ -112,13 +112,15 @@ function rationalProduct(
 }
 
 /**
- * @param {Product} product
+ * Fold a run of factors that contains no substitution barrier.
+ * @param {ProductFactor[]} items Simplified factors, flattened by the caller.
+ * @param {number} start
+ * @param {number} end
  * @param {SimplifyFn} simplify
- * @param {number | false} [precision] A quotient that is not exact at this
- *   precision stays symbolic (`100% / 3`) instead of being rounded.
+ * @param {number | false} precision
  * @return {Node}
  */
-function simplifyProduct(product, simplify, precision = false) {
+function foldFactors(items, start, end, simplify, precision) {
   let coeff = 1;
   // Num factors by exponent, so an inexact quotient can be re-emitted as a
   // reduced `numerator / denominator`.
@@ -137,22 +139,6 @@ function simplifyProduct(product, simplify, precision = false) {
    * @return {void}
    */
   function processFactor(exponent, n) {
-    if (n.type === 'Product') {
-      for (const inner of n.factors) {
-        processFactor(
-          /** @type {1 | -1} */ (exponent * inner.exponent),
-          inner.node
-        );
-      }
-      return;
-    }
-    // Canonical negation form (see node.js's `negate`); flatten through it
-    // like a nested Product so cancellation below can see what's inside.
-    if (n.type === 'Sum' && n.terms.length === 1) {
-      processFactor(exponent, num(-1));
-      processFactor(exponent, n.terms[0].node);
-      return;
-    }
     if (n.type === 'Num') {
       if (exponent === 1) {
         coeff *= n.value;
@@ -172,8 +158,8 @@ function simplifyProduct(product, simplify, precision = false) {
     opaque.push({ exponent, node: n });
   }
 
-  for (const f of product.factors) {
-    processFactor(f.exponent, simplify(f.node));
+  for (let i = start; i < end; i++) {
+    processFactor(items[i].exponent, items[i].node);
   }
 
   // §10.2 typed division. Higher-power cancellation (`px^2 / px`) is left
@@ -248,6 +234,90 @@ function simplifyProduct(product, simplify, precision = false) {
   factors.push(...opaque);
 
   return mkProduct(factors);
+}
+
+/**
+ * A substitution function (`var()`, `env()`, `attr()`, ...) is replaced by
+ * tokens, not by a value, so factors cannot move or cancel across it. Any
+ * function the parser does not recognise (`anchor()`, `foo()`, ...) is also an
+ * OpaqueCall and is treated the same, conservatively. A grouped Product is a
+ * parenthesized substitution and is equally opaque.
+ * @param {Node} node
+ * @return {boolean}
+ */
+function isBarrier(node) {
+  return (
+    node.type === 'OpaqueCall' ||
+    (node.type === 'Product' && node.grouped === true)
+  );
+}
+
+/**
+ * Flatten a simplified factor through nested ungrouped Products and the
+ * canonical negation form, so barriers are visible at the top level.
+ * @param {ProductFactor[]} out
+ * @param {1 | -1} exponent
+ * @param {Node} node
+ * @return {boolean} Whether a barrier was pushed.
+ */
+function flattenFactor(out, exponent, node) {
+  if (node.type === 'Product' && !node.grouped) {
+    let barrier = false;
+    for (const inner of node.factors) {
+      if (
+        flattenFactor(
+          out,
+          /** @type {1 | -1} */ (exponent * inner.exponent),
+          inner.node
+        )
+      )
+        barrier = true;
+    }
+    return barrier;
+  }
+  if (node.type === 'Sum' && node.terms.length === 1) {
+    out.push({ exponent, node: num(-1) });
+    return flattenFactor(out, exponent, node.terms[0].node);
+  }
+  out.push({ exponent, node });
+  return isBarrier(node);
+}
+
+/**
+ * @param {Product} product
+ * @param {SimplifyFn} simplify
+ * @param {number | false} [precision] A quotient that is not exact at this
+ *   precision stays symbolic (`100% / 3`) instead of being rounded.
+ * @return {Node}
+ */
+function simplifyProduct(product, simplify, precision = false) {
+  /** @type {ProductFactor[]} */
+  const items = [];
+  let hasBarrier = false;
+  for (const f of product.factors) {
+    if (flattenFactor(items, f.exponent, simplify(f.node))) hasBarrier = true;
+  }
+  if (!hasBarrier)
+    return foldFactors(items, 0, items.length, simplify, precision);
+
+  // Fold each run between barriers on its own; never move or cancel a factor
+  // across a barrier, and keep each barrier's own operator.
+  /** @type {ProductFactor[]} */
+  const factors = [];
+  let start = 0;
+  for (let i = 0; i <= items.length; i++) {
+    if (i < items.length && !isBarrier(items[i].node)) continue;
+    if (i - start === 1) factors.push(items[start]);
+    else if (i - start > 1)
+      factors.push({
+        exponent: 1,
+        node: foldFactors(items, start, i, simplify, precision),
+      });
+    if (i < items.length) factors.push(items[i]);
+    start = i + 1;
+  }
+  const result = mkProduct(factors);
+  return product.grouped === true ? mkGroup(result) : result;
 }
 
 export { simplifyProduct };

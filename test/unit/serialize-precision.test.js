@@ -239,7 +239,7 @@ describe('serialize: precision and rounding', () => {
       assert.equal(serialize(ast), 'calc(0 + var(--x))');
       assert.equal(
         serialize(ast, { precision: false }),
-        'calc(-1 * (1e-20 - var(--x)))'
+        'calc(-1e-20 + var(--x))'
       );
     });
 
@@ -253,7 +253,7 @@ describe('serialize: precision and rounding', () => {
           { sign: 1, node: opaqueCall('var', [ident('--x')]) },
         ],
       };
-      assert.equal(serialize(ast), 'calc(-1 * (10px + 0em - var(--x)))');
+      assert.equal(serialize(ast), 'calc(-10px + 0em + var(--x))');
     });
 
     test('negated grouped sum with non-leading sub-precision positive term serializes with positive sign', () => {
@@ -266,7 +266,7 @@ describe('serialize: precision and rounding', () => {
           { sign: 1, node: opaqueCall('var', [ident('--x')]) },
         ],
       };
-      assert.equal(serialize(ast), 'calc(-1 * (10px + 0em - var(--x)))');
+      assert.equal(serialize(ast), 'calc(-10px + 0em + var(--x))');
     });
   });
 });

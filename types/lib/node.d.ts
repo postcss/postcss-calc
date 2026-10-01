@@ -42,6 +42,7 @@ export type ProductFactor = {
 export type Product = {
     type: 'Product';
     factors: ProductFactor[];
+    grouped?: boolean;
 };
 export type Node = Num | Dim | Ident | Call | OpaqueCall | Sum | Product;
 /**
@@ -54,7 +55,7 @@ export type Node = Num | Dim | Ident | Call | OpaqueCall | Sum | Product;
  * @typedef {{sign: 1 | -1, node: Node}} SumTerm Sign is always +1 when node is Num or Dim.
  * @typedef {{type: 'Sum', terms: SumTerm[], grouped?: boolean}} Sum
  * @typedef {{exponent: 1 | -1, node: Node}} ProductFactor exponent +1 = numerator, -1 = denominator.
- * @typedef {{type: 'Product', factors: ProductFactor[]}} Product
+ * @typedef {{type: 'Product', factors: ProductFactor[], grouped?: boolean}} Product
  * @typedef {Num | Dim | Ident | Call | OpaqueCall | Sum | Product} Node
  */
 /**
@@ -100,9 +101,23 @@ declare function mkSum(rawTerms: SumTerm[]): Node;
  */
 declare function mkProduct(rawFactors: ProductFactor[]): Node;
 /**
+ * Mark a node as a source parenthesized group. A Sum or Product keeps its
+ * structure; any other node becomes a single-factor grouped Product.
+ * @param {Node} node
+ * @return {Node}
+ */
+declare function mkGroup(node: Node): Node;
+/**
+ * Group a parenthesized expression when its tokens must stay bound: a sum, or
+ * a product around a substitution function.
+ * @param {Node} node
+ * @return {Node}
+ */
+declare function groupSubstitution(node: Node): Node;
+/**
  * Negate any node, preserving canonical form.
  * @param {Node} node
  * @return {Node}
  */
 declare function negate(node: Node): Node;
-export { num, dim, ident, call, opaqueCall, mkSum, mkProduct, negate };
+export { num, dim, ident, call, opaqueCall, mkSum, mkProduct, mkGroup, groupSubstitution, negate, };

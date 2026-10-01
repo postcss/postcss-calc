@@ -24,12 +24,12 @@ describe('Exact-by-default division', () => {
     ['calc(10px / -3)', 'calc(-10px / 3)'],
     ['calc(1px / 1in)', 'calc(1px / 1in)'],
     ['calc(1in / 1px)', 'calc(96)'],
-    ['calc(var(--n) / 4)', 'calc(.25 * var(--n))'],
+    ['calc(var(--n) / 4)', 'calc(var(--n) / 4)'],
     ['calc(2 * var(--n) / 3)', 'calc(2 * var(--n) / 3)'],
     // Quotients whose parts would be rounded on output are folded instead.
     ['calc(1em * 105 / 64)', 'calc(105em / 64)'],
     ['calc(1rem * 2.828427125 / 2)', 'calc(1.41421rem)'],
-    ['calc(cos(220deg) * var(--rad) / 2)', 'calc(-.38302 * var(--rad))'],
+    ['calc(cos(220deg) * var(--rad) / 2)', 'calc(-.76604 * var(--rad) / 2)'],
     ['calc(100rem * 1.9999999999999993 / 1024.0)', 'calc(25rem / 128)'],
   ];
   for (const [input, expected] of rows) {

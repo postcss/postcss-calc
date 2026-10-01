@@ -31,8 +31,8 @@ test('converts nested vars', () => {
   );
 });
 
-test('handles negative values at the end', () => {
-  assert.equal(out('calc(var(--my-var) * -1)'), 'calc(-1 * var(--my-var))');
+test('keeps negative values at the end after a substitution', () => {
+  assert.equal(out('calc(var(--my-var) * -1)'), 'calc(var(--my-var) * -1)');
 });
 
 describe('reported bug regressions', () => {

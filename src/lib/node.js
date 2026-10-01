@@ -8,7 +8,11 @@
 //   - No ungrouped Sum directly contains another Sum (flattened on
 //     construction). A grouped Sum is retained so a later negative sign
 //     cannot be distributed across opaque terms.
-//   - No Product directly contains another Product (flattened).
+//   - No Product directly contains another ungrouped Product (flattened). A
+//     grouped Product is retained: it is a parenthesized group around a
+//     substitution function (`var()`, `env()`, ...), whose tokens must not
+//     merge with the surrounding factors. A grouped Product may hold a single
+//     factor.
 //   - A Sum/Product with one positive element collapses to that element.
 //   - A Sum/Product with no elements collapses to Num(0) / Num(1).
 //   - Positive zero-valued Nums are dropped from all-number sums. They are
@@ -28,7 +32,7 @@
  * @typedef {{sign: 1 | -1, node: Node}} SumTerm Sign is always +1 when node is Num or Dim.
  * @typedef {{type: 'Sum', terms: SumTerm[], grouped?: boolean}} Sum
  * @typedef {{exponent: 1 | -1, node: Node}} ProductFactor exponent +1 = numerator, -1 = denominator.
- * @typedef {{type: 'Product', factors: ProductFactor[]}} Product
+ * @typedef {{type: 'Product', factors: ProductFactor[], grouped?: boolean}} Product
  * @typedef {Num | Dim | Ident | Call | OpaqueCall | Sum | Product} Node
  */
 
@@ -185,7 +189,7 @@ function mkProduct(rawFactors) {
  */
 function pushProductFactor(out, f) {
   const n = f.node;
-  if (n.type === 'Product') {
+  if (n.type === 'Product' && !n.grouped) {
     for (const inner of n.factors) {
       out.push({
         exponent: /** @type {1 | -1} */ (f.exponent * inner.exponent),
@@ -199,6 +203,48 @@ function pushProductFactor(out, f) {
     return;
   }
   out.push(f);
+}
+
+/**
+ * Mark a node as a source parenthesized group. A Sum or Product keeps its
+ * structure; any other node becomes a single-factor grouped Product.
+ * @param {Node} node
+ * @return {Node}
+ */
+function mkGroup(node) {
+  if (node.type === 'Sum' || node.type === 'Product') {
+    return { ...node, grouped: true };
+  }
+  return {
+    type: 'Product',
+    factors: [{ exponent: 1, node }],
+    grouped: true,
+  };
+}
+
+/**
+ * Whether a node is a substitution function call (`var()`, `env()`, ...), or
+ * an ungrouped Product that directly contains one. Nested groups are not
+ * inspected: they already bound their own tokens.
+ * @param {Node} node
+ * @return {boolean}
+ */
+function isSubstitutionNode(node) {
+  if (node.type === 'OpaqueCall') return true;
+  if (node.type === 'Product' && !node.grouped) {
+    return node.factors.some((factor) => isSubstitutionNode(factor.node));
+  }
+  return false;
+}
+
+/**
+ * Group a parenthesized expression when its tokens must stay bound: a sum, or
+ * a product around a substitution function.
+ * @param {Node} node
+ * @return {Node}
+ */
+function groupSubstitution(node) {
+  return node.type === 'Sum' || isSubstitutionNode(node) ? mkGroup(node) : node;
 }
 
 /**
@@ -233,4 +279,15 @@ function negate(node) {
   return mkSum([{ sign: -1, node }]);
 }
 
-export { num, dim, ident, call, opaqueCall, mkSum, mkProduct, negate };
+export {
+  num,
+  dim,
+  ident,
+  call,
+  opaqueCall,
+  mkSum,
+  mkProduct,
+  mkGroup,
+  groupSubstitution,
+  negate,
+};

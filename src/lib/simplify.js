@@ -6,7 +6,8 @@ import { simplifySum } from './simplify/sum.js';
 import { simplifyProduct } from './simplify/product.js';
 import { simplifyCall } from './simplify/call.js';
 import { simplifyComponents } from './opaque.js';
-import { opaqueCall } from './node.js';
+import { groupSubstitution, opaqueCall } from './node.js';
+import { isCalculationFunction } from './functions.js';
 import { assertDepth } from './limits.js';
 
 /**
@@ -16,6 +17,20 @@ import { assertDepth } from './limits.js';
  * leaf fold modules avoid circular imports of the entry function.
  * @typedef {(node: Node) => Node} SimplifyFn
  */
+
+/**
+ * A nested calc() is a parenthesized group: with unresolved tokens inside,
+ * its operands must not merge into the surrounding sum or product.
+ * @param {Node} value
+ * @param {(value: Node) => Node} child
+ * @return {Node}
+ */
+function operand(value, child) {
+  const result = child(value);
+  return value.type === 'Call' && isCalculationFunction(value.name)
+    ? groupSubstitution(result)
+    : result;
+}
 
 /**
  * Simplify is an independent, composable AST transformation. It may
@@ -44,9 +59,9 @@ function simplify(node, precision = false, depth = 0) {
         node.rawName
       );
     case 'Sum':
-      return simplifySum(node, child, precision);
+      return simplifySum(node, (value) => operand(value, child), precision);
     case 'Product':
-      return simplifyProduct(node, child, precision);
+      return simplifyProduct(node, (value) => operand(value, child), precision);
   }
 }
 

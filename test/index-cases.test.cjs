@@ -10,10 +10,10 @@ const {
 describe('CSS custom properties', () => {
   test(
     'should ignore calc with css variables (1)',
-    // spec-style spaces; canonical order puts the dim first.
+    // spec-style spaces; operand order is preserved around var().
     testValue(
       'calc(var(--mouseX) * 1px)',
-      /* 'calc(var(--mouseX)*1px)' */ 'calc(1px * var(--mouseX))'
+      /* 'calc(var(--mouseX)*1px)' */ 'calc(var(--mouseX) * 1px)'
     )
   );
 
@@ -22,7 +22,7 @@ describe('CSS custom properties', () => {
     // spec-style spaces around `*`.
     testValue(
       'calc(10px - (100px * var(--mouseX)))',
-      /* 'calc(10px - 100px*var(--mouseX))' */ 'calc(10px - 100px * var(--mouseX))'
+      /* 'calc(10px - 100px*var(--mouseX))' */ 'calc(10px - (100px * var(--mouseX)))'
     )
   );
 
@@ -39,7 +39,7 @@ describe('CSS custom properties', () => {
     // spec-style spaces around `/`.
     testValue(
       'calc(10px - (100px / var(--mouseX)))',
-      /* 'calc(10px - 100px/var(--mouseX))' */ 'calc(10px - 100px / var(--mouseX))'
+      /* 'calc(10px - 100px/var(--mouseX))' */ 'calc(10px - (100px / var(--mouseX)))'
     )
   );
 
@@ -53,19 +53,19 @@ describe('CSS custom properties', () => {
 
   test(
     'should ignore calc with css variables (6)',
-    // `/2` → `* .5` (reciprocal); coefficient first.
+    // division by a number is kept as written.
     testValue(
       'calc(var(--popupHeight) / 2)',
-      /* 'calc(var(--popupHeight)/2)' */ 'calc(.5 * var(--popupHeight))'
+      /* 'calc(var(--popupHeight)/2)' */ 'calc(var(--popupHeight) / 2)'
     )
   );
 
   test(
     'should ignore calc with css variables (7)',
-    // `/2` → `* .5` on both terms; coefficient first.
+    // division by a number is kept as written on both terms.
     testValue(
       'calc(var(--popupHeight) / 2 + var(--popupWidth) / 2)',
-      'calc(.5 * var(--popupHeight) + .5 * var(--popupWidth))'
+      'calc(var(--popupHeight) / 2 + var(--popupWidth) / 2)'
     )
   );
 
@@ -137,7 +137,7 @@ describe('Skip special functions', () => {
     'should skip attr function',
     testCssDoesNotThrow(
       'foo { width: calc(attr(size ch) * 1.1); }',
-      'foo { width: calc(1.1 * attr(size ch)); }'
+      'foo { width: calc(attr(size ch) * 1.1); }'
     )
   );
 });

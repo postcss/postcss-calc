@@ -43,7 +43,7 @@ describe('Nested calc functions', () => {
     'should handle nested calc function (#4)',
     testValue(
       'calc(var(--foo) - calc(var(--bar) - var(--baz)))',
-      'calc(var(--foo) - var(--bar) + var(--baz))'
+      'calc(var(--foo) - (var(--bar) - var(--baz)))'
     )
   );
 
@@ -75,7 +75,7 @@ describe('Nested calc functions', () => {
     'should handle nested calc function (#8)',
     testValue(
       'calc(var(--foo) - calc(var(--bar) + var(--baz)))',
-      'calc(var(--foo) - var(--bar) - var(--baz))'
+      'calc(var(--foo) - (var(--bar) + var(--baz)))'
     )
   );
 
