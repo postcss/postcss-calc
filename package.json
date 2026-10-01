@@ -33,8 +33,8 @@
   "scripts": {
     "lint": "oxlint . && tsc && oxfmt --check",
     "fmt": "oxfmt",
-    "benchmark:arithmetic-chains": "node scripts/benchmark/benchmark-arithmetic-chains.js",
-    "benchmark:nested-fallbacks": "node scripts/benchmark/benchmark-nested-fallbacks.js",
+    "benchmark:arithmetic-chains": "node scripts/benchmark/benchmark-parser.js arithmetic-chains",
+    "benchmark:nested-fallbacks": "node scripts/benchmark/benchmark-parser.js nested-fallbacks",
     "benchmark:corpus": "node scripts/benchmark/benchmark-corpus.js",
     "benchmark:serialization": "node scripts/benchmark/benchmark-serialization.js",
     "test:benchmark": "node --test 'test/unit/benchmark-*.test.js' test/unit/compare-parser-benchmarks.test.js test/unit/corpus-benchmark.test.js",

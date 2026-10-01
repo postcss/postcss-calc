@@ -104,74 +104,15 @@ export function validateCorpusArtifact(artifact) {
             `corpus replicate ${index} batch ${batchIndex} has invalid groups`
           );
         seenGroups.add(measurement.group);
-        if (
-          !Number.isInteger(measurement.repetitions) ||
-          measurement.repetitions <= 0
-        )
-          throw new TypeError(
-            `corpus replicate ${index} has invalid repetitions`
-          );
-        const replicateGroup = `${replicate.replicate}:${measurement.group}`;
-        const previousRepetitions = repetitionsByGroup.get(replicateGroup);
-        if (
-          previousRepetitions !== undefined &&
-          previousRepetitions !== measurement.repetitions
-        )
-          throw new TypeError(
-            `corpus group ${measurement.group} has inconsistent repetitions`
-          );
-        repetitionsByGroup.set(replicateGroup, measurement.repetitions);
-        if (
-          !Array.isArray(measurement.calibrationSamplesMs) ||
-          measurement.calibrationSamplesMs.length === 0
-        )
-          throw new TypeError(
-            `corpus replicate ${index} has invalid calibration samples`
-          );
-        for (const sample of measurement.calibrationSamplesMs) {
-          if (
-            !sample ||
-            !positiveFinite(sample.oursMs) ||
-            !positiveFinite(sample.referenceMs)
-          )
-            throw new TypeError(
-              `corpus replicate ${index} has invalid calibration timings`
-            );
-        }
-        if (
-          config.calibrationOrderBalanced === true &&
-          measurement.calibrationOrder !== replicate.calibrationOrder
-        )
-          throw new TypeError(
-            `corpus replicate ${index} has an inconsistent calibration order`
-          );
-        for (const implementation of ['ours', 'reference']) {
-          const result = measurement[implementation];
-          if (
-            !result ||
-            !positiveFinite(result.ms) ||
-            !positiveFinite(result.elapsedMs) ||
-            !Number.isInteger(result.checksum) ||
-            result.checksum < 0
-          )
-            throw new TypeError(
-              `corpus replicate ${index} has nonpositive timings`
-            );
-          const checksumKey = `${replicate.replicate}:${measurement.group}:${implementation}`;
-          const previousChecksum = checksumsByGroup.get(checksumKey);
-          if (
-            previousChecksum !== undefined &&
-            previousChecksum !== result.checksum
-          )
-            throw new TypeError(
-              `corpus group ${measurement.group} has inconsistent checksums`
-            );
-          checksumsByGroup.set(checksumKey, result.checksum);
-          const allChecksums =
-            allChecksumsByGroup.get(measurement.group) ?? new Set();
-          allChecksums.add(result.checksum);
-          allChecksumsByGroup.set(measurement.group, allChecksums);
-        }
+        validateCorpusMeasurement(
+          measurement,
+          replicate,
+          index,
+          config,
+          repetitionsByGroup,
+          checksumsByGroup,
+          allChecksumsByGroup
+        );
       }
       if (seenGroups.size !== expectedGroups.length)
         throw new TypeError(
@@ -251,4 +192,76 @@ function isPermutation(values, length) {
     ) &&
     new Set(values).size === length
   );
+}
+
+function validateCorpusMeasurement(
+  measurement,
+  replicate,
+  index,
+  config,
+  repetitionsByGroup,
+  checksumsByGroup,
+  allChecksumsByGroup
+) {
+  if (
+    !Number.isInteger(measurement.repetitions) ||
+    measurement.repetitions <= 0
+  )
+    throw new TypeError(`corpus replicate ${index} has invalid repetitions`);
+  const replicateGroup = `${replicate.replicate}:${measurement.group}`;
+  const previousRepetitions = repetitionsByGroup.get(replicateGroup);
+  if (
+    previousRepetitions !== undefined &&
+    previousRepetitions !== measurement.repetitions
+  )
+    throw new TypeError(
+      `corpus group ${measurement.group} has inconsistent repetitions`
+    );
+  repetitionsByGroup.set(replicateGroup, measurement.repetitions);
+  if (
+    !Array.isArray(measurement.calibrationSamplesMs) ||
+    measurement.calibrationSamplesMs.length === 0
+  )
+    throw new TypeError(
+      `corpus replicate ${index} has invalid calibration samples`
+    );
+  for (const sample of measurement.calibrationSamplesMs) {
+    if (
+      !sample ||
+      !positiveFinite(sample.oursMs) ||
+      !positiveFinite(sample.referenceMs)
+    )
+      throw new TypeError(
+        `corpus replicate ${index} has invalid calibration timings`
+      );
+  }
+  if (
+    config.calibrationOrderBalanced === true &&
+    measurement.calibrationOrder !== replicate.calibrationOrder
+  )
+    throw new TypeError(
+      `corpus replicate ${index} has an inconsistent calibration order`
+    );
+  for (const implementation of ['ours', 'reference']) {
+    const result = measurement[implementation];
+    if (
+      !result ||
+      !positiveFinite(result.ms) ||
+      !positiveFinite(result.elapsedMs) ||
+      !Number.isInteger(result.checksum) ||
+      result.checksum < 0
+    )
+      throw new TypeError(`corpus replicate ${index} has nonpositive timings`);
+    const checksumKey = `${replicate.replicate}:${measurement.group}:${implementation}`;
+    const previousChecksum = checksumsByGroup.get(checksumKey);
+    if (previousChecksum !== undefined && previousChecksum !== result.checksum)
+      throw new TypeError(
+        `corpus group ${measurement.group} has inconsistent checksums`
+      );
+    checksumsByGroup.set(checksumKey, result.checksum);
+    const allChecksums =
+      allChecksumsByGroup.get(measurement.group) ?? new Set();
+    allChecksums.add(result.checksum);
+    allChecksumsByGroup.set(measurement.group, allChecksums);
+  }
 }

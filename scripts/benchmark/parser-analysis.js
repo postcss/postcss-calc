@@ -15,6 +15,7 @@ import {
   addSlopeIntervals,
   analyzeGrowth,
   addGrowthIntervals,
+  bootstrapRatioSummary,
   largestSizeKeys,
   precisionSummary,
 } from './parser-scaling.js';
@@ -316,14 +317,7 @@ function addRuntimeIntervals(
     upperRatio: Math.exp(intervals.familyUpper),
   };
   endpoint.meaningfulImprovement = intervals.upper <= Math.log(0.9);
-  endpoint.bootstrap95 = {
-    lowerRatio: Math.exp(intervals.lower),
-    upperRatio: Math.exp(intervals.upper),
-    resamples: bootstrap.resamples,
-    familyCount: bootstrap.familyCount,
-    degenerateResamples: bootstrap.degenerateResamples,
-    degenerateFallbacks: bootstrap.degenerateFallbacks,
-  };
+  endpoint.bootstrap95 = bootstrapRatioSummary(intervals, bootstrap);
   endpoint.precision = precisionSummary(
     endpoint.observedLogRatioSd,
     bootstrap.standardErrors[index],

@@ -9,10 +9,10 @@ reanalysis.
 For a detailed explanation of the statistical methodology, experiment design,
 and software architecture, see [BENCHMARKS.md](../BENCHMARKS.md).
 
-- **`benchmark/benchmark-arithmetic-chains.js`** — runs the fresh-process, paired parser
-  benchmark for arithmetic shapes. `benchmark/benchmark-nested-fallbacks.js` does the
-  same for nested `var()` fallbacks. Both accept `--baseline`, `--blocks`,
-  `--max-attempts`, `--seed`, and `--output`, and write schema-v2 artifacts under
+- **`benchmark/benchmark-parser.js <benchmark>`** — runs the fresh-process, paired
+  parser benchmark. `arithmetic-chains` covers arithmetic shapes and
+  `nested-fallbacks` covers nested `var()` fallbacks. It accepts `--baseline`,
+  `--blocks`, `--max-attempts`, `--seed`, and `--output`, and writes schema-v2 artifacts under
   `reports/benchmarks/`. The default arithmetic grid uses four logarithmically
   spaced sizes with uniform doubling steps (`2,000` to `16,000`) and a tuned
   batch schedule so a controlled run completes under 5 minutes while preserving
