@@ -7,13 +7,15 @@
  * unreduced — consumers rarely rely on it and the spec doesn't require it.
  * @template {{ exponent: 1 | -1, value: number, unit: string }} D
  * @param {D[]} dims
+ * @param {number | false} [precision] A factor that is not exact at this
+ *   precision is not cancelled, so the quotient stays symbolic.
  * @return {{ factor: number, remaining: D[] } | null}
  */
 declare function tryCancelPair<D extends {
     exponent: 1 | -1;
     value: number;
     unit: string;
-}>(dims: D[]): {
+}>(dims: D[], precision?: number | false): {
     factor: number;
     remaining: D[];
 } | null;

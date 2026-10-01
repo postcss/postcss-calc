@@ -12,6 +12,9 @@ import {
   mkProduct,
 } from '../../src/lib/node.js';
 
+const rounded = (value) =>
+  Number(serialize(num(value), { precision: 5 }).slice(5, -1));
+
 describe('serialize: precision and rounding', () => {
   test('serialize: precision option applied to numbers and dimensions', () => {
     assert.equal(
@@ -84,13 +87,37 @@ describe('serialize: precision and rounding', () => {
   });
 
   test('serialize: rounds sub-1 midpoints away from zero and preserves sub-precision values', () => {
-    assert.equal(serialize(num(0.05), { precision: 1 }), 'calc(.1)');
-    assert.equal(serialize(num(-0.05), { precision: 1 }), 'calc(-.1)');
-    assert.equal(serialize(num(0.005), { precision: 2 }), 'calc(.01)');
-    // 0.004 rounds to zero at 1 place but exceeds the noise floor, so the
-    // value is preserved rather than collapsed to 0.
+    assert.equal(serialize(num(0.15), { precision: 1 }), 'calc(.2)');
+    assert.equal(serialize(num(-0.15), { precision: 1 }), 'calc(-.2)');
+    assert.equal(serialize(num(0.0125), { precision: 2 }), 'calc(.013)');
+    // Values below 1 keep `precision` significant digits, so 0.004 survives
+    // a precision of 1 instead of collapsing to 0.
     assert.equal(serialize(num(0.004), { precision: 1 }), 'calc(.004)');
     assert.equal(serialize(num(-0.004), { precision: 1 }), 'calc(-.004)');
+  });
+
+  test('serialize: rounds values below 1 to a uniform number of significant digits', () => {
+    assert.equal(serialize(num(0.0123456), { precision: 5 }), 'calc(.012346)');
+    assert.equal(
+      serialize(dim(1 / 150000, 'px'), { precision: 5 }),
+      'calc(.0000066667px)'
+    );
+  });
+
+  test('serialize: rounding never decreases as the input grows below 1', () => {
+    let previous = 0;
+    for (let exponent = -7; exponent < 0; exponent += 0.01) {
+      const value = 10 ** exponent;
+      const result = rounded(value);
+      assert.ok(
+        result >= previous,
+        `${value} rounded to ${result} < ${previous}`
+      );
+      previous = result;
+    }
+    // No gap around 5e-6, where fixed decimals used to collapse values.
+    assert.ok(rounded(4.9e-6) > 0);
+    assert.ok(rounded(5.1e-6) >= rounded(4.9e-6));
   });
 
   test('serialize: leaves values unchanged when precision exceeds the shortest representation', () => {

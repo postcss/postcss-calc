@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## Unreleased
+
+### Bug fixes
+
+- fold a division or unit conversion only when the result is exact at the
+  configured `precision`. `calc(100% / 3)` stays `calc(100% / 3)` instead of
+  becoming `calc(33.33333%)`, which drifted when repeated (#62), and
+  `calc(1cm + 1px)` is no longer converted to an approximate `1.02646cm`.
+  Use `precision: false` to fold every division.
+- keep `precision` significant digits for values below 1, so
+  `calc(1px / 150000)` is no longer rounded to `.00001px`
+- `min()`, `max()` and `clamp()` return the chosen argument, keeping its
+  original unit
+
 ## 11.2.1 (2026-09-20)
 
 ### Bug fixes

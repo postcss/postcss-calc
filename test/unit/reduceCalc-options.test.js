@@ -12,8 +12,8 @@ const { reduceWithWarnings, assertIdempotent } =
 describe('reduceCalc: precision', () => {
   test('reduceCalc: precision option applies to numeric output', () => {
     assert.equal(
-      reduceCalc('calc(1in + 10px)', { precision: 2 }),
-      'calc(1.1in)'
+      reduceCalc('calc(1.23456px + 1px)', { precision: 2 }),
+      'calc(2.23px)'
     );
   });
 
@@ -25,7 +25,10 @@ describe('reduceCalc: precision', () => {
   });
 
   test('reduceCalc: precision 0 rounds to whole numbers', () => {
-    assert.equal(reduceCalc('calc(1in + 10px)', { precision: 0 }), 'calc(1in)');
+    assert.equal(
+      reduceCalc('calc(1.23456px + 1px)', { precision: 0 }),
+      'calc(2px)'
+    );
   });
 
   test('reduceCalc: precision rounds large fractional results without drift', () => {
@@ -62,9 +65,12 @@ describe('reduceCalc: precision', () => {
   });
 
   test('reduceCalc: precision rounds sub-1 midpoints away from zero', () => {
-    assert.equal(reduceCalc('calc(0.05 + 0)', { precision: 1 }), 'calc(.1)');
-    assert.equal(reduceCalc('calc(0.005 + 0)', { precision: 2 }), 'calc(.01)');
-    // 0.004 rounds to zero at 1 place but is above the noise floor.
+    assert.equal(reduceCalc('calc(0.15 + 0)', { precision: 1 }), 'calc(.2)');
+    assert.equal(
+      reduceCalc('calc(0.0125 + 0)', { precision: 2 }),
+      'calc(.013)'
+    );
+    // Values below 1 keep `precision` significant digits.
     assert.equal(reduceCalc('calc(0.004 + 0)', { precision: 1 }), 'calc(.004)');
   });
 });

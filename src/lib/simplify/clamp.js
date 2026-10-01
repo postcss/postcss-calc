@@ -1,5 +1,5 @@
 import { call } from '../node.js';
-import { foldConstArgs, foldResult } from './fold.js';
+import { foldConstArgs, chosenArg } from './fold.js';
 import { simplifyMinMax } from './min-max.js';
 
 /** @typedef {import('../node.js').Node} Node */
@@ -29,7 +29,7 @@ function simplifyClamp(args) {
       // Spec §10.8: clamp(MIN, VAL, MAX) = max(MIN, min(VAL, MAX)). The
       // outer max(MIN, …) means MIN wins when MIN > MAX — not MAX.
       const clamped = Math.max(lo, Math.min(v, hi));
-      return foldResult(fold, clamped);
+      return chosenArg(args, fold, clamped);
     }
   }
   return call('clamp', args);

@@ -26,9 +26,10 @@ function denoise(total, scale) {
 /**
  * @param {Sum} sum
  * @param {SimplifyFn} simplify
+ * @param {number | false} [precision]
  * @return {Node}
  */
-function simplifySum(sum, simplify) {
+function simplifySum(sum, simplify, precision = false) {
   // §10.10 two-phase dim handling: phase 1 buckets by exact unit (`1em + 1em`
   // → `2em`); phase 2 merges convertible same-base buckets into the first-
   // encountered unit. `100vh - 5rem - 10rem - 100px` → `-15rem` in phase 1,
@@ -106,7 +107,10 @@ function simplifySum(sum, simplify) {
   const terms = hasNum
     ? [{ sign: /** @type {1} */ (1), node: num(denoise(numTotal, numScale)) }]
     : [];
-  for (const bucket of mergeConvertibleBuckets([...byUnit.values()])) {
+  for (const bucket of mergeConvertibleBuckets(
+    [...byUnit.values()],
+    precision
+  )) {
     terms.push({
       sign: 1,
       node: dim(
