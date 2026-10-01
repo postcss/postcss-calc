@@ -3,6 +3,7 @@
 // while holding the default 20-block run to under five minutes.
 export const SIZES = [2_000, 4_000, 8_000, 16_000];
 export const DEPTHS = [16, 32, 64, 128, 256, 512];
+export const PARSER_BENCHMARKS = ['arithmetic-chains', 'nested-fallbacks'];
 
 // 16ms batch targets provide ample separation above the timer resolution floor
 // while keeping worker durations concise.

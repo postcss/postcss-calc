@@ -1,9 +1,16 @@
-import { runParserBenchmark } from './parser-benchmark.js';
+// Fresh-process paired parser benchmark. Usage:
+// benchmark-parser.js <arithmetic-chains|nested-fallbacks> [options]
+import { PARSER_BENCHMARKS, runParserBenchmark } from './parser-benchmark.js';
 
 try {
+  const [benchmark, ...args] = process.argv.slice(2);
+  if (!PARSER_BENCHMARKS.includes(benchmark))
+    throw new TypeError(
+      `expected benchmark name (${PARSER_BENCHMARKS.join(' or ')}), got: ${benchmark}`
+    );
   const result = await runParserBenchmark({
-    benchmark: 'arithmetic-chains',
-    ...parseOptions(process.argv.slice(2)),
+    benchmark,
+    ...parseOptions(args),
   });
   console.log(`Parser benchmark: ${result.artifact.analysis.status}`);
   console.log(`Wrote ${result.path}`);

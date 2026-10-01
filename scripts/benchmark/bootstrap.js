@@ -255,12 +255,13 @@ export function bootstrapStratifiedMaxT({
       if (sampledSE === 0) {
         hasDegenerateEndpoint = true;
         const deviation = effect - observed[column];
-        if (deviation === 0) statistic = 0;
-        else {
-          if (observedSE[column] === 0)
-            throw new RangeError(
-              'nonzero bootstrap deviation has no positive standard error'
-            );
+        if (deviation === 0) {
+          statistic = 0;
+        } else if (observedSE[column] === 0) {
+          throw new RangeError(
+            'nonzero bootstrap deviation has no positive standard error'
+          );
+        } else {
           statistic = deviation / observedSE[column];
           degenerateFallbacks++;
         }

@@ -288,37 +288,8 @@ function assertStoredAnalysisMatches(stored, expected, path = 'analysis') {
   const expectedKeys = Object.keys(expected).sort();
   if (JSON.stringify(storedKeys) !== JSON.stringify(expectedKeys))
     throw new TypeError(`${path} does not match recomputed observations`);
-  for (const key of expectedKeys) {
-    const left = stored[key];
-    const right = expected[key];
-    if (typeof right === 'number') {
-      if (
-        typeof left !== 'number' ||
-        !Number.isFinite(left) ||
-        Math.abs(left - right) > 1e-10 * Math.max(1, Math.abs(right))
-      )
-        throw new TypeError(
-          `${path}.${key} does not match recomputed observations`
-        );
-    } else if (Array.isArray(right)) {
-      if (!Array.isArray(left) || left.length !== right.length)
-        throw new TypeError(
-          `${path}.${key} does not match recomputed observations`
-        );
-      for (let index = 0; index < right.length; index++)
-        assertStoredValue(
-          left[index],
-          right[index],
-          `${path}.${key}[${index}]`
-        );
-    } else if (right && typeof right === 'object') {
-      assertStoredAnalysisMatches(left, right, `${path}.${key}`);
-    } else if (left !== right) {
-      throw new TypeError(
-        `${path}.${key} does not match recomputed observations`
-      );
-    }
-  }
+  for (const key of expectedKeys)
+    assertStoredValue(stored[key], expected[key], `${path}.${key}`);
 }
 
 function assertStoredValue(left, right, path) {

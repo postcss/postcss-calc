@@ -26,6 +26,17 @@ export function precisionSummary(
   };
 }
 
+export function bootstrapRatioSummary(intervals, bootstrap) {
+  return {
+    lowerRatio: Math.exp(intervals.lower),
+    upperRatio: Math.exp(intervals.upper),
+    resamples: bootstrap.resamples,
+    familyCount: bootstrap.familyCount,
+    degenerateResamples: bootstrap.degenerateResamples,
+    degenerateFallbacks: bootstrap.degenerateFallbacks,
+  };
+}
+
 export function parseKey(key) {
   const parts = key.split(':');
   const size = Number(parts.at(-1));
@@ -215,14 +226,7 @@ export function addGrowthIntervals(
       lowerRatio: result.candidateLowerRatio,
       upperRatio: result.candidateUpperRatio,
     };
-    result.bootstrap95 = {
-      lowerRatio: Math.exp(intervals.lower),
-      upperRatio: Math.exp(intervals.upper),
-      resamples: bootstrap.resamples,
-      familyCount: bootstrap.familyCount,
-      degenerateResamples: bootstrap.degenerateResamples,
-      degenerateFallbacks: bootstrap.degenerateFallbacks,
-    };
+    result.bootstrap95 = bootstrapRatioSummary(intervals, bootstrap);
     result.precision = precisionSummary(
       variationMetrics(growthData.claimRows[index]).sd,
       standardError,
