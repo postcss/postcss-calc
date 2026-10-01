@@ -8,12 +8,7 @@ import { indexBlocks } from '../../src/lib/block-index.js';
 import { parse } from '../../src/lib/parser.js';
 import { serialize } from '../../src/lib/serialize.js';
 import { sexpr } from '../helpers/sexpr.js';
-import { parseSource } from '../helpers/parse-source.js';
-
-/** Parse input, return its S-expression. */
-const ast = (input) => {
-  return sexpr(parseSource(input));
-};
+import { parseSource, parseSexpr as ast } from '../helpers/parse-source.js';
 
 test('parser: accepts a bounded range of a shared native token stream', () => {
   const tokens = tokenize({ css: 'prefix calc(/* gap */-2px + 3px) suffix' });

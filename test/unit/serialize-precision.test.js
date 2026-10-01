@@ -1,6 +1,7 @@
 import { describe, test } from 'node:test';
 import assert from 'node:assert/strict';
-import { serialize as serializeSource } from '../../src/lib/serialize.js';
+import { serialize } from '../../src/lib/serialize.js';
+import { parseSource } from '../helpers/parse-source.js';
 import {
   num,
   dim,
@@ -10,8 +11,6 @@ import {
   mkSum,
   mkProduct,
 } from '../../src/lib/node.js';
-
-const serialize = (node, opts = {}) => serializeSource(node, opts);
 
 describe('serialize: precision and rounding', () => {
   test('serialize: precision option applied to numbers and dimensions', () => {
@@ -196,46 +195,21 @@ describe('serialize: precision and rounding', () => {
   });
 
   describe('serialize: sub-precision negative terms in sums and grouped sums', () => {
-    test('sub-precision negative number term serializes as 0 in sums', () => {
+    test('sub-precision negative number term in sums respects precision', () => {
       const ast = mkSum([
         { sign: 1, node: num(-1e-20) },
         { sign: 1, node: opaqueCall('var', [ident('--x')]) },
       ]);
       assert.equal(serialize(ast), 'calc(0 + var(--x))');
-    });
-
-    test('sub-precision negative number term with precision: false retains negative value in sums', () => {
-      const ast = mkSum([
-        { sign: 1, node: num(-1e-20) },
-        { sign: 1, node: opaqueCall('var', [ident('--x')]) },
-      ]);
       assert.equal(
         serialize(ast, { precision: false }),
         'calc(-1e-20 + var(--x))'
       );
     });
 
-    test('sub-precision negative number term serializes as 0 in grouped sums', () => {
-      const ast = {
-        type: /** @type {const} */ ('Sum'),
-        grouped: true,
-        terms: [
-          { sign: 1, node: num(-1e-20) },
-          { sign: 1, node: opaqueCall('var', [ident('--x')]) },
-        ],
-      };
+    test('sub-precision negative number term in grouped sums respects precision', () => {
+      const ast = parseSource('(-1e-20 + var(--x))');
       assert.equal(serialize(ast), 'calc(0 + var(--x))');
-    });
-
-    test('sub-precision negative number term with precision: false retains grouped negative sum inversion', () => {
-      const ast = {
-        type: /** @type {const} */ ('Sum'),
-        grouped: true,
-        terms: [
-          { sign: 1, node: num(-1e-20) },
-          { sign: 1, node: opaqueCall('var', [ident('--x')]) },
-        ],
-      };
       assert.equal(
         serialize(ast, { precision: false }),
         'calc(-1 * (1e-20 - var(--x)))'

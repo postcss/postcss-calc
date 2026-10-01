@@ -59,6 +59,62 @@ export function corpusCorrectness() {
     inputHash: 'inputs',
   };
 }
+/**
+ * Build a synthetic corpus artifact matching schema 2.
+ * @param {object} [options]
+ * @param {string[]} [options.groups]
+ * @param {(replicate: number) => number} [options.ratioForReplicate]
+ * @param {object} [options.config]
+ * @param {number} [options.seed]
+ * @param {object} [options.corpus]
+ * @param {object} [options.correctness]
+ */
+export function syntheticCorpusArtifact({
+  groups = ['exact', 'sum'],
+  ratioForReplicate = () => 1,
+  config = CORPUS_DECISION_CONFIG,
+  seed = 123,
+  corpus = { lengthStrata: {}, rootShapeCounts: { sum: 2 } },
+  correctness = corpusCorrectness(),
+} = {}) {
+  const replicates = Array.from({ length: 20 }, (_, replicate) => ({
+    replicate,
+    calibrationOrder: replicate < 10 ? 'ours-first' : 'reference-first',
+    permutation: [0, 1],
+    batches: Array.from({ length: 6 }, (unusedBatch, batch) => ({
+      order: batch < 3 ? 'ours-first' : 'reference-first',
+      measurements: groups.map((group) => {
+        const ratio = ratioForReplicate(replicate);
+        return {
+          group,
+          repetitions: 1,
+          calibrationOrder: replicate < 10 ? 'ours-first' : 'reference-first',
+          calibrationSamplesMs: [{ oursMs: ratio, referenceMs: 1 }],
+          ours: {
+            ms: ratio,
+            elapsedMs: ratio,
+            checksum: group === 'exact' ? 1 : 2,
+          },
+          reference: {
+            ms: 1,
+            elapsedMs: 1,
+            checksum: group === 'exact' ? 1 : 2,
+          },
+        };
+      }),
+    })),
+  }));
+
+  return {
+    schema: 2,
+    benchmark: 'corpus',
+    seed,
+    config,
+    corpus,
+    correctness,
+    replicates,
+  };
+}
 
 /**
  * Build a parser artifact from already-generated observations. `rows` contains
