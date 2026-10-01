@@ -170,6 +170,37 @@ function emitSumTerm(term, session, sign) {
 }
 
 /**
+ * @param {import('../node.js').Num | import('../node.js').Dim} termNode
+ * @param {1 | -1} sign
+ * @param {number} i
+ * @param {SerializeSession} session
+ * @return {void}
+ */
+function emitScalarSumTerm(termNode, sign, i, session) {
+  const buffer = session.buffer;
+  const effectiveVal = sign * termNode.value;
+  if (Object.is(effectiveVal, -0)) {
+    if (i > 0) buffer.push(' + ');
+    emitSignedZero(buffer, termNode);
+    return;
+  }
+  if (isDegenerate(effectiveVal)) {
+    if (i === 0 && sign === -1) buffer.push('-');
+    else if (i > 0) buffer.push(sign === 1 ? ' + ' : ' - ');
+    emitScalar(termNode, session);
+    return;
+  }
+  const rounded = round(effectiveVal, session.precision);
+  if (rounded < 0) {
+    buffer.push(i === 0 ? '-' : ' - ');
+    emitRoundedScalar(termNode, buffer, -rounded);
+  } else {
+    if (i > 0) buffer.push(' + ');
+    emitRoundedScalar(termNode, buffer, rounded);
+  }
+}
+
+/**
  * @param {import('../node.js').SumTerm[]} terms
  * @param {SerializeSession} session
  * @param {1 | -1} [multiplier]
@@ -180,34 +211,11 @@ function emitSumTerms(terms, session, multiplier = 1) {
   for (let i = 0; i < terms.length; i++) {
     const term = terms[i];
     const termNode = term.node;
+    const sign = /** @type {1 | -1} */ (term.sign * multiplier);
     if (isScalar(termNode)) {
-      const effectiveVal = term.sign * multiplier * termNode.value;
-      if (Object.is(effectiveVal, -0)) {
-        if (i > 0) buffer.push(' + ');
-        emitSignedZero(buffer, termNode);
-      } else if (isDegenerate(effectiveVal)) {
-        const sign = /** @type {1 | -1} */ (term.sign * multiplier);
-        if (i === 0) {
-          if (sign === -1) buffer.push('-');
-          emitScalar(termNode, session);
-        } else {
-          buffer.push(sign === 1 ? ' + ' : ' - ');
-          emitScalar(termNode, session);
-        }
-      } else {
-        const rounded = round(effectiveVal, session.precision);
-        if (rounded < 0) {
-          if (i === 0) buffer.push('-');
-          else buffer.push(' - ');
-          emitRoundedScalar(termNode, buffer, -rounded);
-        } else {
-          if (i > 0) buffer.push(' + ');
-          emitRoundedScalar(termNode, buffer, rounded);
-        }
-      }
+      emitScalarSumTerm(termNode, sign, i, session);
       continue;
     }
-    const sign = /** @type {1 | -1} */ (term.sign * multiplier);
     if (i === 0) {
       emitSumTerm(term, session, sign);
     } else {
