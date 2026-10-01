@@ -22,8 +22,25 @@ describe('Exact-by-default division', () => {
     ['calc(1 / 3)', 'calc(1 / 3)'],
     ['calc(10px / 3 * 3)', 'calc(10px)'],
     ['calc(10px / -3)', 'calc(-10px / 3)'],
-    ['calc(1px / 1in)', 'calc(1px / 1in)'],
+    ['calc(1px / 1in)', 'calc(1 / 96)'],
     ['calc(1in / 1px)', 'calc(96)'],
+    ['calc(1pt / 1pc)', 'calc(1 / 12)'],
+    ['calc(1pc / 1pt)', 'calc(12)'],
+    ['calc(2in / 1px)', 'calc(192)'],
+    ['calc(7px / 1in)', 'calc(7 / 96)'],
+    ['calc(1in / 7px)', 'calc(96 / 7)'],
+    ['calc(-1px / 1in)', 'calc(-1 / 96)'],
+    ['calc(1px / -1in)', 'calc(-1 / 96)'],
+    ['calc(1cm / 1px)', 'calc(1cm / 1px)'],
+    ['calc(1deg / 1rad)', 'calc(1deg / 1rad)'],
+    ['calc((100px + 60em) / 3)', 'calc((100px + 60em) / 3)'],
+    ['calc((3px + 5em) / 3)', 'calc((3px + 5em) / 3)'],
+    ['calc((3px + 6em) / -3)', 'calc(-1px - 2em)'],
+    ['calc((3px + var(--a)) / 3)', 'calc((3px + var(--a)) / 3)'],
+    ['calc(1px * 3 / 3px)', 'calc(1)'],
+    ['calc(1px / 3px * 3)', 'calc(1)'],
+    ['calc((3px + 6em) / 3)', 'calc(1px + 2em)'],
+    ['calc((30px + 60%) / 3)', 'calc(10px + 20%)'],
     ['calc(var(--n) / 4)', 'calc(var(--n) / 4)'],
     ['calc(2 * var(--n) / 3)', 'calc(2 * var(--n) / 3)'],
     // Quotients whose parts would be rounded on output are folded instead.
@@ -51,6 +68,24 @@ describe('Exact-by-default division', () => {
     assert.equal(
       reduceCalc('calc(1px + 1pt)', { precision: false }),
       'calc(2.333333333333333px)'
+    );
+  });
+
+  test('precision undefined keeps the default', () => {
+    assert.equal(
+      reduceCalc('calc(100% / 3)', { precision: undefined }),
+      'calc(100% / 3)'
+    );
+    assert.equal(
+      reduceCalc('calc(1cm + 1px)', { precision: undefined }),
+      'calc(1cm + 1px)'
+    );
+  });
+
+  test('precision false folds inexact unit quotients', () => {
+    assert.equal(
+      reduceCalc('calc(1cm / 1px)', { precision: false }),
+      'calc(37.79527559055118)'
     );
   });
 

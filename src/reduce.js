@@ -61,11 +61,12 @@ function reduceCalc(value, opts) {
 
   /** @type {ResolvedReduceCalcOptions} */
   const options = {
-    precision: 5,
     warnWhenCannotResolve: false,
     unwrapSingleNegativeNumber: false,
     unwrapSingleValue: false,
     ...opts,
+    // An explicit `precision: undefined` keeps the default.
+    precision: opts?.precision ?? 5,
   };
   /** @type {import('@csstools/css-tokenizer').CSSToken[]} */
   let tokens;

@@ -3,16 +3,17 @@ import { isExact } from './exact.js';
 
 /**
  * If `dims` contain exactly one numerator / one denominator pair with the
- * same base type and convertible units, return the numeric factor produced
- * by cancelling them and the list of remaining (uncancelled) dims.
- * Otherwise return null. Used by `simplifyProduct` for typed division
- * (§10.2). More complex cancellation (e.g. `px^2 / px`) is left
+ * same base type and convertible units, return the two sides expressed in a
+ * common unit, so the caller can fold them into its own numerator and
+ * denominator. Otherwise return null. Used by `simplifyProduct` for typed
+ * division (§10.2). More complex cancellation (e.g. `px^2 / px`) is left
  * unreduced — consumers rarely rely on it and the spec doesn't require it.
  * @template {{ exponent: 1 | -1, value: number, unit: string }} D
  * @param {D[]} dims
- * @param {number | false} [precision] A factor that is not exact at this
- *   precision is not cancelled, so the quotient stays symbolic.
- * @return {{ factor: number, remaining: D[] } | null}
+ * @param {number | false} [precision] The denominator is converted into the
+ *   numerator's unit when that is exact at this precision (`1px / 1in` →
+ *   `1 / 96`); otherwise the numerator is converted (`1in / 1px` → `96 / 1`).
+ * @return {{ numerator: number, denominator: number, remaining: D[] } | null}
  */
 function tryCancelPair(dims, precision = false) {
   if (dims.length !== 2) {
@@ -29,16 +30,32 @@ function tryCancelPair(dims, precision = false) {
   if (!numBase || numBase !== denBase) {
     return null;
   }
-  const converted = convert(numerator.value, numerator.unit, denominator.unit);
-  if (converted === null) {
-    return null;
-  }
+  const converted = convert(
+    denominator.value,
+    denominator.unit,
+    numerator.unit
+  );
   // denominator.value === 0 yields ±Infinity / NaN naturally (§10.9.1).
-  const factor = converted / denominator.value;
-  if (!isExact(factor, precision)) {
-    return null;
+  if (converted !== null && isExact(converted, precision)) {
+    return {
+      numerator: numerator.value,
+      denominator: converted,
+      remaining: [],
+    };
   }
-  return { factor, remaining: [] };
+  const numConverted = convert(
+    numerator.value,
+    numerator.unit,
+    denominator.unit
+  );
+  if (numConverted !== null && isExact(numConverted, precision)) {
+    return {
+      numerator: numConverted,
+      denominator: denominator.value,
+      remaining: [],
+    };
+  }
+  return null;
 }
 
 export { tryCancelPair };

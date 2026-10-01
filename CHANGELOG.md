@@ -6,22 +6,20 @@ All notable changes to this project will be documented in this file. See [commit
 
 ### Bug fixes
 
-- fold a division or unit conversion only when the result is exact at the
+- transform a division or unit conversion only when the result is exact at the
   configured `precision`. `calc(100% / 3)` stays `calc(100% / 3)` instead of
-  becoming `calc(33.33333%)`, which drifted when repeated (#62), and
-  `calc(1cm + 1px)` is no longer converted to an approximate `1.02646cm`.
-  Use `precision: false` to fold every division.
+  becoming `calc(33.33333%)`, and `calc(1cm + 1px)` 
+  is no longer converted to an approximate `1.02646cm`.
+  Use `precision: false` to transform every division.
 - keep `precision` significant digits for values below 1, so
   `calc(1px / 150000)` is no longer rounded to `.00001px`
-- `min()`, `max()` and `clamp()` return the chosen argument, keeping its
-  original unit
-- treat `var()`, `env()`, `attr()` and other substitution functions as
-  positional barriers. They are replaced by raw tokens before the value is
-  computed, so with `--a: 1px + 2px`, `var(--a) * 2` means `1px + 2px * 2`.
-  Factors are no longer reordered or cancelled across them
-  (`var(--a) * 2` is no longer rewritten to `2 * var(--a)`,
-  `var(--a) / var(--a)` is not cancelled), and parentheses around them are kept
-  (`1px - (2 * var(--a))`)
+- `min()`, `max()` and `clamp()` preserve the original unit
+- keep the order of terms and factors around `var()`, `env()`, `attr()` and
+  other substitution functions. These are replaced by raw tokens before the
+  value is computed, so with `--a: 1px + 2px`, `var(--a) * 2` means
+  `1px + 2px * 2`. Factors are no longer reordered or cancelled:
+  `var(--a) * 2` is not rewritten to `2 * var(--a)`, `var(--a) / var(--a)` is
+  not cancelled, and parentheses are kept (`1px - (2 * var(--a))`).
   Unrecognised functions such as `anchor-size()` are treated the same way, so
   `2 * anchor-size(width) * .5` is no longer folded
 - keep the parentheses of a nested `calc()` that contains unresolved values, so
