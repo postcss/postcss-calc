@@ -34,7 +34,7 @@ function compileCandidate(candidate, ctx) {
   if (!analysis.valid) {
     throw new Error('Invalid CSS calculation type');
   }
-  const tree = simplify(parsed);
+  const tree = simplify(parsed, ctx.options.precision);
   const original =
     analysis.unresolved && !candidate.calculation
       ? ctx.value.slice(candidate.start, candidate.end)

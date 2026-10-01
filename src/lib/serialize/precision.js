@@ -92,16 +92,20 @@ function round(v, prec) {
   // or exponent overflows into Infinity/NaN (e.g. exponent + prec > 308).
   const p = Math.min(100, Math.max(0, Math.trunc(prec)));
   const sign = v < 0 ? -1 : 1;
-  // Fast path: rounding to integer with "round half away from zero".
-  const rounded =
-    p === 0 ? sign * Math.round(abs) : sign * roundDecimal(abs, p);
-
-  // Preserve non-zero values smaller than precision (e.g. 1/1000000) from collapsing
-  // to zero, while still snapping true floating-point dust (< 1e-12) to zero.
-  if (rounded === 0 && abs > NOISE_FLOOR) {
-    return Number(v.toPrecision(Math.max(p, 1)));
+  // Values below 1 keep `p` significant digits (at least one) rather than `p`
+  // decimals, so small magnitudes lose precision evenly. The exponent comes
+  // from the decimal text, not log10, so powers of ten cannot land off by one.
+  if (abs < 1) {
+    const exponent = Number(abs.toExponential().split('e')[1]);
+    const rounded = roundDecimal(abs, Math.max(p, 1) - 1 - exponent);
+    // Snap true floating-point dust (<= 1e-12) to zero, unless the precision
+    // is high enough to represent it as a fractional value.
+    if (abs <= NOISE_FLOOR && roundDecimal(abs, p) === 0) {
+      return sign === -1 ? -0 : 0;
+    }
+    return sign * rounded;
   }
-  return rounded;
+  return sign * roundDecimal(abs, p);
 }
 
 // §10.13 / §10.7.2: Infinity/NaN serialize as canonical keywords.

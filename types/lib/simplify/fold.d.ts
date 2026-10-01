@@ -16,6 +16,19 @@ declare function foldResult(fold: {
     unit: string;
 }, value: number): Num | Dim;
 /**
+ * Return the argument that produced a folded min/max/clamp value, so the
+ * result keeps its own unit, spelling and zero sign. Falls back to a fresh
+ * node when no argument matches (NaN).
+ * @param {Node[]} args
+ * @param {{ values: number[], unit: string }} fold
+ * @param {number} value
+ * @return {Node}
+ */
+declare function chosenArg(args: Node[], fold: {
+    values: number[];
+    unit: string;
+}, value: number): Node;
+/**
  * @param {Node[]} args
  * @return {{ values: number[], unit: string } | null}
  */
@@ -23,4 +36,4 @@ declare function foldConstArgs(args: Node[]): {
     values: number[];
     unit: string;
 } | null;
-export { foldConstArgs, foldResult };
+export { foldConstArgs, foldResult, chosenArg };

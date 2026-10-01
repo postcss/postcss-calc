@@ -17,6 +17,20 @@ function foldResult(fold, value) {
 }
 
 /**
+ * Return the argument that produced a folded min/max/clamp value, so the
+ * result keeps its own unit, spelling and zero sign. Falls back to a fresh
+ * node when no argument matches (NaN).
+ * @param {Node[]} args
+ * @param {{ values: number[], unit: string }} fold
+ * @param {number} value
+ * @return {Node}
+ */
+function chosenArg(args, fold, value) {
+  const index = fold.values.findIndex((v) => Object.is(v, value));
+  return index === -1 ? foldResult(fold, value) : args[index];
+}
+
+/**
  * @param {Node[]} args
  * @return {{ values: number[], unit: string } | null}
  */
@@ -75,4 +89,4 @@ function foldDimArgs(args, unit, base) {
   return { values, unit };
 }
 
-export { foldConstArgs, foldResult };
+export { foldConstArgs, foldResult, chosenArg };

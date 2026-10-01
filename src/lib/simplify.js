@@ -21,13 +21,15 @@ import { assertDepth } from './limits.js';
  * Simplify is an independent, composable AST transformation. It may
  * synthesize canonical nodes while preserving the Node -> Node contract.
  * @param {Node} node
+ * @param {number | false} [precision] When set, divisions and unit
+ *   conversions that are not exact at this precision stay symbolic.
  * @param {number} [depth]
  * @return {Node}
  */
-function simplify(node, depth = 0) {
+function simplify(node, precision = false, depth = 0) {
   assertDepth(depth);
   /** @param {Node} value */
-  const child = (value) => simplify(value, depth + 1);
+  const child = (value) => simplify(value, precision, depth + 1);
   switch (node.type) {
     case 'Num':
     case 'Dim':
@@ -42,9 +44,9 @@ function simplify(node, depth = 0) {
         node.rawName
       );
     case 'Sum':
-      return simplifySum(node, child);
+      return simplifySum(node, child, precision);
     case 'Product':
-      return simplifyProduct(node, child);
+      return simplifyProduct(node, child, precision);
   }
 }
 

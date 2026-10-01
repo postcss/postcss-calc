@@ -6,7 +6,8 @@ export type UnitBucket = import('./bucket.js').UnitBucket;
 /**
  * @param {Sum} sum
  * @param {SimplifyFn} simplify
+ * @param {number | false} [precision]
  * @return {Node}
  */
-declare function simplifySum(sum: Sum, simplify: SimplifyFn): Node;
+declare function simplifySum(sum: Sum, simplify: SimplifyFn, precision?: number | false): Node;
 export { simplifySum };

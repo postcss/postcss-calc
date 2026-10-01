@@ -5,6 +5,7 @@
  */
 
 import { convert } from '../convertUnits.js';
+import { isExact } from './exact.js';
 
 /**
  * @typedef {object} UnitBucket
@@ -18,9 +19,12 @@ import { convert } from '../convertUnits.js';
 /** Mutates `buckets` in place — totals of survivor buckets accumulate the
  *  converted values of merged neighbors. Caller must not reuse the input.
  * @param {UnitBucket[]} buckets
+ * @param {number | false} [precision] A conversion that is not exact at this
+ *   precision is not merged. When only the reverse direction is exact, the
+ *   survivor switches to the other bucket's unit.
  * @return {UnitBucket[]}
  */
-function mergeConvertibleBuckets(buckets) {
+function mergeConvertibleBuckets(buckets, precision = false) {
   /** @type {Map<import('../convertUnits.js').BaseType, UnitBucket>} */ const representative =
     new Map();
   /** @type {UnitBucket[]} */ const out = [];
@@ -36,12 +40,25 @@ function mergeConvertibleBuckets(buckets) {
       continue;
     }
     const converted = convert(b.total, b.unit, first.unit);
-    if (converted === null) {
-      out.push(b);
+    if (converted !== null && isExact(converted, precision)) {
+      first.total += converted;
+      first.scale = Math.max(first.scale, Math.abs(converted));
       continue;
     }
-    first.total += converted;
-    first.scale = Math.max(first.scale, Math.abs(converted));
+    const reversed = convert(first.total, first.unit, b.unit);
+    const reversedScale = convert(first.scale, first.unit, b.unit);
+    if (
+      reversed !== null &&
+      reversedScale !== null &&
+      isExact(reversed, precision)
+    ) {
+      first.unit = b.unit;
+      first.rawUnit = b.rawUnit;
+      first.total = reversed + b.total;
+      first.scale = Math.max(reversedScale, Math.abs(b.total));
+      continue;
+    }
+    out.push(b);
   }
   return out;
 }

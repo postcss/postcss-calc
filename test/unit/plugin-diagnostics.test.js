@@ -112,8 +112,10 @@ describe('plugin: parse error handling', () => {
 // --- precision -----------------------------------------------------------
 describe('plugin: precision', () => {
   test('plugin: precision option applies to numeric output', async () => {
-    const { css } = await process('a{b:calc(1in + 10px)}', { precision: 2 });
-    assert.equal(css, 'a{b:calc(1.1in)}');
+    const { css } = await process('a{b:calc(1.23456px + 1px)}', {
+      precision: 2,
+    });
+    assert.equal(css, 'a{b:calc(2.23px)}');
   });
 
   test('plugin: precision false keeps full float precision', async () => {
@@ -124,7 +126,9 @@ describe('plugin: precision', () => {
   });
 
   test('plugin: precision 0 rounds to whole numbers', async () => {
-    const { css } = await process('a{b:calc(1in + 10px)}', { precision: 0 });
-    assert.equal(css, 'a{b:calc(1in)}');
+    const { css } = await process('a{b:calc(1.23456px + 1px)}', {
+      precision: 0,
+    });
+    assert.equal(css, 'a{b:calc(2px)}');
   });
 });

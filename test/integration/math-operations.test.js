@@ -14,7 +14,7 @@ describe('Complex calculations', () => {
     'should handle complex calculations (reduce-css-calc#45) (2)',
     testValue(
       'calc(((((100% + (2 * 30px) + 63.5px) / 0.7537) - (100vw - 60px)) / 2) + 30px)',
-      'calc(66.33939% + 141.92915px - 50vw)'
+      'calc(30px + .5 * (-100vw + 60px + (100% + 123.5px) / .7537))'
     )
   );
 
@@ -253,7 +253,7 @@ describe('Precision', () => {
 
   test(
     'should handle precision correctly (2)',
-    testValue('calc(5/1000000)', 'calc(.00001)')
+    testValue('calc(5/1000000)', 'calc(.000005)')
   );
 
   test(
@@ -283,7 +283,7 @@ describe('Precision', () => {
 
   test(
     'should limit a value smaller than the precision to that many significant digits',
-    testValue('calc(1/3000000)', 'calc(3.3333e-7)')
+    testValue('calc(.00000033333333 + 0)', 'calc(3.3333e-7)')
   );
 
   test(
@@ -319,7 +319,7 @@ describe('Precision', () => {
 
   test(
     'canonical reciprocal coefficient with opaque term at default precision',
-    testValue('calc(var(--x) / 3)', 'calc(.33333 * var(--x))')
+    testValue('calc(var(--x) / 3)', 'calc(var(--x) / 3)')
   );
 
   test(

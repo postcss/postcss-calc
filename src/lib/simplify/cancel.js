@@ -1,4 +1,5 @@
 import { baseOf, convert } from '../convertUnits.js';
+import { isExact } from './exact.js';
 
 /**
  * If `dims` contain exactly one numerator / one denominator pair with the
@@ -9,9 +10,11 @@ import { baseOf, convert } from '../convertUnits.js';
  * unreduced — consumers rarely rely on it and the spec doesn't require it.
  * @template {{ exponent: 1 | -1, value: number, unit: string }} D
  * @param {D[]} dims
+ * @param {number | false} [precision] A factor that is not exact at this
+ *   precision is not cancelled, so the quotient stays symbolic.
  * @return {{ factor: number, remaining: D[] } | null}
  */
-function tryCancelPair(dims) {
+function tryCancelPair(dims, precision = false) {
   if (dims.length !== 2) {
     return null;
   }
@@ -31,7 +34,11 @@ function tryCancelPair(dims) {
     return null;
   }
   // denominator.value === 0 yields ±Infinity / NaN naturally (§10.9.1).
-  return { factor: converted / denominator.value, remaining: [] };
+  const factor = converted / denominator.value;
+  if (!isExact(factor, precision)) {
+    return null;
+  }
+  return { factor, remaining: [] };
 }
 
 export { tryCancelPair };

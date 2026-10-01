@@ -12,9 +12,8 @@ describe('min() and max() folding', () => {
   });
 
   test('simplify: min converts units within a family before comparing', () => {
-    // 1in = 96px, so min(1in, 10px) = min(1in, .10417in) = .10417in.
-    // First arg's unit is canonical — consistent with the sum-bucket rule.
-    assert.equal(out('min(1in, 10px)'), 'calc(.10417in)');
+    // 1in = 96px, so min(1in, 10px) is the 10px argument, returned as written.
+    assert.equal(out('min(1in, 10px)'), 'calc(10px)');
   });
 
   test('simplify: min preserved when types mix', () => {
