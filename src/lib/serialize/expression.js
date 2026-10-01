@@ -25,8 +25,8 @@ import {
  * @typedef {import('./precision.js').SerializeSession} SerializeSession
  */
 
-// The AST is canonical: sums and products are flat, so these precedence
-// levels cover every binary expression
+// The AST is canonical: sums and products are flat, except grouped nodes that
+// keep their parentheses, so these precedence levels cover every binary expression
 const SUM_PRECEDENCE = 1;
 const PRODUCT_PRECEDENCE = 2;
 const ATOMIC_PRECEDENCE = 3;
@@ -50,7 +50,10 @@ function precedence(node) {
 function needsParentheses(node, parentPrecedence, groupedRequired) {
   return (
     precedence(node) < parentPrecedence ||
-    (node.type === 'Sum' && node.grouped === true && groupedRequired === true)
+    (node.type === 'Sum' &&
+      node.grouped === true &&
+      groupedRequired === true) ||
+    (node.type === 'Product' && node.grouped === true && parentPrecedence > 0)
   );
 }
 
@@ -225,7 +228,7 @@ function emitSum(sum, session) {
  * @return {void}
  */
 function emitLeadingNeg(node, session) {
-  if (node.type === 'Product') {
+  if (node.type === 'Product' && !node.grouped) {
     if (
       node.factors.length > 0 &&
       node.factors[0].exponent === 1 &&
@@ -309,17 +312,6 @@ function emitMathResult(node, session, wrapper) {
     } else {
       emitRoundedScalar(node, buffer, scalarValue);
     }
-    return;
-  }
-  if (
-    node.type === 'Sum' &&
-    node.grouped &&
-    node.terms.length > 1 &&
-    termSign(node.terms[0], 1, session.precision) === -1
-  ) {
-    session.buffer.push(wrapper, '(-1 * (');
-    emitSumTerms(node.terms, session, -1);
-    session.buffer.push('))');
     return;
   }
   if (

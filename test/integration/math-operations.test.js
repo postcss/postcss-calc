@@ -90,10 +90,10 @@ describe('Subtraction from zero', () => {
 
   test(
     'should reduce substracted expression from zero (css-variable)',
-    // reciprocal; zero bucket kept; coefficient first.
+    // zero bucket kept; the group around the substitution stays.
     testValue(
       'calc( 0px - (var(--foo, 4px) / 2))',
-      'calc(0px - .5 * var(--foo, 4px))'
+      'calc(0px - (var(--foo, 4px) / 2))'
     )
   );
 
@@ -119,29 +119,32 @@ describe('Discard zero', () => {
 describe('Division precedence', () => {
   test(
     'should preserve division precedence',
-    // spec-style spaces around `/`, redundant parens dropped.
+    // spec-style spaces around `/`; parens around var() are kept.
     testValue(
       'calc(100%/(var(--aspect-ratio)))',
-      'calc(100% / var(--aspect-ratio))'
+      'calc(100% / (var(--aspect-ratio)))'
     )
   );
 
   test(
     'should preserve division precedence (2)',
-    // `/16` → `* .0625` (reciprocal); coefficient first.
+    // `/16` is kept as written; parens around substitutions are kept.
     testValue(
       `calc(
         (var(--fluid-screen) - ((var(--fluid-min-width) / 16) * 1rem)) /
         ((var(--fluid-max-width) / 16) - (var(--fluid-min-width) / 16))
     )`,
-      'calc((var(--fluid-screen) - .0625 * 1rem * var(--fluid-min-width)) / (.0625 * var(--fluid-max-width) - .0625 * var(--fluid-min-width)))'
+      'calc((var(--fluid-screen) - (var(--fluid-min-width) / 16) * 1rem) / ((var(--fluid-max-width) / 16) - (var(--fluid-min-width) / 16)))'
     )
   );
 
   test(
     'should preserve division precedence (3)',
-    // `1/(10/x)` folds to `.1 * x` via reciprocal.
-    testValue('calc(1/(10/var(--dot-size)))', 'calc(.1 * var(--dot-size))')
+    // `1/(10/x)` is not folded: x may expand to arbitrary tokens.
+    testValue(
+      'calc(1/(10/var(--dot-size)))',
+      'calc(1 / (10 / var(--dot-size)))'
+    )
   );
 
   test(
@@ -318,13 +321,13 @@ describe('Precision', () => {
   );
 
   test(
-    'canonical reciprocal coefficient with opaque term at default precision',
+    'division of an opaque term is kept at default precision',
     testValue('calc(var(--x) / 3)', 'calc(var(--x) / 3)')
   );
 
   test(
-    'canonical reciprocal coefficient with opaque term at precision false',
-    testValue('calc(var(--x) / 3)', 'calc(.3333333333333333 * var(--x))', {
+    'division of an opaque term is kept at precision false',
+    testValue('calc(var(--x) / 3)', 'calc(var(--x) / 3)', {
       precision: false,
     })
   );

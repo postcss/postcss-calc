@@ -1,6 +1,14 @@
 // Pratt parser over native @csstools/css-tokenizer tokens.
 import { baseOf } from './convertUnits.js';
-import { call, dim, ident, mkProduct, mkSum, num } from './node.js';
+import {
+  call,
+  dim,
+  ident,
+  groupSubstitution,
+  mkProduct,
+  mkSum,
+  num,
+} from './node.js';
 import { isCalculationFunction, isSupportedMathFunction } from './functions.js';
 import { assertDepth } from './limits.js';
 import { parseOpaqueCall, parseVar } from './parser/opaque.js';
@@ -58,9 +66,7 @@ function parsePrefix(input, cursor, token, depth) {
         case '(': {
           const expression = parseExpr(input, cursor, 0, depth + 1);
           expectPunct(input, cursor, ')');
-          return expression.type === 'Sum'
-            ? { ...expression, grouped: true }
-            : expression;
+          return groupSubstitution(expression);
         }
       }
     // No unary `+`/`-` production exists in the <calc-value> grammar; a

@@ -17,8 +17,6 @@ import {
   emitMathResult,
   emitNode,
   emitLeadingNeg,
-  emitSumTerms,
-  termSign,
 } from './serialize/expression.js';
 
 /**
@@ -125,17 +123,6 @@ function planSerializeResult(result, opts) {
 
 /** @param {Node} node @param {ReturnType<typeof makeContext>} session @return {void} */
 function emitRootExpr(node, session) {
-  if (
-    node.type === 'Sum' &&
-    node.grouped &&
-    node.terms.length > 1 &&
-    termSign(node.terms[0], 1, session.precision) === -1
-  ) {
-    session.buffer.push('-1 * (');
-    emitSumTerms(node.terms, session, -1);
-    session.buffer.push(')');
-    return;
-  }
   if (node.type === 'Sum' && node.terms.length === 1) {
     emitLeadingNeg(node.terms[0].node, session);
     return;

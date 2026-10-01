@@ -175,14 +175,14 @@ describe('reduceCalc: basic pipeline', () => {
     test('negated grouped sum with non-leading sub-precision negative term serializes with positive sign', () => {
       assert.equal(
         reduceCalc('calc((-10px + var(--x) - 1e-20em))'),
-        'calc(-1 * (10px + 0em - var(--x)))'
+        'calc(-10px + 0em + var(--x))'
       );
     });
 
     test('negated grouped sum with non-leading sub-precision positive term serializes with positive sign', () => {
       assert.equal(
         reduceCalc('calc((-10px + var(--x) + 1e-20em))'),
-        'calc(-1 * (10px + 0em - var(--x)))'
+        'calc(-10px + 0em + var(--x))'
       );
     });
 
@@ -196,7 +196,7 @@ describe('reduceCalc: basic pipeline', () => {
     test('precision: false retains grouped negative sum inversion', () => {
       assert.equal(
         reduceCalc('calc((-1e-20 + var(--x)))', { precision: false }),
-        'calc(-1 * (1e-20 - var(--x)))'
+        'calc(-1e-20 + var(--x))'
       );
     });
 
@@ -242,17 +242,17 @@ describe('reduceCalc: basic pipeline', () => {
       );
     });
 
-    test('negated grouped sum serializes a negated positive zero term as arithmetic negative zero', () => {
+    test('grouped sum with a leading negative term keeps its signs and a positive zero term', () => {
       assert.equal(
         reduceCalc('calc((-1em + var(--x) + 0px))'),
-        'calc(-1 * (1em + calc(-1 * 0px) - var(--x)))'
+        'calc(-1em + 0px + var(--x))'
       );
     });
 
-    test('negated grouped sum serializes a negated negative zero term as positive zero', () => {
+    test('grouped sum with a leading negative term keeps its signs and a negative zero term', () => {
       assert.equal(
         reduceCalc('calc((-1em + var(--x) - 0px))'),
-        'calc(-1 * (1em + 0px - var(--x)))'
+        'calc(-1em + calc(-1 * 0px) + var(--x))'
       );
     });
   });

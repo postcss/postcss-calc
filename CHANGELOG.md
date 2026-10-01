@@ -15,6 +15,22 @@ All notable changes to this project will be documented in this file. See [commit
   `calc(1px / 150000)` is no longer rounded to `.00001px`
 - `min()`, `max()` and `clamp()` return the chosen argument, keeping its
   original unit
+- treat `var()`, `env()`, `attr()` and other substitution functions as
+  positional barriers. They are replaced by raw tokens before the value is
+  computed, so with `--a: 1px + 2px`, `var(--a) * 2` means `1px + 2px * 2`.
+  Factors are no longer reordered or cancelled across them
+  (`var(--a) * 2` is no longer rewritten to `2 * var(--a)`,
+  `var(--a) / var(--a)` is not cancelled), and parentheses around them are kept
+  (`1px - (2 * var(--a))`)
+  Unrecognised functions such as `anchor-size()` are treated the same way, so
+  `2 * anchor-size(width) * .5` is no longer folded
+- keep the parentheses of a nested `calc()` that contains unresolved values, so
+  `calc(var(--a) - calc(var(--b) - var(--c)))` is no longer rewritten to
+  `calc(var(--a) - var(--b) + var(--c))`
+- do not flip every sign of a parenthesized sum that starts with a negative
+  term: `calc((var(--b) - 7 - 2))` is now `calc(-9 + var(--b))` instead of
+  `calc(-1 * (9 - var(--b)))`, which changed the value when `--b` expands to
+  several tokens
 
 ## 11.2.1 (2026-09-20)
 

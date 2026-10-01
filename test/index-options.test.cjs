@@ -23,10 +23,10 @@ test(
 describe('Ignore', () => {
   test(
     'should ignore reducing custom property',
-    // `/8` → `* .125` (reciprocal); coefficient first.
+    // A division after a substitution stays where it was written.
     testCss(
       ':root { --foo: calc(var(--bar) / 8); }',
-      /* ':root { --foo: calc(var(--bar)/8); }' */ ':root { --foo: calc(.125 * var(--bar)); }'
+      /* ':root { --foo: calc(var(--bar)/8); }' */ ':root { --foo: calc(var(--bar) / 8); }'
     )
   );
 
@@ -100,9 +100,9 @@ test(
 
 test(
   'nested var (reduce-css-calc#50)',
-  // `/2` → `* .5` (reciprocal); coefficient first.
+  // division by a number is kept as written.
   testValue(
     'calc(var(--xxx, var(--yyy)) / 2)',
-    'calc(.5 * var(--xxx, var(--yyy)))'
+    'calc(var(--xxx, var(--yyy)) / 2)'
   )
 );
