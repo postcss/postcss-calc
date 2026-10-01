@@ -6,11 +6,12 @@
   },
   "rules": {
     "array-callback-return": "error",
-    "complexity": ["error", { "max": 25 }],
+    "complexity": "error",
     "eqeqeq": ["error", "always", { "null": "ignore" }],
     "guard-for-in": "error",
     "import/no-duplicates": "error",
     "import/no-self-import": "error",
+    "max-depth": "error",
     "max-lines": ["error", { "max": 400 }],
     "no-bitwise": "error",
     "no-case-declarations": "error",
