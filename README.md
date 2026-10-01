@@ -4,8 +4,9 @@
 [![Support Chat][git-img]][git-url]
 
 [PostCSS Calc] lets you reduce `calc()` references whenever it's possible.
-When multiple units are mixed together in the same expression, the `calc()`
-statement is left as is, to fallback to the [W3C calc() implementation].
+When an expression mixes units that cannot be combined exactly (such as `px`
+and `em`), or contains values only known at runtime (such as `var()`), the
+unresolved part is left for the browser's [W3C calc() implementation].
 
 ## Installation
 
@@ -62,7 +63,7 @@ leaving all other text untouched.
 import reduceCalc from 'postcss-calc/reduce';
 
 reduceCalc('calc(1in + 10px)');
-// => 'calc(1.10417in)'
+// => 'calc(106px)'
 
 reduceCalc('min(50px, calc(2 * 40px))');
 // => 'calc(50px)'
@@ -122,6 +123,28 @@ postcss().use(calc({ precision: 10 }));
 Allows you to define the precision for decimal numbers. Set it to `false` to
 disable rounding and preserve full IEEE-754 floating-point precision (emitting
 the shortest round-tripping decimal representation).
+
+Values below 1 keep `precision` significant digits (`.0123456px` becomes
+`.012346px`), and larger values keep `precision` decimals. Divisions and unit
+conversions are folded only when the result is exact at the precision;
+otherwise they stay symbolic and everything around them is still simplified:
+
+```css
+.a {
+  width: calc(100% / 4);
+} /* calc(25%) */
+.b {
+  width: calc(100% / 3);
+} /* calc(100% / 3), not 33.33333% */
+.c {
+  width: calc(1cm + 1px);
+} /* calc(1cm + 1px) */
+.d {
+  width: calc(1px + 1pt);
+} /* calc(1.75pt) */
+```
+
+With `precision: false` nothing is rounded, so every division is folded.
 
 ```js
 var out = postcss()
@@ -235,15 +258,10 @@ canonical-form decisions:
   requires the zero term because it carries the length-percentage type.
 - **Constant folding.** `calc(43 + pi)` now folds to `46.14159` (§10.7.1).
   Previously `pi` / `e` stayed symbolic.
-- **Reciprocal conversion.** `calc(var(--x) / 2)` becomes
-  `calc(var(--x) * 0.5)`. The two are mathematically equivalent;
-  previously the division shape was kept.
 - **Distributive multiplication.** `calc(0.5 * (100vw - 10px))` becomes
   `calc(50vw - 5px)`.
 - **Unit case normalization.** `2PX` becomes `2px` (CSS units are case-
   insensitive; lowercase is conventional).
-- **Calc unwrap (§10.6).** `calc(var(--foo))` becomes `var(--foo)` — a
-  `calc()` containing a single value is replaced by that value.
 - **Spec-style spaced operators.** `2px*var(--x)` is serialized as
   `2px * var(--x)`. The tokenizer is unaffected; only output spacing
   differs.
@@ -265,13 +283,15 @@ To replace the value of CSS custom properties at build time, try [PostCSS Custom
 ## Contributing
 
 Work on a branch, install dev-dependencies, respect coding style & run tests
-before submitting a bug fix or a feature.
+before submitting a bug fix or a feature. See [CONTRIBUTING.md](CONTRIBUTING.md)
+for the full guidelines. The project uses [pnpm](https://pnpm.io/).
 
 ```bash
 git clone git@github.com:postcss/postcss-calc.git
 git checkout -b patch-1
-npm install
-npm test
+pnpm install
+pnpm test
+pnpm lint
 ```
 
 The normal test run uses a deterministic structural sample of the harvested
@@ -282,11 +302,19 @@ when changing parsing/simplification behavior:
 pnpm test:corpus:full
 ```
 
-Profile parser chains with `pnpm benchmark:arithmetic-chains` or
-`pnpm benchmark:nested-fallbacks`; both use 20 fresh paired blocks by default
-and write ignored schema-v2 reports. Compare a saved report with
-`node scripts/compare-parser-benchmarks.js <report>`. Run the correctness-aware
-corpus benchmark with `pnpm benchmark:corpus`.
+Performance changes to the parser, analyzer, simplifier, or serializer should be
+checked with the benchmarks. `pnpm benchmark:arithmetic-chains` and
+`pnpm benchmark:nested-fallbacks` compare the working tree against `HEAD` using
+20 fresh-process paired blocks by default and write git-ignored schema-v2
+reports under `reports/benchmarks/`. Re-check a saved report with
+`pnpm benchmark:reanalyze <report>`. `pnpm benchmark:corpus` compares the whole
+pipeline with `@csstools/css-calc` on real-world expressions and is
+report-only.
+
+These benchmarks time only the parser (or, for the corpus, the whole reducer)
+on one machine, and a `pass` means "no regression detected at the declared
+margin", not "no change". Read [BENCHMARKS.md](BENCHMARKS.md) before
+interpreting results.
 
 The PostCSS benchmark awaits `postcss().process(...)`, and that await already
 triggers result stringification. It therefore does not add a redundant

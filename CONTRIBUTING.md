@@ -32,7 +32,7 @@ Before submitting a new issue, be sure to make a cursory search to see if the en
 Before contributing any code to the project, be sure to either open a new issue in the issue tracker detailing what you intend to contribute, or comment on an existing issue if one exists.
 This allows us to:
 
-- give feedback early on before significant effort has been put into the endevour.
+- give feedback early on before significant effort has been put into the endeavour.
 - align your contribution with ongoing efforts.
 - make sure that there's no ongoing effort into the issue already.
 
@@ -42,3 +42,32 @@ When submitting your pull request, make sure that you:
 - summarize your contribution.
 - list the issues that this contribution addresses.
 - include tests for your contribution.
+
+## Development
+
+The project uses [pnpm](https://pnpm.io/) and ES modules. Before submitting a
+pull request, run:
+
+```sh
+pnpm install
+pnpm test
+pnpm lint
+```
+
+`pnpm lint` runs oxlint, `tsc`, and `oxfmt --check`; `pnpm fmt` formats the
+code. If your change touches parsing, analysis, or simplification, also run the
+full differential corpus with `pnpm test:corpus:full`.
+
+## Benchmarks and Performance
+
+If your pull request touches hot parsing, analysis, simplification, or
+serialization paths, run the relevant benchmarks. The paired parser benchmarks
+compare your working tree against a baseline revision (`HEAD` by default), so
+commit or stash unrelated changes first; there is no need to run them twice by
+hand.
+
+Benchmark results are noisy estimates, not proof. Run them on an idle machine,
+report the verdict together with the intervals and your environment, and treat
+`inconclusive` as "unknown", not as "fine". Do not rerun until you get a
+favorable verdict. See [BENCHMARKS.md](BENCHMARKS.md) for what each benchmark
+does and does not measure, the methodology, and the controlled-run checklist.
