@@ -1,4 +1,4 @@
-/* oxlint-disable no-bitwise, complexity */
+/* oxlint-disable no-bitwise */
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';

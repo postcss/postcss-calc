@@ -1,4 +1,3 @@
-/* oxlint-disable complexity */
 import {
   DECISION_CONFIG_VERSION,
   MIN_VALID_BLOCKS,
@@ -20,14 +19,17 @@ export function validateSchemaV2Artifact(artifact) {
   )
     throw new TypeError('artifact has an invalid seed');
   if (artifact.benchmark === 'corpus') return validateCorpusArtifact(artifact);
+  return validateParserArtifact(artifact);
+}
+
+function validateParserArtifact(artifact) {
   if (!Array.isArray(artifact.blocks))
     throw new TypeError('artifact must contain blocks');
   const config =
     artifact.config?.decisionConfigVersion === DECISION_CONFIG_VERSION
       ? validateDecisionConfig(artifact.config, 'parser artifact')
       : migrateLegacyDecisionConfig(artifact, 'parser');
-  const requestedBlocks = config.requestedBlocks;
-  const maxAttempts = config.maxAttempts;
+  const { requestedBlocks, maxAttempts, minimumBlocks } = config;
   if (
     !Number.isInteger(requestedBlocks) ||
     requestedBlocks < MIN_VALID_BLOCKS ||
@@ -36,16 +38,8 @@ export function validateSchemaV2Artifact(artifact) {
     throw new TypeError('artifact has an invalid requested block count');
   if (!Number.isInteger(maxAttempts) || maxAttempts < requestedBlocks)
     throw new TypeError('artifact has an invalid maxAttempts');
-  const minimumBlocks = config.minimumBlocks;
   const underFloor = artifact.blocks.length < minimumBlocks;
-  const isInconclusiveUnderfloorArtifact =
-    underFloor &&
-    artifact.analysis?.status === 'inconclusive' &&
-    Array.isArray(artifact.attempts) &&
-    artifact.attempts.length > 0;
-  const isCorrectnessFailure =
-    artifact.analysis?.status === 'correctness-failure';
-  if (underFloor && !isInconclusiveUnderfloorArtifact && !isCorrectnessFailure)
+  if (underFloor && !isAllowedUnderFloor(artifact))
     throw new TypeError(
       `artifact has fewer than ${minimumBlocks} valid blocks`
     );
@@ -54,56 +48,61 @@ export function validateSchemaV2Artifact(artifact) {
     throw new TypeError('artifact must contain workload keys');
   for (const [blockIndex, block] of artifact.blocks.entries())
     validateParserRecord(block, `block ${blockIndex}`, expected);
-  if (artifact.attempts !== undefined) {
-    if (!Array.isArray(artifact.attempts) || artifact.attempts.length === 0)
-      throw new TypeError('artifact attempts must be a non-empty array');
-    if (artifact.attempts.length > maxAttempts)
-      throw new TypeError('artifact contains more attempts than maxAttempts');
-    for (const [attemptIndex, attempt] of artifact.attempts.entries()) {
-      validateParserRecord(
-        attempt,
-        `attempt ${attemptIndex}`,
-        expected,
-        true,
-        config.driftThreshold
-      );
-      if (attempt.index !== attemptIndex)
-        throw new TypeError(
-          `attempt ${attemptIndex} has an inconsistent index`
-        );
-    }
-    const accepted = artifact.attempts.filter((attempt) => !attempt.rejected);
-    if (accepted.length !== artifact.blocks.length)
-      throw new TypeError('artifact attempts and blocks are inconsistent');
-    for (const [index, block] of artifact.blocks.entries()) {
-      const attempt = accepted[index];
-      if (JSON.stringify(attempt) !== JSON.stringify(block))
-        throw new TypeError('artifact attempts and blocks are inconsistent');
-    }
-  } else if (underFloor) {
+  if (artifact.attempts !== undefined)
+    validateAttempts(artifact, expected, config);
+  else if (underFloor)
     throw new TypeError('under-floor artifact must retain attempts');
-  }
-  if (artifact.blocks.length > requestedBlocks)
-    throw new TypeError('artifact contains more blocks than requested');
-  if (artifact.blocks.length === requestedBlocks) {
-    const orders = artifact.blocks.map((block) => block.processOrder);
-    if (
-      orders.filter((order) => order === 'baseline-first').length !==
-      requestedBlocks / 2
-    )
-      throw new TypeError('accepted blocks have an unbalanced process order');
-  }
-  if (artifact.blocks.length >= minimumBlocks) {
-    const orderCounts = {
-      'baseline-first': artifact.blocks.filter(
-        (block) => block.processOrder === 'baseline-first'
-      ).length,
-      'candidate-first': artifact.blocks.filter(
-        (block) => block.processOrder === 'candidate-first'
-      ).length,
-    };
-    if (orderCounts['baseline-first'] !== orderCounts['candidate-first'])
-      throw new TypeError('accepted blocks have an unbalanced process order');
-  }
+  validateBlockBalance(artifact.blocks, requestedBlocks, minimumBlocks);
   return artifact;
+}
+
+function isAllowedUnderFloor(artifact) {
+  const status = artifact.analysis?.status;
+  const isInconclusive =
+    status === 'inconclusive' &&
+    Array.isArray(artifact.attempts) &&
+    artifact.attempts.length > 0;
+  return isInconclusive || status === 'correctness-failure';
+}
+
+function validateAttempts(artifact, expected, config) {
+  const { attempts, blocks } = artifact;
+  if (!Array.isArray(attempts) || attempts.length === 0)
+    throw new TypeError('artifact attempts must be a non-empty array');
+  if (attempts.length > config.maxAttempts)
+    throw new TypeError('artifact contains more attempts than maxAttempts');
+  for (const [attemptIndex, attempt] of attempts.entries()) {
+    validateParserRecord(
+      attempt,
+      `attempt ${attemptIndex}`,
+      expected,
+      true,
+      config.driftThreshold
+    );
+    if (attempt.index !== attemptIndex)
+      throw new TypeError(`attempt ${attemptIndex} has an inconsistent index`);
+  }
+  const accepted = attempts.filter((attempt) => !attempt.rejected);
+  if (accepted.length !== blocks.length)
+    throw new TypeError('artifact attempts and blocks are inconsistent');
+  for (const [index, block] of blocks.entries())
+    if (JSON.stringify(accepted[index]) !== JSON.stringify(block))
+      throw new TypeError('artifact attempts and blocks are inconsistent');
+}
+
+function validateBlockBalance(blocks, requestedBlocks, minimumBlocks) {
+  if (blocks.length > requestedBlocks)
+    throw new TypeError('artifact contains more blocks than requested');
+  const countFirst = (order) =>
+    blocks.filter((block) => block.processOrder === order).length;
+  if (
+    blocks.length === requestedBlocks &&
+    countFirst('baseline-first') !== requestedBlocks / 2
+  )
+    throw new TypeError('accepted blocks have an unbalanced process order');
+  if (
+    blocks.length >= minimumBlocks &&
+    countFirst('baseline-first') !== countFirst('candidate-first')
+  )
+    throw new TypeError('accepted blocks have an unbalanced process order');
 }

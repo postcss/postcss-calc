@@ -1,4 +1,3 @@
-/* oxlint-disable complexity */
 export const TARGET_BATCH_MS = 25;
 export const MIN_WARMUPS = 5;
 export const MAX_WARMUPS = 10;
@@ -40,6 +39,71 @@ export const DECISION_CONFIG_KEYS = [
   'intervalMethod',
 ];
 
+function isPositiveFinite(value) {
+  return typeof value === 'number' && Number.isFinite(value) && value > 0;
+}
+
+function requireParameters(config, kind, keys, isValid) {
+  for (const key of keys)
+    if (!isValid(config[key]))
+      throw new TypeError(`${kind} has invalid decision parameter ${key}`);
+}
+
+function validateCounts(config, kind) {
+  requireParameters(
+    config,
+    kind,
+    [
+      'requestedBlocks',
+      'minimumBlocks',
+      'maxAttempts',
+      'measuredBatchCount',
+      'bootstrapResamples',
+    ],
+    (value) => Number.isInteger(value) && value > 0
+  );
+  if (config.requestedBlocks < config.minimumBlocks)
+    throw new TypeError(`${kind} has an invalid requested block count`);
+  if (config.maxAttempts < config.requestedBlocks)
+    throw new TypeError(`${kind} has an invalid maxAttempts`);
+  requireParameters(
+    config,
+    kind,
+    ['warmupMinimum', 'warmupMaximum'],
+    (value) => Number.isInteger(value) && value >= 0
+  );
+  if (config.warmupMaximum < config.warmupMinimum)
+    throw new TypeError(`${kind} has an invalid warm-up range`);
+}
+
+function validateMargins(config, kind) {
+  requireParameters(
+    config,
+    kind,
+    [
+      'targetBatchMs',
+      'driftThreshold',
+      'bootstrapResamples',
+      'runtimeNonRegressionMargin',
+      'equivalenceMargin',
+      'precisionMargin',
+      'growthThreshold',
+      'orderInteractionThreshold',
+    ],
+    isPositiveFinite
+  );
+  requireParameters(
+    config,
+    kind,
+    ['confidence'],
+    (value) => isPositiveFinite(value) && value < 1
+  );
+  if (config.runtimeNonRegressionMargin < 1 || config.equivalenceMargin < 1)
+    throw new TypeError(`${kind} has an invalid ratio margin`);
+  if (config.precisionMargin < 1 || config.growthThreshold <= 1)
+    throw new TypeError(`${kind} has an invalid precision or growth margin`);
+}
+
 /** @param {object} config @param {string} kind */
 export function validateDecisionConfig(config, kind = 'artifact') {
   if (!config || typeof config !== 'object')
@@ -51,51 +115,8 @@ export function validateDecisionConfig(config, kind = 'artifact') {
     throw new TypeError(
       `${kind} has an invalid decision configuration version`
     );
-  for (const key of [
-    'requestedBlocks',
-    'minimumBlocks',
-    'maxAttempts',
-    'measuredBatchCount',
-    'bootstrapResamples',
-  ])
-    if (!Number.isInteger(config[key]) || config[key] <= 0)
-      throw new TypeError(`${kind} has invalid decision parameter ${key}`);
-  if (config.requestedBlocks < config.minimumBlocks)
-    throw new TypeError(`${kind} has an invalid requested block count`);
-  if (config.maxAttempts < config.requestedBlocks)
-    throw new TypeError(`${kind} has an invalid maxAttempts`);
-  for (const key of ['warmupMinimum', 'warmupMaximum'])
-    if (!Number.isInteger(config[key]) || config[key] < 0)
-      throw new TypeError(`${kind} has invalid decision parameter ${key}`);
-  if (config.warmupMaximum < config.warmupMinimum)
-    throw new TypeError(`${kind} has an invalid warm-up range`);
-  for (const key of [
-    'targetBatchMs',
-    'driftThreshold',
-    'bootstrapResamples',
-    'runtimeNonRegressionMargin',
-    'equivalenceMargin',
-    'precisionMargin',
-    'growthThreshold',
-    'orderInteractionThreshold',
-  ])
-    if (
-      typeof config[key] !== 'number' ||
-      !Number.isFinite(config[key]) ||
-      config[key] <= 0
-    )
-      throw new TypeError(`${kind} has invalid decision parameter ${key}`);
-  if (
-    typeof config.confidence !== 'number' ||
-    !Number.isFinite(config.confidence) ||
-    config.confidence <= 0 ||
-    config.confidence >= 1
-  )
-    throw new TypeError(`${kind} has invalid decision parameter confidence`);
-  if (config.runtimeNonRegressionMargin < 1 || config.equivalenceMargin < 1)
-    throw new TypeError(`${kind} has an invalid ratio margin`);
-  if (config.precisionMargin < 1 || config.growthThreshold <= 1)
-    throw new TypeError(`${kind} has an invalid precision or growth margin`);
+  validateCounts(config, kind);
+  validateMargins(config, kind);
   if (
     ![DECISION_INTERVAL_METHOD, CORPUS_INTERVAL_METHOD].includes(
       config.intervalMethod
@@ -107,6 +128,51 @@ export function validateDecisionConfig(config, kind = 'artifact') {
   return config;
 }
 
+function legacyDefaults(requestedBlocks, isCorpus) {
+  return {
+    requestedBlocks,
+    minimumBlocks: MIN_VALID_BLOCKS,
+    maxAttempts: Math.max(30, requestedBlocks),
+    targetBatchMs: TARGET_BATCH_MS,
+    warmupMinimum: isCorpus ? 0 : MIN_WARMUPS,
+    warmupMaximum: isCorpus ? 0 : MAX_WARMUPS,
+    measuredBatchCount: MEASURED_BATCHES,
+    driftThreshold: DRIFT_THRESHOLD,
+    bootstrapResamples: BOOTSTRAP_RESAMPLES,
+    confidence: 0.95,
+    runtimeNonRegressionMargin: NON_REGRESSION_MARGIN,
+    equivalenceMargin: isCorpus ? CORPUS_EQUIVALENCE_MARGIN : 1.1,
+    precisionMargin: 1.1,
+    growthThreshold: GROWTH_THRESHOLD,
+    orderInteractionThreshold: Math.log(1.1),
+    intervalMethod: isCorpus
+      ? CORPUS_INTERVAL_METHOD
+      : DECISION_INTERVAL_METHOD,
+  };
+}
+
+function legacySource(artifact) {
+  const config = artifact?.config ?? {};
+  const blocks = artifact?.blocks?.length ?? artifact?.replicates?.length ?? 0;
+  const requestedBlocks =
+    config.requestedBlocks ?? config.blocks ?? config.replicates ?? blocks;
+  const source = {
+    ...config,
+    requestedBlocks,
+    measuredBatchCount:
+      config.measuredBatchCount ?? config.batches ?? MEASURED_BATCHES,
+  };
+  return { config, blocks, source };
+}
+
+function legacyCorpusFields(config, blocks) {
+  return {
+    replicates: config.replicates ?? blocks,
+    batches: config.batches ?? 6,
+    calibrationOrderBalanced: config.calibrationOrderBalanced ?? false,
+  };
+}
+
 /**
  * Migrate the pre-contract artifacts that were emitted by the first schema-v2
  * implementation.  This is intentionally the only place where repository
@@ -116,46 +182,15 @@ export function migrateLegacyDecisionConfig(
   artifact,
   kind = artifact?.benchmark === 'corpus' ? 'corpus' : 'parser'
 ) {
-  const source = artifact?.config ?? {};
-  const blocks = artifact?.blocks?.length ?? artifact?.replicates?.length ?? 0;
-  const requestedBlocks =
-    source.requestedBlocks ?? source.blocks ?? source.replicates ?? blocks;
-  const base = {
-    decisionConfigVersion: DECISION_CONFIG_VERSION,
-    requestedBlocks,
-    minimumBlocks: source.minimumBlocks ?? MIN_VALID_BLOCKS,
-    maxAttempts: source.maxAttempts ?? Math.max(30, requestedBlocks),
-    targetBatchMs: source.targetBatchMs ?? TARGET_BATCH_MS,
-    warmupMinimum:
-      source.warmupMinimum ?? (kind === 'corpus' ? 0 : MIN_WARMUPS),
-    warmupMaximum:
-      source.warmupMaximum ?? (kind === 'corpus' ? 0 : MAX_WARMUPS),
-    measuredBatchCount:
-      source.measuredBatchCount ?? source.batches ?? MEASURED_BATCHES,
-    driftThreshold: source.driftThreshold ?? DRIFT_THRESHOLD,
-    bootstrapResamples: source.bootstrapResamples ?? BOOTSTRAP_RESAMPLES,
-    confidence: source.confidence ?? 0.95,
-    runtimeNonRegressionMargin:
-      source.runtimeNonRegressionMargin ?? NON_REGRESSION_MARGIN,
-    equivalenceMargin:
-      source.equivalenceMargin ??
-      (kind === 'corpus' ? CORPUS_EQUIVALENCE_MARGIN : 1.1),
-    precisionMargin: source.precisionMargin ?? 1.1,
-    precisionMethod: PRECISION_METHOD,
-    growthThreshold: source.growthThreshold ?? GROWTH_THRESHOLD,
-    orderInteractionThreshold:
-      source.orderInteractionThreshold ?? Math.log(1.1),
-    intervalMethod:
-      source.intervalMethod ??
-      (kind === 'corpus' ? CORPUS_INTERVAL_METHOD : DECISION_INTERVAL_METHOD),
-  };
-  if (kind === 'corpus')
-    return {
-      ...base,
-      replicates: source.replicates ?? blocks,
-      batches: source.batches ?? 6,
-      calibrationOrderBalanced: source.calibrationOrderBalanced ?? false,
-    };
+  const isCorpus = kind === 'corpus';
+  const { config, blocks, source } = legacySource(artifact);
+  const requestedBlocks = source.requestedBlocks;
+  const defaults = legacyDefaults(requestedBlocks, isCorpus);
+  const base = { decisionConfigVersion: DECISION_CONFIG_VERSION };
+  for (const [key, fallback] of Object.entries(defaults))
+    base[key] = source[key] ?? fallback;
+  base.precisionMethod = PRECISION_METHOD;
+  if (isCorpus) return { ...base, ...legacyCorpusFields(config, blocks) };
   return base;
 }
 

@@ -1,6 +1,17 @@
-/* oxlint-disable complexity */
 import { BOOTSTRAP_RESAMPLES, DECISION_INTERVAL_METHOD } from './config.js';
 import { seededRandom } from './random.js';
+import {
+  columnMeans,
+  matrixWidth,
+  resampleRows,
+  resampleStratum,
+  sampledEffect,
+  sampledVariance,
+  splitStrata,
+  standardErrorsForSample,
+  studentizedStatistic,
+  validateRows,
+} from './bootstrap-matrix.js';
 import { finiteValues, percentile } from './statistics.js';
 
 /** @param {number[]} values @param {number} seed @param {number} [resamples] */
@@ -70,25 +81,12 @@ export function bootstrapPairedIntervals(
     throw new RangeError('cannot bootstrap an empty matrix');
   if (!Number.isInteger(resamples) || resamples <= 0)
     throw new RangeError('resamples must be positive');
-  const width = rows[0]?.length;
-  if (!Number.isInteger(width) || width <= 0)
-    throw new RangeError('cannot bootstrap a matrix without columns');
+  const width = matrixWidth(rows);
   if (familyCount !== width)
     throw new RangeError('familyCount must equal the matrix width');
-  for (const row of rows) {
-    if (!Array.isArray(row) || row.length !== width) {
-      throw new TypeError('bootstrap rows must have equal widths');
-    }
-    finiteValues(row);
-  }
+  validateRows(rows, width);
 
-  const observed = Array(width).fill(0);
-  for (const row of rows)
-    for (let column = 0; column < width; column++)
-      observed[column] += row[column];
-  for (let column = 0; column < width; column++)
-    observed[column] /= rows.length;
-
+  const observed = columnMeans(rows, width);
   const standardErrors = Array.from({ length: width }, (_, column) => {
     const variance =
       rows.reduce(
@@ -97,29 +95,14 @@ export function bootstrapPairedIntervals(
       ) / Math.max(1, rows.length - 1);
     return Math.sqrt(variance / rows.length);
   });
-  const distributions = Array.from({ length: width }, () => Array(resamples));
-  const studentizedDeviations = Array(resamples);
-  const random = seededRandom(seed);
-  for (let sample = 0; sample < resamples; sample++) {
-    const sums = Array(width).fill(0);
-    for (let i = 0; i < rows.length; i++) {
-      const row = rows[Math.floor(random() * rows.length)];
-      for (let column = 0; column < width; column++)
-        sums[column] += row[column];
-    }
-    let maxDeviation = 0;
-    for (let column = 0; column < width; column++) {
-      const mean = sums[column] / rows.length;
-      distributions[column][sample] = mean;
-      const standardError = standardErrors[column];
-      let deviation;
-      if (standardError === 0)
-        deviation = mean === observed[column] ? 0 : Infinity;
-      else deviation = Math.abs((mean - observed[column]) / standardError);
-      maxDeviation = Math.max(maxDeviation, deviation);
-    }
-    studentizedDeviations[sample] = maxDeviation;
-  }
+  const { distributions, studentizedDeviations } = resampleRows(
+    rows,
+    width,
+    resamples,
+    seed,
+    observed,
+    standardErrors
+  );
 
   const familyCritical = percentile(studentizedDeviations, 0.95);
   return {
@@ -167,31 +150,11 @@ export function bootstrapStratifiedMaxT({
     throw new RangeError('resamples must be positive');
   if (!(confidence > 0 && confidence < 1))
     throw new RangeError('confidence must be in (0, 1)');
-  const width = rows[0]?.length;
-  if (!Number.isInteger(width) || width <= 0)
-    throw new RangeError('cannot bootstrap a matrix without columns');
-  for (const row of rows) {
-    if (!Array.isArray(row) || row.length !== width)
-      throw new TypeError('bootstrap rows must have equal widths');
-    finiteValues(row);
-  }
-  const labels = [...new Set(strata)];
-  if (labels.length !== 2)
-    throw new RangeError('stratified max-T requires exactly two strata');
-  const ordered = labels.sort();
-  const strataRows = ordered.map((label) =>
-    rows
-      .map((row, index) => ({ row, label: strata[index] }))
-      .filter((item) => item.label === label)
-      .map((item) => item.row)
-      .sort(compareRows)
-  );
-  if (strataRows.some((group) => group.length === 0))
-    throw new RangeError('cannot resample an empty stratum');
+  const width = matrixWidth(rows);
+  validateRows(rows, width);
+  const { ordered, strataRows } = splitStrata(rows, strata);
 
-  const observedByStratum = strataRows.map((group) =>
-    columnMeans(group, width)
-  );
+  const observedByStratum = strataRows.map((g) => columnMeans(g, width));
   const observed = Array.from(
     { length: width },
     (_, column) =>
@@ -213,64 +176,42 @@ export function bootstrapStratifiedMaxT({
     (group) => new Int32Array(group.length)
   );
   const sampledMeans = strataRows.map(() => new Float64Array(width));
-  let degenerateResamples = 0;
-  let degenerateFallbacks = 0;
+  const counters = {
+    degenerateResamples: 0,
+    degenerateFallbacks: 0,
+    degenerateEndpoint: false,
+  };
   const random = seededRandom(seed);
 
   for (let sample = 0; sample < resamples; sample++) {
-    for (let stratum = 0; stratum < strataCount; stratum++) {
-      const group = strataRows[stratum];
-      const indices = sampledIndices[stratum];
-      const means = sampledMeans[stratum];
-      means.fill(0);
-      for (let i = 0; i < group.length; i++) {
-        const index = Math.floor(random() * group.length);
-        indices[i] = index;
-        const row = group[index];
-        for (let column = 0; column < width; column++)
-          means[column] += row[column];
-      }
-      for (let column = 0; column < width; column++)
-        means[column] /= group.length;
-    }
+    for (let stratum = 0; stratum < strataCount; stratum++)
+      resampleStratum(
+        strataRows[stratum],
+        sampledIndices[stratum],
+        sampledMeans[stratum],
+        width,
+        random
+      );
     let maxT = 0;
-    let hasDegenerateEndpoint = false;
+    counters.degenerateEndpoint = false;
     for (let column = 0; column < width; column++) {
-      let effect = 0;
-      let variance = 0;
-      for (let stratum = 0; stratum < strataCount; stratum++) {
-        const group = strataRows[stratum];
-        const indices = sampledIndices[stratum];
-        const mean = sampledMeans[stratum][column];
-        effect += mean;
-        let within = 0;
-        for (let i = 0; i < indices.length; i++)
-          within += (group[indices[i]][column] - mean) ** 2;
-        variance += within / Math.max(1, group.length - 1) / group.length;
-      }
-      effect /= strataCount;
-      const sampledSE = Math.sqrt(variance / strataCount ** 2);
+      const effect = sampledEffect(sampledMeans, column);
+      const variance = sampledVariance(
+        strataRows,
+        sampledIndices,
+        sampledMeans,
+        column
+      );
       distributions[column][sample] = effect;
-      let statistic;
-      if (sampledSE === 0) {
-        hasDegenerateEndpoint = true;
-        const deviation = effect - observed[column];
-        if (deviation === 0) {
-          statistic = 0;
-        } else if (observedSE[column] === 0) {
-          throw new RangeError(
-            'nonzero bootstrap deviation has no positive standard error'
-          );
-        } else {
-          statistic = deviation / observedSE[column];
-          degenerateFallbacks++;
-        }
-      } else {
-        statistic = (effect - observed[column]) / sampledSE;
-      }
+      const statistic = studentizedStatistic(
+        effect - observed[column],
+        Math.sqrt(variance / strataCount ** 2),
+        observedSE[column],
+        counters
+      );
       maxT = Math.max(maxT, Math.abs(statistic));
     }
-    if (hasDegenerateEndpoint) degenerateResamples++;
+    if (counters.degenerateEndpoint) counters.degenerateResamples++;
     studentizedMax[sample] = maxT;
   }
 
@@ -284,8 +225,8 @@ export function bootstrapStratifiedMaxT({
     observed,
     standardErrors: observedSE,
     familyCritical,
-    degenerateResamples,
-    degenerateFallbacks,
+    degenerateResamples: counters.degenerateResamples,
+    degenerateFallbacks: counters.degenerateFallbacks,
     intervals: distributions.map((values, column) => {
       const alpha = (1 - confidence) / 2;
       const halfWidth =
@@ -352,33 +293,4 @@ export function bootstrapCorpusInterval(strata, seed, resamples, confidence) {
       )
     : strata;
   return bootstrapPairedReplicateInterval(pairs, seed, resamples, confidence);
-}
-
-function compareRows(left, right) {
-  for (let index = 0; index < left.length; index++) {
-    if (left[index] !== right[index]) return left[index] - right[index];
-  }
-  return 0;
-}
-
-function columnMeans(rows, width) {
-  const means = Array(width).fill(0);
-  for (const row of rows)
-    for (let column = 0; column < width; column++) means[column] += row[column];
-  return means.map((sum) => sum / rows.length);
-}
-
-function standardErrorsForSample(stratumMeans, sampledRows, width) {
-  return Array.from({ length: width }, (_, column) => {
-    let variance = 0;
-    for (let stratum = 0; stratum < sampledRows.length; stratum++) {
-      const rows = sampledRows[stratum];
-      const mean = stratumMeans[stratum][column];
-      const within =
-        rows.reduce((sum, row) => sum + (row[column] - mean) ** 2, 0) /
-        Math.max(1, rows.length - 1);
-      variance += within / rows.length;
-    }
-    return Math.sqrt(variance / stratumMeans.length ** 2);
-  });
 }

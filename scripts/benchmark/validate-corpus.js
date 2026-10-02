@@ -1,4 +1,3 @@
-/* oxlint-disable complexity */
 import {
   CORPUS_CATEGORIES,
   NEUTRAL_CORPUS_CATEGORIES,
@@ -11,6 +10,8 @@ import {
 } from './config.js';
 import { positiveFinite } from './validate-parser.js';
 import { validateCorpusGroupSummaries } from './validate-corpus-summaries.js';
+
+const ORDERS = ['ours-first', 'reference-first'];
 
 export function validateCorpusArtifact(artifact) {
   if (
@@ -41,91 +42,115 @@ export function validateCorpusArtifact(artifact) {
   const expectedGroups = corpusGroups(artifact);
   if (expectedGroups.length < 2)
     throw new TypeError('corpus artifact has no complete comparison groups');
-  const repetitionsByGroup = new Map();
-  const checksumsByGroup = new Map();
-  const allChecksumsByGroup = new Map();
+  const state = {
+    config,
+    expectedGroups,
+    repetitionsByGroup: new Map(),
+    checksumsByGroup: new Map(),
+    allChecksumsByGroup: new Map(),
+  };
   const replicateIds = new Set();
   for (const [index, replicate] of artifact.replicates.entries()) {
-    if (
-      !Number.isInteger(replicate?.replicate) ||
-      replicate.replicate < 0 ||
-      replicateIds.has(replicate.replicate)
-    )
-      throw new TypeError(`corpus replicate ${index} has an invalid id`);
-    replicateIds.add(replicate.replicate);
-    if (config.calibrationOrderBalanced === true) {
-      if (
-        !['ours-first', 'reference-first'].includes(replicate.calibrationOrder)
-      )
-        throw new TypeError(
-          `corpus replicate ${index} has an invalid calibration order`
-        );
-      for (const expectedOrder of ['ours-first', 'reference-first']) {
-        const count = artifact.replicates.filter(
-          (item) => item.calibrationOrder === expectedOrder
-        ).length;
-        if (Math.abs(count - artifact.replicates.length / 2) > 1)
-          throw new TypeError('corpus calibration orders are unbalanced');
-      }
-    }
-    if (
-      !Array.isArray(replicate.permutation) ||
-      !isPermutation(replicate.permutation, artifact.correctness.accepted)
-    )
-      throw new TypeError(
-        `corpus replicate ${index} has an invalid permutation`
-      );
-    if (!Array.isArray(replicate.batches) || replicate.batches.length !== 6)
-      throw new TypeError(`corpus replicate ${index} must contain six batches`);
-    const orderCounts = { 'ours-first': 0, 'reference-first': 0 };
-    for (const [batchIndex, batch] of replicate.batches.entries()) {
-      if (
-        !batch ||
-        !['ours-first', 'reference-first'].includes(batch.order) ||
-        !Array.isArray(batch.measurements)
-      )
-        throw new TypeError(
-          `corpus replicate ${index} has invalid batch order`
-        );
-      orderCounts[batch.order]++;
-      const seenGroups = new Set();
-      if (batch.measurements.length !== expectedGroups.length)
-        throw new TypeError(
-          `corpus replicate ${index} batch ${batchIndex} has incomplete groups`
-        );
-      for (const measurement of batch.measurements) {
-        if (
-          !measurement ||
-          typeof measurement.group !== 'string' ||
-          !expectedGroups.includes(measurement.group) ||
-          seenGroups.has(measurement.group)
-        )
-          throw new TypeError(
-            `corpus replicate ${index} batch ${batchIndex} has invalid groups`
-          );
-        seenGroups.add(measurement.group);
-        validateCorpusMeasurement(
-          measurement,
-          replicate,
-          index,
-          config,
-          repetitionsByGroup,
-          checksumsByGroup,
-          allChecksumsByGroup
-        );
-      }
-      if (seenGroups.size !== expectedGroups.length)
-        throw new TypeError(
-          `corpus replicate ${index} batch ${batchIndex} has missing groups`
-        );
-    }
-    if (orderCounts['ours-first'] !== 3 || orderCounts['reference-first'] !== 3)
-      throw new TypeError(
-        `corpus replicate ${index} has unbalanced process orders`
-      );
+    validateReplicateHeader(artifact, replicate, index, replicateIds, config);
+    validateReplicateBatches(replicate, index, state);
   }
-  validateCorpusGroupSummaries(artifact, expectedGroups, allChecksumsByGroup);
+  validateCorpusGroupSummaries(
+    artifact,
+    expectedGroups,
+    state.allChecksumsByGroup
+  );
   return artifact;
+}
+
+function validateReplicateHeader(
+  artifact,
+  replicate,
+  index,
+  replicateIds,
+  config
+) {
+  if (
+    !Number.isInteger(replicate?.replicate) ||
+    replicate.replicate < 0 ||
+    replicateIds.has(replicate.replicate)
+  )
+    throw new TypeError(`corpus replicate ${index} has an invalid id`);
+  replicateIds.add(replicate.replicate);
+  if (config.calibrationOrderBalanced === true)
+    validateCalibrationBalance(artifact, replicate, index);
+  if (
+    !Array.isArray(replicate.permutation) ||
+    !isPermutation(replicate.permutation, artifact.correctness.accepted)
+  )
+    throw new TypeError(`corpus replicate ${index} has an invalid permutation`);
+  if (!Array.isArray(replicate.batches) || replicate.batches.length !== 6)
+    throw new TypeError(`corpus replicate ${index} must contain six batches`);
+}
+
+function validateCalibrationBalance(artifact, replicate, index) {
+  if (!ORDERS.includes(replicate.calibrationOrder))
+    throw new TypeError(
+      `corpus replicate ${index} has an invalid calibration order`
+    );
+  for (const expectedOrder of ORDERS) {
+    const count = artifact.replicates.filter(
+      (item) => item.calibrationOrder === expectedOrder
+    ).length;
+    if (Math.abs(count - artifact.replicates.length / 2) > 1)
+      throw new TypeError('corpus calibration orders are unbalanced');
+  }
+}
+
+function validateReplicateBatches(replicate, index, state) {
+  const orderCounts = { 'ours-first': 0, 'reference-first': 0 };
+  for (const [batchIndex, batch] of replicate.batches.entries()) {
+    if (
+      !batch ||
+      !ORDERS.includes(batch.order) ||
+      !Array.isArray(batch.measurements)
+    )
+      throw new TypeError(`corpus replicate ${index} has invalid batch order`);
+    orderCounts[batch.order]++;
+    validateBatchMeasurements(batch, batchIndex, replicate, index, state);
+  }
+  if (orderCounts['ours-first'] !== 3 || orderCounts['reference-first'] !== 3)
+    throw new TypeError(
+      `corpus replicate ${index} has unbalanced process orders`
+    );
+}
+
+function validateBatchMeasurements(batch, batchIndex, replicate, index, state) {
+  const { expectedGroups } = state;
+  const seenGroups = new Set();
+  if (batch.measurements.length !== expectedGroups.length)
+    throw new TypeError(
+      `corpus replicate ${index} batch ${batchIndex} has incomplete groups`
+    );
+  for (const measurement of batch.measurements) {
+    if (
+      !measurement ||
+      typeof measurement.group !== 'string' ||
+      !expectedGroups.includes(measurement.group) ||
+      seenGroups.has(measurement.group)
+    )
+      throw new TypeError(
+        `corpus replicate ${index} batch ${batchIndex} has invalid groups`
+      );
+    seenGroups.add(measurement.group);
+    validateCorpusMeasurement(
+      measurement,
+      replicate,
+      index,
+      state.config,
+      state.repetitionsByGroup,
+      state.checksumsByGroup,
+      state.allChecksumsByGroup
+    );
+  }
+  if (seenGroups.size !== expectedGroups.length)
+    throw new TypeError(
+      `corpus replicate ${index} batch ${batchIndex} has missing groups`
+    );
 }
 
 function validateCorpusCorrectness(artifact) {
@@ -203,38 +228,13 @@ function validateCorpusMeasurement(
   checksumsByGroup,
   allChecksumsByGroup
 ) {
-  if (
-    !Number.isInteger(measurement.repetitions) ||
-    measurement.repetitions <= 0
-  )
-    throw new TypeError(`corpus replicate ${index} has invalid repetitions`);
-  const replicateGroup = `${replicate.replicate}:${measurement.group}`;
-  const previousRepetitions = repetitionsByGroup.get(replicateGroup);
-  if (
-    previousRepetitions !== undefined &&
-    previousRepetitions !== measurement.repetitions
-  )
-    throw new TypeError(
-      `corpus group ${measurement.group} has inconsistent repetitions`
-    );
-  repetitionsByGroup.set(replicateGroup, measurement.repetitions);
-  if (
-    !Array.isArray(measurement.calibrationSamplesMs) ||
-    measurement.calibrationSamplesMs.length === 0
-  )
-    throw new TypeError(
-      `corpus replicate ${index} has invalid calibration samples`
-    );
-  for (const sample of measurement.calibrationSamplesMs) {
-    if (
-      !sample ||
-      !positiveFinite(sample.oursMs) ||
-      !positiveFinite(sample.referenceMs)
-    )
-      throw new TypeError(
-        `corpus replicate ${index} has invalid calibration timings`
-      );
-  }
+  validateMeasurementRepetitions(
+    measurement,
+    replicate,
+    index,
+    repetitionsByGroup
+  );
+  validateCalibrationSamples(measurement, index);
   if (
     config.calibrationOrderBalanced === true &&
     measurement.calibrationOrder !== replicate.calibrationOrder
@@ -264,4 +264,46 @@ function validateCorpusMeasurement(
     allChecksums.add(result.checksum);
     allChecksumsByGroup.set(measurement.group, allChecksums);
   }
+}
+
+function validateMeasurementRepetitions(
+  measurement,
+  replicate,
+  index,
+  repetitionsByGroup
+) {
+  if (
+    !Number.isInteger(measurement.repetitions) ||
+    measurement.repetitions <= 0
+  )
+    throw new TypeError(`corpus replicate ${index} has invalid repetitions`);
+  const replicateGroup = `${replicate.replicate}:${measurement.group}`;
+  const previousRepetitions = repetitionsByGroup.get(replicateGroup);
+  if (
+    previousRepetitions !== undefined &&
+    previousRepetitions !== measurement.repetitions
+  )
+    throw new TypeError(
+      `corpus group ${measurement.group} has inconsistent repetitions`
+    );
+  repetitionsByGroup.set(replicateGroup, measurement.repetitions);
+}
+
+function validateCalibrationSamples(measurement, index) {
+  if (
+    !Array.isArray(measurement.calibrationSamplesMs) ||
+    measurement.calibrationSamplesMs.length === 0
+  )
+    throw new TypeError(
+      `corpus replicate ${index} has invalid calibration samples`
+    );
+  for (const sample of measurement.calibrationSamplesMs)
+    if (
+      !sample ||
+      !positiveFinite(sample.oursMs) ||
+      !positiveFinite(sample.referenceMs)
+    )
+      throw new TypeError(
+        `corpus replicate ${index} has invalid calibration timings`
+      );
 }
