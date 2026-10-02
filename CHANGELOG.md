@@ -7,28 +7,27 @@ All notable changes to this project will be documented in this file. See [commit
 ### Bug fixes
 
 - transform a division or unit conversion only when the result is exact at the
-  configured `precision`. `calc(100% / 3)` stays `calc(100% / 3)` instead of
-  becoming `calc(33.33333%)`, and `calc(1cm + 1px)` 
-  is no longer converted to an approximate `1.02646cm`.
+  configured `precision`. For example, keep `calc(100% / 3)` as `calc(100% / 3)` instead of
+  transforming to `calc(33.33333%)`, and no longer convert `calc(1cm + 1px)` 
+  to an approximate `1.02646cm`.
   Use `precision: false` to transform every division.
 - keep `precision` significant digits for values below 1, so
   `calc(1px / 150000)` is no longer rounded to `.00001px`
-- `min()`, `max()` and `clamp()` preserve the original unit
-- keep the order of terms and factors around `var()`, `env()`, `attr()` and
-  other substitution functions. These are replaced by raw tokens before the
-  value is computed, so with `--a: 1px + 2px`, `var(--a) * 2` means
-  `1px + 2px * 2`. Factors are no longer reordered or cancelled:
-  `var(--a) * 2` is not rewritten to `2 * var(--a)`, `var(--a) / var(--a)` is
-  not cancelled, and parentheses are kept (`1px - (2 * var(--a))`).
-  Unrecognised functions such as `anchor-size()` are treated the same way, so
+- preserve the original unit in `min()`, `max()` and `clamp()`
+- keep the order of factors around `var()`, `env()`, `attr()` and
+  other substitution functions. 
+  Factors are no longer reordered or cancelled:
+  do not rewrite `var(--a) * 2` to `2 * var(--a)`, do not cancel `var(--a) / var(--a)`
+  and keep parentheses (`1px - (2 * var(--a))`).
+  Treat unrecognised functions such as `anchor-size()` the same way, so
   `2 * anchor-size(width) * .5` is no longer folded
 - keep the parentheses of a nested `calc()` that contains unresolved values, so
   `calc(var(--a) - calc(var(--b) - var(--c)))` is no longer rewritten to
   `calc(var(--a) - var(--b) + var(--c))`
 - do not flip every sign of a parenthesized sum that starts with a negative
-  term: `calc((var(--b) - 7 - 2))` is now `calc(-9 + var(--b))` instead of
-  `calc(-1 * (9 - var(--b)))`, which changed the value when `--b` expands to
-  several tokens
+  term: `calc((var(--b) - 7 - 2))` now becomes `calc(-9 + var(--b))` instead of
+  `calc(-1 * (9 - var(--b)))`, because this last transformation changes the value 
+  when `--b` expands to several tokens
 
 ## 11.2.1 (2026-09-20)
 
