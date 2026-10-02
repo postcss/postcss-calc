@@ -236,14 +236,12 @@ describe('Math constants', () => {
   );
 
   test(
-    'should perform multiplication with pi',
-    // fold `pi` (§10.7.1).
+    'should perform multiplication with pi (§10.7.1)',
     testValue('calc(1px * pi)', 'calc(3.14159px)')
   );
 
   test(
-    'should perform addition with pi',
-    // fold `pi` (§10.7.1).
+    'should perform addition with pi (§10.7.1)',
     testValue('calc(43 + pi)', 'calc(46.14159)')
   );
 });

@@ -8,7 +8,6 @@ import { createReduceCalcTestHarness } from '../helpers/reduceCalc.js';
 const { reduceWithWarnings, assertIdempotent } =
   createReduceCalcTestHarness(reduceCalc);
 
-// --- precision -----------------------------------------------------------
 describe('reduceCalc: precision', () => {
   test('reduceCalc: precision option applies to numeric output', () => {
     assert.equal(
@@ -75,7 +74,6 @@ describe('reduceCalc: precision', () => {
   });
 });
 
-// --- Option combinations -------------------------------------------------
 describe('reduceCalc: option combinations', () => {
   test('reduceCalc: onParseError catches errors in a media-query param string', () => {
     const errors = [];
@@ -121,8 +119,7 @@ describe('reduceCalc: option combinations', () => {
   });
 });
 
-// --- Bare math functions (issue #189) -----------------------------------
-describe('reduceCalc: bare math functions', () => {
+describe('reduceCalc: bare math functions (issue #189)', () => {
   test('reduceCalc: simplifies bare min() outside of calc()', () => {
     assert.equal(
       reduceCalc('min(360px, 100% - 24px - 24px)'),

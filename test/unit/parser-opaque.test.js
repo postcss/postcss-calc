@@ -1,6 +1,3 @@
-// Unit tests for parser.ts — parselet behavior and raw AST shape.
-// Distinct from test-simplify: we assert what the PARSER produces,
-// before simplify runs. Uses sexpr for compact structural assertions.
 import { describe, test } from 'node:test';
 import assert from 'node:assert/strict';
 import { tokenize } from '@csstools/css-tokenizer';
@@ -148,92 +145,83 @@ describe('parser: opaque expressions and invalid syntax', () => {
   test('parser: unclosed anchor() throws', () => {
     assert.throws(() => parseSource('anchor(--foo top'), /Unclosed anchor\(/);
   });
-  // --- Calc-keyword folding -------------------------------------------------
-  test('parser: `pi` folds to Math.PI', () => {
-    assert.equal(ast('pi'), String(Math.PI));
+});
+// --- Calc-keyword folding -------------------------------------------------
+test('parser: `pi` folds to Math.PI', () => {
+  assert.equal(ast('pi'), String(Math.PI));
+});
+test('parser: `e` folds to Math.E', () => {
+  assert.equal(ast('e'), String(Math.E));
+});
+test('parser: `infinity` folds to Infinity', () => {
+  assert.equal(ast('infinity'), 'Infinity');
+});
+test('parser: calc-keywords are case-insensitive except NaN', () => {
+  assert.equal(ast('PI'), String(Math.PI));
+  assert.equal(ast('Infinity'), 'Infinity');
+});
+test('parser: lowercase `nan` is NOT the keyword (case-sensitive)', () => {
+  // Spec: `NaN` is the only case-sensitive calc keyword. `nan` as
+  // lowercase is just an opaque identifier.
+  assert.equal(ast('nan'), 'nan');
+});
+// --- Strict whitespace around +/- ----------------------------------------
+test('parser: `1px + 2px` is valid', () => {
+  assert.doesNotThrow(() => parseSource('1px + 2px'));
+});
+test('parser: a signed token after whitespace still fails at its position', () => {
+  assert.throws(() => parseSource('1 +2'), {
+    message: '"+" must be surrounded by whitespace at position 2',
   });
-  test('parser: `e` folds to Math.E', () => {
-    assert.equal(ast('e'), String(Math.E));
+});
+test('parser: a unary plus after multiplication has the canonical AST', () => {
+  assert.deepEqual(parseSource('1 * +2'), {
+    type: 'Num',
+    value: 2,
   });
-  test('parser: `infinity` folds to Infinity', () => {
-    assert.equal(ast('infinity'), 'Infinity');
+});
+// §10.1: `+` and `-` must be surrounded by whitespace. All three asymmetric
+// cases (no/before-only/after-only) must throw the same way.
+for (const input of ['1px+2px', '1px +2px', '1px+ 2px']) {
+  test(`parser: \`${input}\` throws (asymmetric whitespace around +)`, () => {
+    assert.throws(() => parseSource(input), /must be surrounded by whitespace/);
   });
-  test('parser: calc-keywords are case-insensitive except NaN', () => {
-    assert.equal(ast('PI'), String(Math.PI));
-    assert.equal(ast('Infinity'), 'Infinity');
-  });
-  test('parser: lowercase `nan` is NOT the keyword (case-sensitive)', () => {
-    // Spec: `NaN` is the only case-sensitive calc keyword. `nan` as
-    // lowercase is just an opaque identifier.
-    assert.equal(ast('nan'), 'nan');
-  });
-  // --- Strict whitespace around +/- ----------------------------------------
-  test('parser: `1px + 2px` is valid', () => {
-    assert.doesNotThrow(() => parseSource('1px + 2px'));
-  });
-  test('parser: a signed token after whitespace still fails at its position', () => {
-    assert.throws(() => parseSource('1 +2'), {
-      message: '"+" must be surrounded by whitespace at position 2',
-    });
-  });
-  test('parser: a unary plus after multiplication has the canonical AST', () => {
-    assert.deepEqual(parseSource('1 * +2'), {
-      type: 'Num',
-      value: 2,
-    });
-  });
-  // §10.1: `+` and `-` must be surrounded by whitespace. All three asymmetric
-  // cases (no/before-only/after-only) must throw the same way.
-  for (const input of ['1px+2px', '1px +2px', '1px+ 2px']) {
-    test(`parser: \`${input}\` throws (asymmetric whitespace around +)`, () => {
-      assert.throws(
-        () => parseSource(input),
-        /must be surrounded by whitespace/
-      );
+}
+test('parser: asymmetric additive whitespace reports the operator position', () => {
+  for (const [input, position] of [
+    ['1px+2px', 3],
+    ['1px +2px', 4],
+    ['1px+ 2px', 3],
+  ]) {
+    assert.throws(() => parseSource(input), {
+      message: `"+" must be surrounded by whitespace at position ${position}`,
     });
   }
-  test('parser: asymmetric additive whitespace reports the operator position', () => {
-    for (const [input, position] of [
-      ['1px+2px', 3],
-      ['1px +2px', 4],
-      ['1px+ 2px', 3],
-    ]) {
-      assert.throws(() => parseSource(input), {
-        message: `"+" must be surrounded by whitespace at position ${position}`,
-      });
-    }
-  });
-  test('parser: * / do not require whitespace (spec allows both)', () => {
-    const productTokens = tokenize({ css: '1px*2' });
-    assert.doesNotThrow(() =>
-      parse(productTokens, 0, productTokens.length, indexBlocks(productTokens))
-    );
-    const quotientTokens = tokenize({ css: '1px/2' });
-    assert.doesNotThrow(() =>
-      parse(
-        quotientTokens,
-        0,
-        quotientTokens.length,
-        indexBlocks(quotientTokens)
-      )
-    );
-  });
-  test('parser: tab / newline satisfy the §10.1 whitespace rule', () => {
-    // The whitespace check inspects the token's `ws` flag, which the
-    // tokenizer sets for any character matched by /\s/ — tab and newline
-    // count just like a space. (sexpr shows the raw parse, no folding.)
-    assert.equal(ast('1\t+\n2'), '(+ 1 2)');
-    assert.equal(ast('1\n-\t2'), '(+ 1 -2)');
-  });
-  test('parser: comments satisfy the §10.1 whitespace rule', () => {
-    assert.equal(ast('1px/* gap */+/* gap */2px'), '(+ 1px 2px)');
-    assert.equal(ast('/* gap */1px + 2px'), '(+ 1px 2px)');
-  });
-  test('parser: lookahead preserves comment-derived whitespace when consumed', () => {
-    assert.equal(ast('1 /* before */ + /* after */ 2'), '(+ 1 2)');
-    assert.equal(ast('1 /* before */ - /* after */ 2'), '(+ 1 -2)');
-  });
-  // --- Error positions ------------------------------------------------------
+});
+test('parser: * / do not require whitespace (spec allows both)', () => {
+  const productTokens = tokenize({ css: '1px*2' });
+  assert.doesNotThrow(() =>
+    parse(productTokens, 0, productTokens.length, indexBlocks(productTokens))
+  );
+  const quotientTokens = tokenize({ css: '1px/2' });
+  assert.doesNotThrow(() =>
+    parse(quotientTokens, 0, quotientTokens.length, indexBlocks(quotientTokens))
+  );
+});
+test('parser: tab / newline satisfy the §10.1 whitespace rule', () => {
+  assert.equal(ast('1\t+\n2'), '(+ 1 2)');
+  assert.equal(ast('1\n-\t2'), '(+ 1 -2)');
+});
+test('parser: comments satisfy the §10.1 whitespace rule', () => {
+  assert.equal(ast('1px/* gap */+/* gap */2px'), '(+ 1px 2px)');
+  assert.equal(ast('/* gap */1px + 2px'), '(+ 1px 2px)');
+});
+test('parser: lookahead preserves comment-derived whitespace when consumed', () => {
+  assert.equal(ast('1 /* before */ + /* after */ 2'), '(+ 1 2)');
+  assert.equal(ast('1 /* before */ - /* after */ 2'), '(+ 1 -2)');
+});
+
+describe('Error positions', () => {
   test('parser: trailing operator throws (whitespace-before-EOF fails)', () => {
     // `1 +` has space before `+` but nothing after — EOF has ws=false, so
     // the strict-whitespace check fires before the unexpected-token path.
@@ -248,22 +236,26 @@ describe('parser: opaque expressions and invalid syntax', () => {
   test('parser: stacked operators throw', () => {
     assert.throws(() => parseSource('1 * * 2'), /Unexpected token/);
   });
-  // --- expect() failures (unclosed groups) -----------------------------------
-  test('parser: unclosed paren throws with expected-token message', () => {
-    assert.throws(() => parseSource('(1 + 2'), /Expected \)/);
-  });
+});
 
-  test('parser: unclosed call throws with expected-token message', () => {
-    assert.throws(() => parseSource('min(1, 2'), /Expected \)/);
-  });
+// --- expect() failures (unclosed groups) -----------------------------------
+test('parser: unclosed paren throws with expected-token message', () => {
+  assert.throws(() => parseSource('(1 + 2'), /Expected \)/);
+});
 
-  test('parser: unclosed var throws with unclosed message and position', () => {
-    const tokens = tokenize({ css: 'var(--foo' });
-    assert.throws(
-      () => parse(tokens, 0, tokens.length, indexBlocks(tokens)),
-      /Unclosed var\( at position 4/
-    );
-  });
+test('parser: unclosed call throws with expected-token message', () => {
+  assert.throws(() => parseSource('min(1, 2'), /Expected \)/);
+});
+
+test('parser: unclosed var throws with unclosed message and position', () => {
+  const tokens = tokenize({ css: 'var(--foo' });
+  assert.throws(
+    () => parse(tokens, 0, tokens.length, indexBlocks(tokens)),
+    /Unclosed var\( at position 4/
+  );
+});
+
+describe('Trailing tokens', () => {
   // --- Trailing tokens ------------------------------------------------------
   test('parse: rejects input with trailing tokens after a complete expression', () => {
     assert.throws(() => parseSource('1 2'), /Unexpected token/);

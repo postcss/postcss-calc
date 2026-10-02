@@ -1,14 +1,16 @@
-// Real-world corpus test.
-//
-// Inputs are every unique `calc(...)` expression extracted from cssnano's
-// integration CSS fixtures (Bootstrap, Bulma, Foundation, Milligram,
-// Picnic, Semantic UI, Turret, UIkit). The corpus is committed under
-// `corpus/` so the test is self-contained — no sibling-repo dependency.
-//
-// For each expression we run both our pipeline and `@csstools/css-calc`,
-// canonicalize the outputs through our parser at a shared precision, and
-// assert they agree. Any divergence is either a real bug or a known
-// design choice documented in `KNOWN_DIVERGENCES`.
+/* Real-world corpus test.
+ *
+ *  Inputs are every unique `calc(...)` expression extracted from cssnano's
+ * integration CSS fixtures (Bootstrap, Bulma, Foundation, Milligram,
+ * Picnic, Semantic UI, Turret, UIkit). The corpus is committed under
+ * `corpus/` so the test is self-contained — no sibling-repo dependency.
+ *
+ * For each expression we run both our pipeline and `@csstools/css-calc`,
+ * canonicalize the outputs through our parser at a shared precision, and
+ *  assert they agree. Any divergence is either a real bug or a known
+ *  design choice documented in `KNOWN_DIVERGENCES`.
+ */
+
 import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';

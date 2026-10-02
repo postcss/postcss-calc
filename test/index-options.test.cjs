@@ -22,11 +22,10 @@ test(
 
 describe('Ignore', () => {
   test(
-    'should ignore reducing custom property',
-    // A division after a substitution stays where it was written.
+    'should keep the division after a custom property',
     testCss(
       ':root { --foo: calc(var(--bar) / 8); }',
-      /* ':root { --foo: calc(var(--bar)/8); }' */ ':root { --foo: calc(var(--bar) / 8); }'
+      ':root { --foo: calc(var(--bar) / 8); }'
     )
   );
 
@@ -44,7 +43,7 @@ test(
   // `10px+10px` violates §10.1 whitespace → preserved with a warning.
   testCss(
     '@media (min-width:calc(10px+10px)){}',
-    /* '@media (min-width:20px){}' */ '@media (min-width:calc(10px+10px)){}',
+    '@media (min-width:calc(10px+10px)){}',
     {
       mediaQueries: true,
     }
@@ -53,12 +52,12 @@ test(
 
 describe('Ignore', () => {
   test(
-    'should ignore selectors (1)',
+    'should ignore attribute selectors',
     testCss('div[data-size="calc(3*3)"]{}', 'div[data-size="calc(3*3)"]{}')
   );
 
   test(
-    'should ignore selectors (2)',
+    'should ignore nth-child pseudo-class',
     testCss(
       'div:nth-child(2n + calc(3*3)){}',
       'div:nth-child(2n + calc(3*3)){}'
@@ -99,8 +98,7 @@ test(
 );
 
 test(
-  'nested var (reduce-css-calc#50)',
-  // division by a number is kept as written.
+  'should keep division a s written in a nested var (reduce-css-calc#50)',
   testValue(
     'calc(var(--xxx, var(--yyy)) / 2)',
     'calc(var(--xxx, var(--yyy)) / 2)'

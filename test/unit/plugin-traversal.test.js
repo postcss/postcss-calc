@@ -30,8 +30,6 @@ describe('plugin: option combinations', () => {
   });
 
   test('plugin: selectors:true reduces calc() in selector text', async () => {
-    // Walking the selector surfaces calc() function nodes that aren't safely
-    // buried in attribute-value strings.
     const { css } = await process('a:nth-child(calc(1 + 2)) { b: c }', {
       selectors: true,
     });
@@ -182,15 +180,14 @@ describe('plugin: bare math functions', () => {
 });
 
 // --- Source-range preservation ------------------------------------------
-// The outer traversal only replaces matched source ranges. These tests pin
-// down that content having nothing to do with calc() remains byte-for-byte
-// unchanged.
-test('plugin: IE backslash hack survives the outer walk untouched', async () => {
-  const { css } = await process('a{width:calc(1px + 2px)\\9}');
-  assert.equal(css, 'a{width:calc(3px)\\9}');
-});
-
+// These tests pin down that content having nothing to do with calc() remains
+// byte-for-byte unchanged.
 describe('plugin: escaped and opaque content', () => {
+  test('plugin: IE backslash hack survives the outer walk untouched', async () => {
+    const { css } = await process('a{width:calc(1px + 2px)\\9}');
+    assert.equal(css, 'a{width:calc(3px)\\9}');
+  });
+
   test('plugin: escaped content value survives the outer walk untouched', async () => {
     const { css } = await process('a{content:"\\e901"}');
     assert.equal(css, 'a{content:"\\e901"}');
