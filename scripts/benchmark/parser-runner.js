@@ -1,4 +1,4 @@
-/* oxlint-disable complexity, no-bitwise */
+/* oxlint-disable no-bitwise */
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join, resolve } from 'node:path';
@@ -31,15 +31,7 @@ const WORKER = fileURLToPath(
   new URL('./parser-benchmark-worker.js', import.meta.url)
 );
 
-export function runParserBenchmark({
-  root = process.cwd(),
-  benchmark = 'arithmetic-chains',
-  baseline = 'HEAD',
-  blocks = MIN_VALID_BLOCKS,
-  maxAttempts = Math.max(30, blocks),
-  seed = 0x51f15eed,
-  output,
-} = {}) {
+function validateOptions(blocks, maxAttempts) {
   if (
     !Number.isInteger(blocks) ||
     blocks < MIN_VALID_BLOCKS ||
@@ -50,10 +42,10 @@ export function runParserBenchmark({
     );
   if (!Number.isInteger(maxAttempts) || maxAttempts < blocks)
     throw new TypeError('--max-attempts must be an integer at least --blocks');
-  const normalizedSeed = normalizeSeed(seed);
-  const workloads = parserWorkloads(benchmark);
-  const workloadKeys = workloads.map((item) => item.key);
-  const config = {
+}
+
+function buildConfig({ benchmark, baseline, blocks, maxAttempts }) {
+  return {
     decisionConfigVersion: DECISION_CONFIG_VERSION,
     benchmark,
     baseline,
@@ -75,6 +67,160 @@ export function runParserBenchmark({
     orderInteractionThreshold: Math.log(1.1),
     intervalMethod: DECISION_INTERVAL_METHOD,
   };
+}
+
+function processSchedule(blocks, seed) {
+  return seededShuffle(
+    Array.from({ length: blocks }, (_, index) =>
+      index < blocks / 2 ? 'baseline-first' : 'candidate-first'
+    ),
+    seed
+  );
+}
+
+function revisionSources(processOrder, root, materialized) {
+  const baseline = ['baseline', materialized.sourceRoot];
+  const candidate = ['candidate', join(root, 'src')];
+  return processOrder === 'baseline-first'
+    ? [baseline, candidate]
+    : [candidate, baseline];
+}
+
+function runAttempt({
+  attempt,
+  seed,
+  processOrder,
+  workloads,
+  workloadKeys,
+  config,
+  root,
+  materialized,
+}) {
+  const blockSeed = (seed + Math.imul(attempt + 1, 0x9e3779b9)) >>> 0;
+  const order = seededShuffle(workloads, blockSeed);
+  const revisions = revisionSources(processOrder, root, materialized).map(
+    ([revision, sourceRoot]) =>
+      runChild(
+        WORKER,
+        {
+          sourceRoot,
+          revision,
+          processOrder,
+          workloads: order,
+          targetBatchMs: config.targetBatchMs,
+          warmupMinimum: config.warmupMinimum,
+          warmupMaximum: config.warmupMaximum,
+          measuredBatchCount: config.measuredBatchCount,
+        },
+        root
+      )
+  );
+  const drift = revisions.map((revision) =>
+    Math.abs(
+      controlMedian(revision.controlAfter) /
+        controlMedian(revision.controlBefore) -
+        1
+    )
+  );
+  const structural = new Map(
+    revisions.flatMap((revision) =>
+      revision.workloads.map((workload) => [
+        `${revision.revision}:${workload.key}`,
+        workload.structural,
+      ])
+    )
+  );
+  const mismatches = workloadKeys.filter(
+    (key) =>
+      structural.get(`baseline:${key}`) !== structural.get(`candidate:${key}`)
+  );
+  const drifted = drift.some((value) => value > config.driftThreshold);
+  const rejectionReasons = [
+    ...(drifted ? ['drift'] : []),
+    ...(mismatches.length > 0 ? ['structural-mismatch'] : []),
+  ];
+  return {
+    index: attempt,
+    seed: blockSeed,
+    processOrder,
+    workloadOrder: order.map(endpointKey),
+    rejected: rejectionReasons.length > 0,
+    rejectionReasons,
+    rejectionReason: rejectionReasons.join('+') || null,
+    drift,
+    structuralMismatches: mismatches,
+    revisions,
+  };
+}
+
+function collectBlocks({ blocks, maxAttempts, seed, ...context }) {
+  const attempts = [];
+  const validBlocks = [];
+  const schedule = processSchedule(blocks, seed);
+  let correctnessFailure = null;
+  let attempt = 0;
+  while (validBlocks.length < blocks && attempt < maxAttempts) {
+    // Rejected attempts retry the same acceptance slot. This preserves the
+    // randomized, balanced process-order schedule among retained blocks.
+    const record = runAttempt({
+      ...context,
+      attempt,
+      seed,
+      processOrder: schedule[validBlocks.length],
+    });
+    attempts.push(record);
+    if (record.structuralMismatches.length > 0) {
+      correctnessFailure = record;
+      break;
+    }
+    if (!record.rejected) validBlocks.push(record);
+    attempt++;
+  }
+  return { attempts, validBlocks, correctnessFailure };
+}
+
+function analyze(artifact, correctnessFailure) {
+  const validCount = artifact.blocks.length;
+  if (correctnessFailure)
+    return {
+      status: 'correctness-failure',
+      validBlocks: validCount,
+      reason: 'baseline and candidate parser structures differ',
+      attempt: correctnessFailure.index,
+      structuralMismatches: correctnessFailure.structuralMismatches,
+    };
+  if (validCount >= MIN_VALID_BLOCKS) return analyzeParser(artifact);
+  return {
+    status: 'inconclusive',
+    validBlocks: validCount,
+    reason: 'fewer than twenty valid blocks',
+  };
+}
+
+function outputPath({ root, output, benchmark, seed }) {
+  return output
+    ? resolve(root, output)
+    : join(
+        root,
+        'reports/benchmarks',
+        `${benchmark}-${Date.now()}-${seed}.json`
+      );
+}
+
+export function runParserBenchmark({
+  root = process.cwd(),
+  benchmark = 'arithmetic-chains',
+  baseline = 'HEAD',
+  blocks = MIN_VALID_BLOCKS,
+  maxAttempts = Math.max(30, blocks),
+  seed = 0x51f15eed,
+  output,
+} = {}) {
+  validateOptions(blocks, maxAttempts);
+  const normalizedSeed = normalizeSeed(seed);
+  const workloads = parserWorkloads(benchmark);
+  const workloadKeys = workloads.map((item) => item.key);
+  const config = buildConfig({ benchmark, baseline, blocks, maxAttempts });
   const environment = collectBenchmarkProvenance(root, {
     baselineRef: baseline,
     benchmark: `parser-${benchmark}`,
@@ -82,100 +228,16 @@ export function runParserBenchmark({
   });
   const materialized = materializeBaseline(root, baseline);
   try {
-    const attempts = [];
-    const validBlocks = [];
-    const processSchedule = seededShuffle(
-      Array.from({ length: blocks }, (_, index) =>
-        index < blocks / 2 ? 'baseline-first' : 'candidate-first'
-      ),
-      normalizedSeed
-    );
-    let correctnessFailure = null;
-    let attempt = 0;
-    while (validBlocks.length < blocks && attempt < maxAttempts) {
-      const blockSeed =
-        (normalizedSeed + Math.imul(attempt + 1, 0x9e3779b9)) >>> 0;
-      const order = seededShuffle(workloads, blockSeed);
-      // Rejected attempts retry the same acceptance slot. This preserves the
-      // randomized, balanced process-order schedule among retained blocks.
-      const processOrder = processSchedule[validBlocks.length];
-      const revisions = [];
-      const sources =
-        processOrder === 'baseline-first'
-          ? [
-              ['baseline', materialized.sourceRoot],
-              ['candidate', join(root, 'src')],
-            ]
-          : [
-              ['candidate', join(root, 'src')],
-              ['baseline', materialized.sourceRoot],
-            ];
-      for (const [revision, sourceRoot] of sources) {
-        const child = runChild(
-          WORKER,
-          {
-            sourceRoot,
-            revision,
-            processOrder,
-            workloads: order,
-            targetBatchMs: config.targetBatchMs,
-            warmupMinimum: config.warmupMinimum,
-            warmupMaximum: config.warmupMaximum,
-            measuredBatchCount: config.measuredBatchCount,
-          },
-          root
-        );
-        revisions.push(child);
-      }
-      const drift = revisions.map((revision) =>
-        Math.abs(
-          controlMedian(revision.controlAfter) /
-            controlMedian(revision.controlBefore) -
-            1
-        )
-      );
-      const structural = new Map(
-        revisions.flatMap((revision) =>
-          revision.workloads.map((workload) => [
-            `${revision.revision}:${workload.key}`,
-            workload.structural,
-          ])
-        )
-      );
-      const mismatches = workloadKeys.filter(
-        (key) =>
-          structural.get(`baseline:${key}`) !==
-          structural.get(`candidate:${key}`)
-      );
-      const rejected =
-        drift.some((value) => value > config.driftThreshold) ||
-        mismatches.length > 0;
-      const rejectionReasons = [
-        ...(drift.some((value) => value > config.driftThreshold)
-          ? ['drift']
-          : []),
-        ...(mismatches.length > 0 ? ['structural-mismatch'] : []),
-      ];
-      const record = {
-        index: attempt,
-        seed: blockSeed,
-        processOrder,
-        workloadOrder: order.map(endpointKey),
-        rejected,
-        rejectionReasons,
-        rejectionReason: rejectionReasons.join('+') || null,
-        drift,
-        structuralMismatches: mismatches,
-        revisions,
-      };
-      attempts.push(record);
-      if (mismatches.length > 0) {
-        correctnessFailure = record;
-        break;
-      }
-      if (!rejected) validBlocks.push(record);
-      attempt++;
-    }
+    const { attempts, validBlocks, correctnessFailure } = collectBlocks({
+      blocks,
+      maxAttempts,
+      seed: normalizedSeed,
+      workloads,
+      workloadKeys,
+      config,
+      root,
+      materialized,
+    });
     const artifact = {
       schema: 2,
       benchmark: `parser-${benchmark}`,
@@ -191,31 +253,14 @@ export function runParserBenchmark({
       attempts,
       blocks: validBlocks,
     };
-    if (correctnessFailure) {
-      artifact.analysis = {
-        status: 'correctness-failure',
-        validBlocks: validBlocks.length,
-        reason: 'baseline and candidate parser structures differ',
-        attempt: correctnessFailure.index,
-        structuralMismatches: correctnessFailure.structuralMismatches,
-      };
-    } else if (validBlocks.length >= MIN_VALID_BLOCKS) {
-      artifact.analysis = analyzeParser(artifact);
-    } else {
-      artifact.analysis = {
-        status: 'inconclusive',
-        validBlocks: validBlocks.length,
-        reason: 'fewer than twenty valid blocks',
-      };
-    }
+    artifact.analysis = analyze(artifact, correctnessFailure);
     validateSchemaV2Artifact(artifact);
-    const path = output
-      ? resolve(root, output)
-      : join(
-          root,
-          'reports/benchmarks',
-          `${benchmark}-${Date.now()}-${normalizedSeed}.json`
-        );
+    const path = outputPath({
+      root,
+      output,
+      benchmark,
+      seed: normalizedSeed,
+    });
     mkdirSync(dirname(path), { recursive: true });
     writeFileSync(path, `${JSON.stringify(artifact, null, 2)}\n`);
     if (correctnessFailure)

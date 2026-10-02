@@ -1,4 +1,3 @@
-/* oxlint-disable complexity */
 export function positiveFinite(value) {
   return typeof value === 'number' && Number.isFinite(value) && value > 0;
 }
@@ -10,6 +9,14 @@ export function validateParserRecord(
   isAttempt = false,
   driftThreshold = 0.15
 ) {
+  validateRecordHeader(record, label, expected, isAttempt);
+  if (isAttempt) validateAttemptFlags(record, label, driftThreshold);
+  for (const revision of record.revisions)
+    validateParserRevision(revision, label, expected, record.processOrder);
+  if (isAttempt) validateAttemptDerivations(record, label, expected);
+}
+
+function validateRecordHeader(record, label, expected, isAttempt) {
   if (
     !record ||
     typeof record !== 'object' ||
@@ -42,76 +49,80 @@ export function validateParserRecord(
     !revisions.has('candidate')
   )
     throw new TypeError(`${label} must contain baseline and candidate`);
-  if (isAttempt) {
-    if (typeof record.rejected !== 'boolean')
-      throw new TypeError(`${label} has an invalid rejection flag`);
-    if (
-      !Array.isArray(record.rejectionReasons) ||
-      record.rejectionReasons.some(
-        (reason) => !['drift', 'structural-mismatch'].includes(reason)
-      ) ||
-      new Set(record.rejectionReasons).size !==
-        record.rejectionReasons.length ||
-      record.rejected !== Boolean(record.rejectionReasons.length) ||
-      record.rejectionReason !== (record.rejectionReasons.join('+') || null)
+}
+
+function validateAttemptFlags(record, label, driftThreshold) {
+  if (typeof record.rejected !== 'boolean')
+    throw new TypeError(`${label} has an invalid rejection flag`);
+  if (!hasValidRejectionReasons(record))
+    throw new TypeError(`${label} has an invalid rejection reason`);
+  if (
+    !Array.isArray(record.drift) ||
+    record.drift.length !== 2 ||
+    record.drift.some(
+      (value) =>
+        typeof value !== 'number' || !Number.isFinite(value) || value < 0
     )
-      throw new TypeError(`${label} has an invalid rejection reason`);
-    if (
-      !Array.isArray(record.drift) ||
-      record.drift.length !== 2 ||
-      record.drift.some(
-        (value) =>
-          typeof value !== 'number' || !Number.isFinite(value) || value < 0
-      )
+  )
+    throw new TypeError(`${label} has invalid drift`);
+  if (
+    !Array.isArray(record.structuralMismatches) ||
+    record.structuralMismatches.some((key) => typeof key !== 'string')
+  )
+    throw new TypeError(`${label} has invalid structural mismatches`);
+  if (
+    Boolean(record.structuralMismatches.length) !==
+    record.rejectionReasons.includes('structural-mismatch')
+  )
+    throw new TypeError(`${label} has inconsistent structural rejection`);
+  if (
+    record.drift.some((value) => value > driftThreshold) !==
+    record.rejectionReasons.includes('drift')
+  )
+    throw new TypeError(`${label} has inconsistent drift rejection`);
+}
+
+function hasValidRejectionReasons(record) {
+  const reasons = record.rejectionReasons;
+  return (
+    Array.isArray(reasons) &&
+    reasons.every((reason) =>
+      ['drift', 'structural-mismatch'].includes(reason)
+    ) &&
+    new Set(reasons).size === reasons.length &&
+    record.rejected === Boolean(reasons.length) &&
+    record.rejectionReason === (reasons.join('+') || null)
+  );
+}
+
+function validateAttemptDerivations(record, label, expected) {
+  const expectedDrift = record.revisions.map((revision) =>
+    Math.abs(
+      revision.controlAfter.medianMs / revision.controlBefore.medianMs - 1
     )
-      throw new TypeError(`${label} has invalid drift`);
-    if (
-      !Array.isArray(record.structuralMismatches) ||
-      record.structuralMismatches.some((key) => typeof key !== 'string')
+  );
+  if (
+    record.drift.some(
+      (value, index) => Math.abs(value - expectedDrift[index]) > 1e-12
     )
-      throw new TypeError(`${label} has invalid structural mismatches`);
-    if (
-      Boolean(record.structuralMismatches.length) !==
-      record.rejectionReasons.includes('structural-mismatch')
+  )
+    throw new TypeError(`${label} has inconsistent drift`);
+  const structural = new Map(
+    record.revisions.flatMap((revision) =>
+      revision.workloads.map((workload) => [
+        `${revision.revision}:${workload.key}`,
+        workload.structural,
+      ])
     )
-      throw new TypeError(`${label} has inconsistent structural rejection`);
-    if (
-      record.drift.some((value) => value > driftThreshold) !==
-      record.rejectionReasons.includes('drift')
-    )
-      throw new TypeError(`${label} has inconsistent drift rejection`);
-  }
-  for (const revision of record.revisions)
-    validateParserRevision(revision, label, expected, record.processOrder);
-  if (isAttempt) {
-    const expectedDrift = record.revisions.map((revision) =>
-      Math.abs(
-        revision.controlAfter.medianMs / revision.controlBefore.medianMs - 1
-      )
-    );
-    if (
-      record.drift.some(
-        (value, index) => Math.abs(value - expectedDrift[index]) > 1e-12
-      )
-    )
-      throw new TypeError(`${label} has inconsistent drift`);
-    const structural = new Map(
-      record.revisions.flatMap((revision) =>
-        revision.workloads.map((workload) => [
-          `${revision.revision}:${workload.key}`,
-          workload.structural,
-        ])
-      )
-    );
-    const mismatches = [...expected].filter(
-      (key) =>
-        structural.get(`baseline:${key}`) !== structural.get(`candidate:${key}`)
-    );
-    if (
-      JSON.stringify(mismatches) !== JSON.stringify(record.structuralMismatches)
-    )
-      throw new TypeError(`${label} has inconsistent structural mismatches`);
-  }
+  );
+  const mismatches = [...expected].filter(
+    (key) =>
+      structural.get(`baseline:${key}`) !== structural.get(`candidate:${key}`)
+  );
+  if (
+    JSON.stringify(mismatches) !== JSON.stringify(record.structuralMismatches)
+  )
+    throw new TypeError(`${label} has inconsistent structural mismatches`);
 }
 
 function validateParserRevision(revision, label, expected, processOrder) {

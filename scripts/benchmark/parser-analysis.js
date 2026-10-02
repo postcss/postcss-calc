@@ -1,4 +1,4 @@
-/* oxlint-disable no-bitwise, complexity */
+/* oxlint-disable no-bitwise */
 import {
   bootstrapStratifiedMaxT,
   decisionConfigForArtifact,
@@ -33,6 +33,120 @@ function revisionResults(blocks, revision) {
   return values;
 }
 
+function pairedLogRatios(blocks, keys) {
+  const baseline = revisionResults(blocks, 'baseline');
+  const candidate = revisionResults(blocks, 'candidate');
+  return keys.map((key) => {
+    const base = baseline.get(key);
+    const cand = candidate.get(key);
+    if (
+      !base ||
+      !cand ||
+      base.length !== blocks.length ||
+      cand.length !== blocks.length
+    )
+      throw new TypeError(`missing paired observations for ${key}`);
+    return cand.map((value, index) => logRatio(value, base[index]));
+  });
+}
+
+function initialEndpoint(blocks, key, logs) {
+  const ordinary = ordinaryInterval(logs);
+  const endpoint = {
+    key,
+    geometricMeanPairedRuntimeRatio: Math.exp(ordinary.mean),
+    logRatio: ordinary.mean,
+    ordinary95: {
+      lowerRatio: Math.exp(ordinary.lower),
+      upperRatio: Math.exp(ordinary.upper),
+    },
+    oneSided95: {
+      lowerRatio: null,
+      upperRatio: null,
+    },
+    baselineVariation: variationFor(blocks, 'baseline', key),
+    candidateVariation: variationFor(blocks, 'candidate', key),
+    betweenProcessVariation: {
+      pairedRatio: variationMetrics(logs.map(Math.exp)),
+    },
+    withinProcessBatchVariation: batchVariation(blocks, key),
+    byProcessOrder: processOrderSummaries(blocks, logs, key),
+    meaningfulImprovement: null,
+    ratios: logs.map(Math.exp),
+  };
+  endpoint.observedLogRatioSd = variationMetrics(logs).sd;
+  return endpoint;
+}
+
+function applyFamilyBootstrap(endpoints, familyBootstrap, config, blockCount) {
+  for (const [index, endpoint] of endpoints.entries()) {
+    endpoint.logRatio = familyBootstrap.observed[index];
+    endpoint.geometricMeanPairedRuntimeRatio = Math.exp(endpoint.logRatio);
+    const half = 1.96 * familyBootstrap.standardErrors[index];
+    endpoint.ordinary95 = {
+      lowerRatio: Math.exp(endpoint.logRatio - half),
+      upperRatio: Math.exp(endpoint.logRatio + half),
+    };
+    addRuntimeIntervals(
+      endpoint,
+      familyBootstrap.intervals[index],
+      familyBootstrap,
+      config,
+      blockCount,
+      index
+    );
+  }
+}
+
+function growthVerdict(growth, threshold) {
+  let status = 'pass';
+  if (growth.some((item) => item.candidateLowerRatio > threshold))
+    status = 'regression';
+  else if (growth.some((item) => item.candidateUpperRatio > threshold))
+    status = 'inconclusive';
+  return applyPrecision(status, growth);
+}
+
+function combineStatuses(runtimeStatus, slopeStatus, growthStatus) {
+  const statuses = [runtimeStatus, slopeStatus, growthStatus];
+  if (statuses.includes('regression')) return 'regression';
+  if (statuses.every((item) => item === 'pass')) return 'pass';
+  return 'inconclusive';
+}
+
+function addSensitivity(result, artifact, blocks) {
+  const structurallyValid = Array.isArray(artifact.attempts)
+    ? artifact.attempts.filter(
+        (attempt) => attempt.structuralMismatches.length === 0
+      )
+    : blocks;
+  const orderCounts = new Set(
+    structurallyValid.map((attempt) => attempt.processOrder)
+  );
+  if (structurallyValid.length >= MIN_VALID_BLOCKS && orderCounts.size === 2) {
+    result.sensitivity = analyzeParser(
+      { ...artifact, blocks: structurallyValid, analysis: undefined },
+      { skipValidation: true, sensitivity: false }
+    );
+  } else {
+    result.sensitivity = {
+      status: 'inconclusive',
+      validBlocks: structurallyValid.length,
+      reason: `fewer than ${MIN_VALID_BLOCKS} structurally valid blocks`,
+    };
+  }
+  result.diagnostics = {
+    ...result.diagnostics,
+    rejectedAttempts: Array.isArray(artifact.attempts)
+      ? artifact.attempts.length - blocks.length
+      : 0,
+    structurallyValidAttempts: structurallyValid.length,
+    primaryAndSensitivityDisagree: result.status !== result.sensitivity.status,
+  };
+  if (result.diagnostics.primaryAndSensitivityDisagree)
+    result.status = 'inconclusive';
+}
+
 export function analyzeParser(
   artifact,
   { skipValidation = false, sensitivity = true } = {}
@@ -48,54 +162,14 @@ export function analyzeParser(
       validBlocks: blocks.length,
       reason: `fewer than ${MIN_VALID_BLOCKS} valid blocks`,
     };
-  const baseline = revisionResults(blocks, 'baseline');
-  const candidate = revisionResults(blocks, 'candidate');
   const keys = artifact.workloadKeys;
-  const logsByKey = keys.map((key) => {
-    const base = baseline.get(key);
-    const cand = candidate.get(key);
-    if (
-      !base ||
-      !cand ||
-      base.length !== blocks.length ||
-      cand.length !== blocks.length
-    )
-      throw new TypeError(`missing paired observations for ${key}`);
-    return cand.map((value, index) => logRatio(value, base[index]));
-  });
+  const logsByKey = pairedLogRatios(blocks, keys);
   const runtimeRows = blocks.map((_, index) =>
     logsByKey.map((values) => values[index])
   );
-  const endpoints = [];
-  for (const [keyIndex, key] of keys.entries()) {
-    const logs = logsByKey[keyIndex];
-    const ordinary = ordinaryInterval(logs);
-    const endpoint = {
-      key,
-      geometricMeanPairedRuntimeRatio: Math.exp(ordinary.mean),
-      logRatio: ordinary.mean,
-      ordinary95: {
-        lowerRatio: Math.exp(ordinary.lower),
-        upperRatio: Math.exp(ordinary.upper),
-      },
-      oneSided95: {
-        lowerRatio: null,
-        upperRatio: null,
-      },
-      baselineVariation: variationFor(blocks, 'baseline', key),
-      candidateVariation: variationFor(blocks, 'candidate', key),
-      betweenProcessVariation: {
-        pairedRatio: variationMetrics(logs.map(Math.exp)),
-      },
-      withinProcessBatchVariation: batchVariation(blocks, key),
-      byProcessOrder: processOrderSummaries(blocks, logs, key),
-      meaningfulImprovement: null,
-      ratios: logs.map(Math.exp),
-    };
-    const sd = variationMetrics(logs).sd;
-    endpoint.observedLogRatioSd = sd;
-    endpoints.push(endpoint);
-  }
+  const endpoints = keys.map((key, index) =>
+    initialEndpoint(blocks, key, logsByKey[index])
+  );
 
   const largestKeys = largestSizeKeys(artifact.workloadKeys);
   const largest = endpoints.filter((endpoint) => largestKeys.has(endpoint.key));
@@ -113,23 +187,7 @@ export function analyzeParser(
     resamples: config.bootstrapResamples,
     confidence: config.confidence,
   });
-  for (const [index, endpoint] of endpoints.entries()) {
-    endpoint.logRatio = familyBootstrap.observed[index];
-    endpoint.geometricMeanPairedRuntimeRatio = Math.exp(endpoint.logRatio);
-    const half = 1.96 * familyBootstrap.standardErrors[index];
-    endpoint.ordinary95 = {
-      lowerRatio: Math.exp(endpoint.logRatio - half),
-      upperRatio: Math.exp(endpoint.logRatio + half),
-    };
-    addRuntimeIntervals(
-      endpoint,
-      familyBootstrap.intervals[index],
-      familyBootstrap,
-      config,
-      blocks.length,
-      index
-    );
-  }
+  applyFamilyBootstrap(endpoints, familyBootstrap, config, blocks.length);
   addSlopeIntervals(slopes, familyBootstrap, keys.length, config);
   const growth = addGrowthIntervals(
     growthData,
@@ -154,29 +212,10 @@ export function analyzeParser(
     ),
     slopes.endpoints
   );
-  let growthStatus = 'pass';
-  if (growth.some((item) => item.candidateLowerRatio > config.growthThreshold))
-    growthStatus = 'regression';
-  else if (
-    growth.some((item) => item.candidateUpperRatio > config.growthThreshold)
-  )
-    growthStatus = 'inconclusive';
-  growthStatus = applyPrecision(growthStatus, growth);
-  let status;
-  if (
-    runtimeStatus === 'regression' ||
-    slopeStatus === 'regression' ||
-    growthStatus === 'regression'
-  )
-    status = 'regression';
-  else if (
-    runtimeStatus === 'pass' &&
-    slopeStatus === 'pass' &&
-    growthStatus === 'pass'
-  )
-    status = 'pass';
-  else status = 'inconclusive';
+  const growthStatus = growthVerdict(growth, config.growthThreshold);
+  let status = combineStatuses(runtimeStatus, slopeStatus, growthStatus);
   if (orderEffect.diagnostic) status = 'inconclusive';
+  const rejections = rejectionSummary(artifact.attempts);
   const result = {
     status,
     intervalMethod: DECISION_INTERVAL_METHOD,
@@ -187,48 +226,13 @@ export function analyzeParser(
     slopes,
     growth,
     orderEffect,
-    rejections: rejectionSummary(artifact.attempts),
-    rejectionCounts: rejectionSummary(artifact.attempts).byReason,
-    rejectionRate: rejectionSummary(artifact.attempts).rate,
+    rejections,
+    rejectionCounts: rejections.byReason,
+    rejectionRate: rejections.rate,
     observedBlocks: blocks.length,
     validBlocks: blocks.length,
   };
-  if (sensitivity) {
-    const structurallyValid = Array.isArray(artifact.attempts)
-      ? artifact.attempts.filter(
-          (attempt) => attempt.structuralMismatches.length === 0
-        )
-      : blocks;
-    const orderCounts = new Set(
-      structurallyValid.map((attempt) => attempt.processOrder)
-    );
-    if (
-      structurallyValid.length >= MIN_VALID_BLOCKS &&
-      orderCounts.size === 2
-    ) {
-      result.sensitivity = analyzeParser(
-        { ...artifact, blocks: structurallyValid, analysis: undefined },
-        { skipValidation: true, sensitivity: false }
-      );
-    } else {
-      result.sensitivity = {
-        status: 'inconclusive',
-        validBlocks: structurallyValid.length,
-        reason: `fewer than ${MIN_VALID_BLOCKS} structurally valid blocks`,
-      };
-    }
-    result.diagnostics = {
-      ...result.diagnostics,
-      rejectedAttempts: Array.isArray(artifact.attempts)
-        ? artifact.attempts.length - blocks.length
-        : 0,
-      structurallyValidAttempts: structurallyValid.length,
-      primaryAndSensitivityDisagree:
-        result.status !== result.sensitivity.status,
-    };
-    if (result.diagnostics.primaryAndSensitivityDisagree)
-      result.status = 'inconclusive';
-  }
+  if (sensitivity) addSensitivity(result, artifact, blocks);
   return result;
 }
 

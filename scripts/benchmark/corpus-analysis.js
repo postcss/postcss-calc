@@ -1,4 +1,4 @@
-/* oxlint-disable no-bitwise, complexity */
+/* oxlint-disable no-bitwise */
 import { stableHash } from '../lib/corpus-policy.js';
 import {
   BOOTSTRAP_RESAMPLES,
