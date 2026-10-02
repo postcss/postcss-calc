@@ -259,22 +259,17 @@ test('reduceCalc: reduces percentage ratios through percentage-preserving builti
 });
 
 test('reduceCalc: serializes non-finite percentage ratios', () => {
-  // Both operands resolve in the same percentage context, so the quotient is
-  // a definite number even though its value cannot be known statically.
   assert.equal(reduceCalc('calc(0% / 0%)'), 'calc(NaN)');
   assert.equal(reduceCalc('calc(10% / 0%)'), 'calc(infinity)');
 });
 
 test('reduceCalc: adds a percentage to a reduced percentage ratio', () => {
-  // The ratio is known to be a number, so the sum keeps only the remaining
-  // contextual percentage instead of preserving both operands.
   assert.equal(reduceCalc('calc(10% / 5% + 1%)'), 'calc(2 + 1%)');
   assert.deepEqual(analyzeSource('10% / 5% + 1%'), {
     type: 'number',
     valid: true,
     unresolved: true,
   });
-  // The coarse typing still rejects a concrete dimension beside the ratio.
   assert.deepEqual(analyzeSource('10% / 5% + 1% + 1px'), {
     type: 'unknown',
     valid: false,

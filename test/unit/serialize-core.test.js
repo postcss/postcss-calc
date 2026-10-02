@@ -64,8 +64,6 @@ describe('serialize: core syntax and expressions', () => {
   });
 
   test('serialize: negative Dim via signed leaf → calc(-Xpx)', () => {
-    // Negatives live directly in the Dim value. The constructor helper
-    // `dim(-1, 'px')` returns a Dim with value -1, no Sum wrapper.
     assert.equal(serialize(dim(-1, 'px')), 'calc(-1px)');
   });
 
@@ -142,8 +140,6 @@ describe('serialize: core syntax and expressions', () => {
   });
 
   test('serialize: displaySign flips negative Num to `-` operator', () => {
-    // `5 + Num(-3)` should render as `5 - 3`, not `5 + -3`.
-    // This kills the displaySign branch for Num with value<0.
     const ast = mkSum([
       { sign: 1, node: { type: 'Num', value: 5 } },
       { sign: 1, node: { type: 'Num', value: -3 } },
@@ -152,7 +148,6 @@ describe('serialize: core syntax and expressions', () => {
   });
 
   test('serialize: displaySign flips negative Dim to `-` operator', () => {
-    // Same but for Dim leaves — `5px + Dim(-2, em)` → `5px - 2em`.
     const ast = mkSum([
       { sign: 1, node: { type: 'Dim', value: 5, unit: 'px' } },
       { sign: 1, node: { type: 'Dim', value: -2, unit: 'em' } },
@@ -210,8 +205,6 @@ describe('serialize: core syntax and expressions', () => {
   });
 
   test('serialize: Product with leading denominator emits implicit 1', () => {
-    // `Product([{-1, 2px}])` (impossible from parser but constructible)
-    // should emit `1 / 2px`, exercising the exponent=-1 first-factor branch.
     const ast = {
       type: 'Product',
       factors: [{ exponent: -1, node: dim(2, 'px') }],

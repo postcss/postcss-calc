@@ -53,8 +53,7 @@ describe('Reduce', () => {
   );
 
   test(
-    'should reduce calc (uppercase) (#2)',
-    // zero bucket kept → calc() wrapper survives (name case preserved).
+    'should preserve the zero with units (uppercase)',
     testValue('CALC( (1EM - CALC( 10PX + 1EM)) / 2)', 'CALC(0em - 5px)')
   );
 });

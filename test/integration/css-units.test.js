@@ -155,12 +155,8 @@ describe('Unknown units', () => {
 
 describe('Mixed units', () => {
   test(
-    'should correctly reduce calc with mixed units (cssnano#211)',
-    // zero bucket kept for type info.
-    testValue(
-      'calc(99.99% * 1/1 - 0rem)',
-      /* '99.99%' */ 'calc(99.99% + calc(-1 * 0rem))'
-    )
+    'should keep zero with for mixed units for the type info (cssnano#211)',
+    testValue('calc(99.99% * 1/1 - 0rem)', 'calc(99.99% + calc(-1 * 0rem))')
   );
 
   test(
@@ -176,6 +172,5 @@ describe('Mixed units', () => {
 
 test(
   'should not perform addition on unitless values (reduce-css-calc#3)',
-  // canonical order: number before dim.
   testValue('calc(1px + 1)', 'calc(1px + 1)')
 );

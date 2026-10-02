@@ -40,8 +40,6 @@ describe('mkSum:', () => {
   });
 
   test('mkSum: single negative-sign Num collapses sign into value', () => {
-    // Canonical form: sign=-1 around Num becomes sign=+1 around Num(-X).
-    // And a single positive-sign term unwraps.
     assert.deepEqual(mkSum([{ sign: -1, node: num(5) }]), {
       type: 'Num',
       value: -5,
@@ -249,8 +247,7 @@ describe('mkProduct:', () => {
   });
 });
 
-// --- negate ---------------------------------------------------------------
-describe('negate:', () => {
+describe('negate', () => {
   test('negate: Num flips value sign', () => {
     assert.deepEqual(negate(num(5)), { type: 'Num', value: -5 });
   });
