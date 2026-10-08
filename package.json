@@ -61,13 +61,13 @@
     "fast-check": "^4.10.2",
     "oxfmt": "^0.72.0",
     "oxlint": "^1.87.0",
-    "postcss": "^8.5.28",
+    "postcss": "^8.5.29",
     "typescript": "~7.0.2"
   },
   "dependencies": {
     "@csstools/css-tokenizer": "^4.0.2"
   },
   "peerDependencies": {
-    "postcss": "^8.5.28"
+    "postcss": "^8.5.29"
   }
 }
