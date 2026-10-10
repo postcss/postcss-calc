@@ -57,7 +57,7 @@
   },
   "devDependencies": {
     "@csstools/css-calc": "^3.4.3",
-    "@types/node": "^26.6.4",
+    "@types/node": "^26.6.5",
     "fast-check": "^4.10.2",
     "oxfmt": "^0.72.0",
     "oxlint": "^1.87.0",
