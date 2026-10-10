@@ -155,10 +155,9 @@ function emitSum(sum, session) {
   // x + -0 is exactly x for every x, so leading negative zeros can move
   // behind the first other term and use the shorter subtraction form. When
   // every term is negative zero, keep the order so reducing again is stable.
-  const lead = Math.max(
-    0,
-    terms.findIndex((term) => !isNegativeZeroTerm(term))
-  );
+  let lead = 0;
+  while (lead < terms.length && isNegativeZeroTerm(terms[lead])) lead++;
+  if (lead === terms.length) lead = 0;
   emitSumTerm(terms[lead], true, session);
   for (let i = 0; i < terms.length; i++) {
     if (i !== lead) emitSumTerm(terms[i], false, session);
