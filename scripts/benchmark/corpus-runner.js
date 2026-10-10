@@ -22,7 +22,8 @@ import {
   seededShuffle,
   validateSchemaV2Artifact,
 } from './benchmark.js';
-import { analyzeCorpusObservations, groupResults } from './corpus-analysis.js';
+import { analyzeCorpusObservations } from './corpus-decisions.js';
+import { groupResults } from './corpus-group-results.js';
 
 export const CORPUS_ESTIMAND =
   'Relative total runtime over the fixed set of unique harvested expressions accepted equivalently by both implementations.';

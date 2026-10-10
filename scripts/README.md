@@ -29,9 +29,23 @@ and software architecture, see [BENCHMARKS.md](../BENCHMARKS.md).
   from an observed effect during a run.
 - **`benchmark/compare-parser-benchmarks.js`** — reanalyzes one schema-v2 parser
   artifact and applies the uncertainty-aware runtime, slope, and growth gates.
+  The analysis is split across `benchmark/parser-analysis.js` (entry point and
+  sensitivity analysis), `parser-analysis-endpoints.js` (per-endpoint
+  intervals, process-order summaries), and `parser-analysis-verdicts.js`
+  (runtime, slope, and growth verdicts).
+- **`benchmark/corpus-analysis.js`** — recomputes corpus decisions from raw
+  observations and checks stored summaries against them. Its helpers are
+  `corpus-group-results.js` (per-group paired ratios and bootstrap intervals)
+  and `corpus-decisions.js` (statistical and practical verdicts).
+- **`benchmark/validate-corpus.js`** — validates corpus artifact structure. Its
+  helpers are `validate-corpus-metadata.js` (correctness and group metadata)
+  and `validate-corpus-measurements.js` (per-batch and per-measurement checks).
 - **`benchmark/benchmark-serialization.js`** — measures buffered serializer scaling for wide sums/products, nested calls, and nested opaque fallbacks.
 - **`harvest-github.js`** — scrapes real-world `calc()` expressions from
-  public GitHub into `test/corpus/github/expressions.txt`.
+  public GitHub into `test/corpus/github/expressions.txt`. Its helpers live in
+  `harvest/`: `queries.js` (search phrases and languages), `github.js` (paced
+  `gh` search and fetch with rate-limit backoff), and `extract.js` (comment- and
+  string-aware `calc()` extraction).
 - **`split-corpus.js`** — splits that file into `github-pure.txt` (feeds
   `benchmark/benchmark-corpus.js`/`show-divergences.js` below), `preprocessor.txt`, and
   `invalid.txt` (the latter two are used by real CI resilience tests).
