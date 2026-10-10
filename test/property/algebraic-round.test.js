@@ -17,24 +17,21 @@ import { finiteNum, positiveNum } from '../helpers/arbitraries.js';
 const evalRound = (strategy, x, b) =>
   numeric(out(call('round', [ident(strategy), x, b])));
 
+const strategyArb = fc.constantFrom('nearest', 'up', 'down', 'to-zero');
+
+const assertForEachStrategy = (check) =>
+  fc.assert(fc.property(strategyArb, finiteNum, positiveNum, check), {
+    numRuns: NUM_RUNS,
+  });
+
 // --- round laws ----------------------------------------------------------
 test('law: round is idempotent on the same step — round(round(x, B), B) ≡ round(x, B)', () => {
-  fc.assert(
-    fc.property(
-      fc.constantFrom('nearest', 'up', 'down', 'to-zero'),
-      finiteNum,
-      positiveNum,
-      (strategy, x, b) => {
-        const inner = call('round', [ident(strategy), x, b]);
-        const once = out(inner);
-        const twice = out(
-          call('round', [ident(strategy), num(numeric(once)), b])
-        );
-        return once === twice;
-      }
-    ),
-    { numRuns: NUM_RUNS }
-  );
+  assertForEachStrategy((strategy, x, b) => {
+    const inner = call('round', [ident(strategy), x, b]);
+    const once = out(inner);
+    const twice = out(call('round', [ident(strategy), num(numeric(once)), b]));
+    return once === twice;
+  });
 });
 
 describe('round() laws', () => {
@@ -66,35 +63,19 @@ describe('round() laws', () => {
   });
 
   test('law: round result is on the B-grid — (result / B) is integer', () => {
-    fc.assert(
-      fc.property(
-        fc.constantFrom('nearest', 'up', 'down', 'to-zero'),
-        finiteNum,
-        positiveNum,
-        (strategy, x, b) => {
-          const r = evalRound(strategy, x, b);
-          const q = r / b.value;
-          // Allow tiny FP drift: integer means q ≡ round(q) within EPSILON.
-          return Math.abs(q - Math.round(q)) < 1e-9;
-        }
-      ),
-      { numRuns: NUM_RUNS }
-    );
+    assertForEachStrategy((strategy, x, b) => {
+      const r = evalRound(strategy, x, b);
+      const q = r / b.value;
+      // Allow tiny FP drift: integer means q ≡ round(q) within EPSILON.
+      return Math.abs(q - Math.round(q)) < 1e-9;
+    });
   });
 
   test('law: round result is within B of A — |round(x, B) − x| ≤ B', () => {
-    fc.assert(
-      fc.property(
-        fc.constantFrom('nearest', 'up', 'down', 'to-zero'),
-        finiteNum,
-        positiveNum,
-        (strategy, x, b) => {
-          const r = evalRound(strategy, x, b);
-          return Math.abs(r - x.value) <= b.value + 1e-9;
-        }
-      ),
-      { numRuns: NUM_RUNS }
-    );
+    assertForEachStrategy((strategy, x, b) => {
+      const r = evalRound(strategy, x, b);
+      return Math.abs(r - x.value) <= b.value + 1e-9;
+    });
   });
 
   test('law: nearest minimizes |result − x| (with tie → upper)', () => {

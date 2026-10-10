@@ -10,6 +10,13 @@ import { serialize } from '../../src/lib/serialize.js';
 import { sexpr } from '../helpers/sexpr.js';
 import { parseSource, parseSexpr as ast } from '../helpers/parse-source.js';
 
+const boundedRange = (css) => {
+  const tokens = tokenize({ css });
+  const start = tokens.findIndex((token) => token[1] === '1');
+  const end = tokens.findIndex((token) => token[1] === ')');
+  return { tokens, start, end };
+};
+
 test('parser: accepts a bounded range of a shared native token stream', () => {
   const tokens = tokenize({ css: 'prefix calc(/* gap */-2px + 3px) suffix' });
   const start = tokens.findIndex((token) => token[1] === '/* gap */');
@@ -22,9 +29,7 @@ test('parser: accepts a bounded range of a shared native token stream', () => {
 });
 
 test('parser: bounded virtual EOF keeps its source-relative position', () => {
-  const tokens = tokenize({ css: 'prefix calc(1 *) suffix' });
-  const start = tokens.findIndex((token) => token[1] === '1');
-  const end = tokens.findIndex((token) => token[1] === ')');
+  const { tokens, start, end } = boundedRange('prefix calc(1 *) suffix');
 
   assert.throws(
     () => parse(tokens, start, end, indexBlocks(tokens)),
@@ -33,9 +38,7 @@ test('parser: bounded virtual EOF keeps its source-relative position', () => {
 });
 
 test('parser: bounded virtual EOF scans trailing trivia before reporting its position', () => {
-  const tokens = tokenize({ css: 'prefix calc(1 +   ) suffix' });
-  const start = tokens.findIndex((token) => token[1] === '1');
-  const end = tokens.findIndex((token) => token[1] === ')');
+  const { tokens, start, end } = boundedRange('prefix calc(1 +   ) suffix');
 
   assert.throws(() => parse(tokens, start, end, indexBlocks(tokens)), {
     message: `Unexpected token "" at position ${tokens[end][2]}`,

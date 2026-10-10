@@ -11,6 +11,12 @@ import {
   mkProduct,
 } from '../../src/lib/node.js';
 
+const onePxPlusTwoPx = () =>
+  mkSum([
+    { sign: 1, node: dim(1, 'px') },
+    { sign: 1, node: dim(2, 'px') },
+  ]);
+
 describe('serialize: core syntax and expressions', () => {
   test('serialize: single number uses standard calculation syntax', () => {
     assert.equal(serialize(num(42)), 'calc(42)');
@@ -21,10 +27,7 @@ describe('serialize: core syntax and expressions', () => {
   });
 
   test('serialize: sum wrapped in calc(), spaces around +/-', () => {
-    const ast = mkSum([
-      { sign: 1, node: dim(1, 'px') },
-      { sign: 1, node: dim(2, 'px') },
-    ]);
+    const ast = onePxPlusTwoPx();
     assert.equal(serialize(ast), 'calc(1px + 2px)');
   });
 
@@ -79,10 +82,7 @@ describe('serialize: core syntax and expressions', () => {
   });
 
   test('serialize: custom calcName', () => {
-    const ast = mkSum([
-      { sign: 1, node: dim(1, 'px') },
-      { sign: 1, node: dim(2, 'px') },
-    ]);
+    const ast = onePxPlusTwoPx();
     assert.equal(
       serialize(ast, { calcName: '-webkit-calc' }),
       '-webkit-calc(1px + 2px)'
