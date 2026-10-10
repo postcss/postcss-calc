@@ -14,8 +14,8 @@ import reduceCalc from 'postcss-calc/reduce';
  */
 function evaluate(value) {
   const expression = value
-    .replace(/calc\(/g, '(')
-    .replace(/(?:var|env|attr)\([^()]*\)/g, '1 + 2');
+    .replaceAll('calc(', '(')
+    .replaceAll(/(?:var|env|attr)\([^()]*\)/g, '1 + 2');
   return Function(`"use strict"; return ${expression};`)();
 }
 

@@ -284,7 +284,7 @@ function extractCalcs(src) {
     }
     if (depth !== 0) continue;
     const expr = src.slice(calcStart, j);
-    const flat = expr.replace(/\s+/g, ' ').trim();
+    const flat = expr.replaceAll(/\s+/g, ' ').trim();
     if (flat.length > 2 && flat.length < 4096) results.push(flat);
     // Continue scanning after the open paren so nested calc()s also match.
     CALC_RE.lastIndex = matchEnd;
@@ -293,8 +293,8 @@ function extractCalcs(src) {
 }
 function safeName(owner, repo, path) {
   return `${owner}__${repo}__${path}`
-    .replace(/[/\\]/g, '_')
-    .replace(/[^\w.-]/g, '_');
+    .replaceAll(/[/\\]/g, '_')
+    .replaceAll(/[^\w.-]/g, '_');
 }
 // Phase 1: discover paths.
 const discovered = new Map();

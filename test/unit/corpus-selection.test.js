@@ -20,7 +20,7 @@ const FIXTURE = [
 describe('corpus selection:', () => {
   test('corpus selection: is deterministic and retains grouped subtraction shapes', () => {
     const first = selectCorpusExpressions(FIXTURE, 20);
-    const second = selectCorpusExpressions([...FIXTURE].reverse(), 20);
+    const second = selectCorpusExpressions([...FIXTURE].toReversed(), 20);
     assert.deepEqual(first, second);
     assert.equal(first.total, FIXTURE.length);
     assert.equal(first.eligible, FIXTURE.length - 2);

@@ -52,7 +52,7 @@ function compare(input) {
   const ours = ourOut(input);
   const theirs = theirOut(input);
   if (ours === null && theirs === null) return { kind: 'both-threw' };
-  if (ours === null) return { kind: 'we-threw', theirs: theirs };
+  if (ours === null) return { kind: 'we-threw', theirs };
   if (theirs === null) return { kind: 'they-threw', ours };
   if (ours === theirs) return { kind: 'agree' };
   // Re-feed csstools' output through our pipeline to absorb cosmetic noise.
