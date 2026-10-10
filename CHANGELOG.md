@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## 11.2.3 (2026-10-10)
+
+### Bug fixes
+- postcss-calc now emits -0 in some cases where it previously emitted calc(-1 * 0),
+  in order to obtain some output size savings when a negative 0 appears
+
 ## 11.2.2 (2026-10-1)
 
 ### Bug fixes
