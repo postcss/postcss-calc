@@ -6,7 +6,8 @@
 [PostCSS Calc] lets you reduce `calc()` references whenever it's possible.
 When an expression mixes units that cannot be combined exactly (such as `px`
 and `em`), or contains values only known at runtime (such as `var()`), the
-unresolved part is left for the browser's [W3C calc() implementation].
+unresolved part is left for the browser's [CSS Values 4][css-values-4]
+implementation.
 
 ## Installation
 
@@ -69,9 +70,8 @@ reduceCalc('min(50px, calc(2 * 40px))');
 // => 'calc(50px)'
 ```
 
-It accepts `precision`, `unwrapSingleValue`, the deprecated
-`unwrapSingleNegativeNumber` alias,
-`warnWhenCannotResolve`, `onParseError`, and `onWarn`:
+It accepts `precision`, `unwrapSingleValue`, `warnWhenCannotResolve`,
+`onParseError`, and `onWarn`:
 
 ```js
 const result = reduceCalc('calc(100% + var(--gap))', {
@@ -191,20 +191,20 @@ Example:
 With `mediaQueries: true`, this becomes:
 
 ```css
-@media (min-width: 200px) {
+@media (min-width: calc(200px)) {
   div {
     width: 100px;
   }
 }
 ```
 
+Add `unwrapSingleValue: true` to get the bare value, `(min-width: 200px)`.
+
 #### `selectors` (default: `false`)
 
 Reduces `calc()` functions found in selectors. Selectors do not accept
-`calc()` functions, so the plugin replaces them with their reduced values.
-Finite negative and fractional unitless results are serialized as bare values
-because a selector cannot contain a `calc()` function; the plugin enables the
-`unwrapSingleValue` automatically for selectors.
+`calc()` functions, so the plugin replaces them with their reduced values, as
+if `unwrapSingleValue` were enabled.
 
 ```js
 var out = postcss()
@@ -224,8 +224,8 @@ With `selectors: true`, this becomes `div:nth-child(3)`.
 
 #### `onParseError`
 
-Callback invoked when a `calc()` body fails to parse or simplify. Matches
-[`@csstools/css-calc`][csstools-css-calc]'s shape:
+Callback invoked with the error and the input value when a `calc()` body fails
+to parse or simplify:
 
 ```js
 postcss().use(
@@ -250,13 +250,13 @@ canonical-form decisions:
 - **Strict whitespace (§10.1).** `calc(2px+3px)` is invalid CSS (binary
   `+` / `-` require surrounding whitespace) and is preserved with a
   warning instead of reduced.
-- **Canonical operand order.** Commutative operands serialize
-  numeric-first, matching [`@csstools/css-calc`][csstools-css-calc]:
+- **Canonical operand order.** Sums serialize numbers first, then
+  dimensions in first-seen order, then unresolved terms:
   `calc(var(--foo) + 10px)` → `calc(10px + var(--foo))`.
 - **Zero buckets are kept.** `calc(100px - (100px - 100%))` →
   `calc(0px + 100%)`, not `100%` — [WPT calc-serialization-002][wpt-calc-serialization]
   requires the zero term because it carries the length-percentage type.
-- **Constant folding.** `calc(43 + pi)` now folds to `46.14159` (§10.7.1).
+- **Constant folding.** `calc(43 + pi)` now folds to `calc(46.14159)` (§10.7.1).
   Previously `pi` / `e` stayed symbolic.
 - **Distributive multiplication.** `calc(0.5 * (100vw - 10px))` becomes
   `calc(50vw - 5px)`.
@@ -270,7 +270,6 @@ canonical-form decisions:
   if you want validation behavior.
 
 [css-values-4]: https://www.w3.org/TR/css-values-4/
-[csstools-css-calc]: https://www.npmjs.com/package/@csstools/css-calc
 [wpt-calc-serialization]: https://github.com/web-platform-tests/wpt/blob/master/css/css-values/calc-serialization-002.html
 [jison]: https://github.com/zaach/jison
 
@@ -288,6 +287,7 @@ for the full guidelines. The project uses [pnpm](https://pnpm.io/).
 
 ```bash
 git clone git@github.com:postcss/postcss-calc.git
+cd postcss-calc
 git checkout -b patch-1
 pnpm install
 pnpm test
@@ -302,23 +302,8 @@ when changing parsing/simplification behavior:
 pnpm test:corpus:full
 ```
 
-Performance changes to the parser, analyzer, simplifier, or serializer should be
-checked with the benchmarks. `pnpm benchmark:arithmetic-chains` and
-`pnpm benchmark:nested-fallbacks` compare the working tree against `HEAD` using
-20 fresh-process paired blocks by default and write git-ignored schema-v2
-reports under `reports/benchmarks/`. Re-check a saved report with
-`pnpm benchmark:reanalyze <report>`. `pnpm benchmark:corpus` compares the whole
-pipeline with `@csstools/css-calc` on real-world expressions and is
-report-only.
-
-These benchmarks time only the parser (or, for the corpus, the whole reducer)
-on one machine, and a `pass` means "no regression detected at the declared
-margin", not "no change". Read [BENCHMARKS.md](BENCHMARKS.md) before
-interpreting results.
-
-The PostCSS benchmark awaits `postcss().process(...)`, and that await already
-triggers result stringification. It therefore does not add a redundant
-`result.css` access.
+Check performance changes with the benchmarks described in
+[BENCHMARKS.md](BENCHMARKS.md), and read it before interpreting results.
 
 ## [Changelog](CHANGELOG.md)
 
@@ -332,4 +317,3 @@ triggers result stringification. It therefore does not add a redundant
 [PostCSS Calc]: https://github.com/postcss/postcss-calc
 [PostCSS Custom Properties]: https://github.com/postcss/postcss-custom-properties
 [tests]: test/
-[W3C calc() implementation]: https://www.w3.org/TR/css3-values/#calc-notation
