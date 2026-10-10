@@ -173,18 +173,12 @@ describe('serialize: precision and rounding', () => {
   test('serialize: preserves signed zero vs zero under custom precision', () => {
     const negNested = call('min', [num(-0), num(1)]);
     const posNested = call('min', [num(0), num(1)]);
-    assert.equal(
-      serialize(negNested, { precision: 2 }),
-      'min(calc(-1 * 0), 1)'
-    );
+    assert.equal(serialize(negNested, { precision: 2 }), 'min(-1 * 0, 1)');
     assert.equal(serialize(posNested, { precision: 2 }), 'min(0, 1)');
 
     const negDim = call('min', [dim(-0, 'px'), dim(1, 'px')]);
     const posDim = call('min', [dim(0, 'px'), dim(1, 'px')]);
-    assert.equal(
-      serialize(negDim, { precision: 2 }),
-      'min(calc(-1 * 0px), 1px)'
-    );
+    assert.equal(serialize(negDim, { precision: 2 }), 'min(-1 * 0px, 1px)');
     assert.equal(serialize(posDim, { precision: 2 }), 'min(0px, 1px)');
   });
 
@@ -198,10 +192,7 @@ describe('serialize: precision and rounding', () => {
 
   test('serialize: lowers a signed zero number inside a calculation', () => {
     const nested = call('min', [num(-0), num(1)]);
-    assert.equal(
-      serialize(nested, { precision: false }),
-      'min(calc(-1 * 0), 1)'
-    );
+    assert.equal(serialize(nested, { precision: false }), 'min(-1 * 0, 1)');
   });
 
   test('serialize: lowers signed zero leaves inside structural expressions', () => {
@@ -211,13 +202,13 @@ describe('serialize: precision and rounding', () => {
     ]);
     assert.equal(
       serialize(ast, { precision: false }),
-      'calc(calc(-1 * 0) * var(--x))'
+      'calc(-1 * 0 * var(--x))'
     );
 
     const dimensional = call('min', [dim(-0, 'px'), dim(1, 'px')]);
     assert.equal(
       serialize(dimensional, { precision: false }),
-      'min(calc(-1 * 0px), 1px)'
+      'min(-1 * 0px, 1px)'
     );
   });
 

@@ -9,6 +9,7 @@
     "complexity": "error",
     "eqeqeq": ["error", "always", { "null": "ignore" }],
     "guard-for-in": "error",
+    "import/no-cycle": "error",
     "import/no-duplicates": "error",
     "import/no-self-import": "error",
     "max-depth": "error",

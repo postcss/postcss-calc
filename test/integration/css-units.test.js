@@ -156,7 +156,7 @@ describe('Unknown units', () => {
 describe('Mixed units', () => {
   test(
     'should keep zero with for mixed units for the type info (cssnano#211)',
-    testValue('calc(99.99% * 1/1 - 0rem)', 'calc(99.99% + calc(-1 * 0rem))')
+    testValue('calc(99.99% * 1/1 - 0rem)', 'calc(99.99% - 0rem)')
   );
 
   test(

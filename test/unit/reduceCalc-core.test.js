@@ -134,11 +134,11 @@ describe('reduceCalc: basic pipeline', () => {
   test('reduceCalc: preserves arithmetic signed zero inside unresolved calculations', () => {
     assert.equal(
       reduceCalc('calc(0 / -1 * var(--x))', { precision: false }),
-      'calc(calc(-1 * 0) * var(--x))'
+      'calc(-1 * 0 * var(--x))'
     );
     assert.equal(
       reduceCalc('min(0px / -1, var(--x))', { precision: false }),
-      'min(calc(-1 * 0px), var(--x))'
+      'min(-1 * 0px, var(--x))'
     );
   });
 
@@ -231,15 +231,12 @@ describe('reduceCalc: basic pipeline', () => {
     test('arithmetic signed zero is preserved with default precision', () => {
       assert.equal(
         reduceCalc('calc(0 / -1 * var(--x))'),
-        'calc(calc(-1 * 0) * var(--x))'
+        'calc(-1 * 0 * var(--x))'
       );
     });
 
     test('arithmetic signed zero dimension is preserved under subtraction', () => {
-      assert.equal(
-        reduceCalc('calc(1em - 1px * 0)'),
-        'calc(1em + calc(-1 * 0px))'
-      );
+      assert.equal(reduceCalc('calc(1em - 1px * 0)'), 'calc(1em - 0px)');
     });
 
     test('grouped sum with a leading negative term keeps its signs and a positive zero term', () => {
@@ -252,7 +249,53 @@ describe('reduceCalc: basic pipeline', () => {
     test('grouped sum with a leading negative term keeps its signs and a negative zero term', () => {
       assert.equal(
         reduceCalc('calc((-1em + var(--x) - 0px))'),
-        'calc(-1em + calc(-1 * 0px) + var(--x))'
+        'calc(-1em - 0px + var(--x))'
+      );
+    });
+
+    test('negative zero beside a contextual percentage serializes as subtraction', () => {
+      assert.equal(reduceCalc('calc(100% - 0px)'), 'calc(100% - 0px)');
+      assert.equal(reduceCalc('calc(100% - 0)'), 'calc(100% - 0)');
+    });
+
+    test('leading negative zero term moves behind the next term', () => {
+      assert.equal(reduceCalc('calc(0 / -1 + var(--x))'), 'calc(var(--x) - 0)');
+      assert.equal(reduceCalc('calc(0px / -1 + 1%)'), 'calc(1% - 0px)');
+    });
+
+    test('all-negative-zero sums keep a stable term order', () => {
+      for (const input of [
+        'calc(-1em * 0 - 1px * 0)',
+        'calc(1 / sign(calc(-1em * 0 - 1px * 0)))',
+      ]) {
+        const once = reduceCalc(input);
+        assert.equal(reduceCalc(once), once);
+      }
+      assert.equal(
+        reduceCalc('calc(-1em * 0 - 1px * 0)'),
+        'calc(-1 * 0em - 0px)'
+      );
+    });
+
+    test('negative zero before a non-zero term moves behind it', () => {
+      assert.equal(reduceCalc('calc(-1em * 0 + 1px)'), 'calc(1px - 0em)');
+    });
+
+    test('negative zero type anchor still invalidates an incompatible sum', () => {
+      assert.equal(reduceCalc('calc(1deg - 0px)'), 'calc(1deg - 0px)');
+    });
+
+    test('non-leading negative zero factor keeps its calc() wrapper', () => {
+      assert.equal(
+        reduceCalc('calc(var(--x) * (0 / -1))'),
+        'calc(var(--x) * calc(-1 * 0))'
+      );
+    });
+
+    test('negative zero opening a product in a non-leading sum term keeps its sign', () => {
+      assert.equal(
+        reduceCalc('calc(1px - (0 / -1) * var(--x))'),
+        'calc(1px - -1 * 0 * var(--x))'
       );
     });
   });

@@ -168,13 +168,16 @@ function emitFiniteScalar(node, session, value) {
  * @param {import('../node.js').Num | import('../node.js').Dim} node
  * @param {SerializeSession} session
  * @param {number} [value]
+ * @param {boolean} [bare] emit negative zero without its calc() wrapper
  * @return {void}
  */
-function emitScalar(node, session, value) {
+function emitScalar(node, session, value, bare = false) {
   const buffer = session.buffer;
   const effective = value ?? node.value;
-  if (Object.is(effective, -0)) emitSignedZero(buffer, node);
-  else if (isDegenerate(effective)) {
+  if (Object.is(effective, -0)) {
+    if (bare) emitBareSignedZero(buffer, node);
+    else emitSignedZero(buffer, node);
+  } else if (isDegenerate(effective)) {
     if (node.type === 'Dim') {
       buffer.push(
         'calc(',
@@ -195,8 +198,21 @@ function emitScalar(node, session, value) {
  * @return {void}
  */
 function emitSignedZero(buffer, node) {
+  buffer.push('calc(');
+  emitBareSignedZero(buffer, node);
+  buffer.push(')');
+}
+
+/**
+ * Negative zero as an unwrapped product, valid only where a `<calc-product>`
+ * may appear without changing how the surrounding expression parses.
+ * @param {string[]} buffer
+ * @param {import('../node.js').Num | import('../node.js').Dim} node
+ * @return {void}
+ */
+function emitBareSignedZero(buffer, node) {
   const unit = node.type === 'Dim' ? (node.rawUnit ?? node.unit) : '';
-  buffer.push('calc(-1 * 0', unit, ')');
+  buffer.push('-1 * 0', unit);
 }
 
 /** @param {Node} node @return {node is import('../node.js').Num | import('../node.js').Dim} */
@@ -207,22 +223,6 @@ function isScalar(node) {
 /** @param {Node} node @return {node is import('../node.js').Num | import('../node.js').Dim} */
 function isSignedZero(node) {
   return isScalar(node) ? Object.is(node.value, -0) : false;
-}
-
-/**
- * Whether a scalar node is strictly negative after precision rounding
- * (excluding signed zero and sub-precision values that round to zero).
- * @param {Node} node
- * @param {number | false} precision
- * @return {node is import('../node.js').Num | import('../node.js').Dim}
- */
-function isEffectivelyNegative(node, precision) {
-  return (
-    isScalar(node) &&
-    !Object.is(node.value, -0) &&
-    Number.isFinite(node.value) &&
-    round(node.value, precision) < 0
-  );
 }
 
 export {
@@ -238,7 +238,7 @@ export {
   emitFiniteScalar,
   emitScalar,
   emitSignedZero,
+  emitBareSignedZero,
   isScalar,
   isSignedZero,
-  isEffectivelyNegative,
 };
