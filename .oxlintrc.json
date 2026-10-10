@@ -7,13 +7,24 @@
   "rules": {
     "array-callback-return": "error",
     "complexity": "error",
-    "eqeqeq": ["error", "always", { "null": "ignore" }],
+    "eqeqeq": [
+      "error",
+      "always",
+      {
+        "null": "ignore"
+      }
+    ],
     "guard-for-in": "error",
     "import/no-cycle": "error",
     "import/no-duplicates": "error",
     "import/no-self-import": "error",
     "max-depth": "error",
-    "max-lines": ["error", { "max": 400 }],
+    "max-lines": [
+      "error",
+      {
+        "max": 400
+      }
+    ],
     "no-bitwise": "error",
     "no-case-declarations": "error",
     "no-duplicate-imports": "error",
@@ -21,6 +32,7 @@
     "no-fallthrough": "error",
     "no-labels": "error",
     "no-nested-ternary": "error",
+    "no-param-reassign": "error",
     "no-promise-executor-return": "error",
     "no-prototype-builtins": "error",
     "no-redeclare": "error",
@@ -29,15 +41,32 @@
     "no-shadow": "error",
     "no-template-curly-in-string": "error",
     "no-throw-literal": "error",
-    "no-underscore-dangle": ["error", { "allow": ["_default"] }],
+    "no-underscore-dangle": [
+      "error",
+      {
+        "allow": ["_default"]
+      }
+    ],
     "no-unmodified-loop-condition": "error",
     "no-unnecessary-await": "error",
     "no-unreachable-loop": "error",
     "no-useless-assignment": "error",
+    "no-var": "error",
     "no-void": "error",
+    "object-shorthand": "error",
     "only-throw-error": "error",
     "oxc/no-accumulating-spread": "error",
-    "prefer-const": ["error", { "destructuring": "all" }],
+    "prefer-arrow-callback": "error",
+    "prefer-const": [
+      "error",
+      {
+        "destructuring": "all"
+      }
+    ],
+    "prefer-numeric-literals": "error",
+    "prefer-object-has-own": "error",
+    "prefer-object-spread": "error",
+    "prefer-rest-params": "error",
     "preserve-caught-error": "error",
     "promise/always-return": "error",
     "promise/no-nesting": "error",
@@ -46,22 +75,34 @@
     "unicorn/consistent-function-scoping": "error",
     "unicorn/no-array-for-each": "error",
     "unicorn/no-array-reduce": "error",
+    "unicorn/no-array-reverse": "error",
     "unicorn/no-instanceof-array": "error",
     "unicorn/no-unnecessary-slice-end": "error",
     "unicorn/no-useless-fallback-in-spread": "error",
     "unicorn/no-useless-spread": "error",
     "unicorn/prefer-array-find": "error",
     "unicorn/prefer-array-flat": "error",
+    "unicorn/prefer-array-flat-map": "error",
+    "unicorn/prefer-array-index-of": "error",
     "unicorn/prefer-array-some": "error",
+    "unicorn/prefer-date-now": "error",
+    "unicorn/prefer-default-parameters": "error",
+    "unicorn/prefer-global-this": "error",
     "unicorn/prefer-includes": "error",
+    "unicorn/prefer-math-min-max": "error",
     "unicorn/prefer-math-trunc": "error",
     "unicorn/prefer-modern-math-apis": "error",
     "unicorn/prefer-negative-index": "error",
     "unicorn/prefer-node-protocol": "error",
     "unicorn/prefer-number-properties": "error",
+    "unicorn/prefer-object-from-entries": "error",
+    "unicorn/prefer-optional-catch-binding": "error",
     "unicorn/prefer-regexp-test": "error",
     "unicorn/prefer-set-has": "error",
     "unicorn/prefer-set-size": "error",
+    "unicorn/prefer-string-replace-all": "error",
+    "unicorn/prefer-string-starts-ends-with": "error",
+    "unicorn/prefer-string-trim-start-end": "error",
     "unicorn/prefer-type-error": "error"
   },
   "env": {

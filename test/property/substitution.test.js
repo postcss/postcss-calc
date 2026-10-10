@@ -44,8 +44,8 @@ const { expr } = fc.letrec((tie) => ({
  */
 function evaluate(value, tokens) {
   const expression = value
-    .replace(/calc\(/g, '(')
-    .replace(/var\(--([abc])\)/g, (_, name) => tokens[name]);
+    .replaceAll('calc(', '(')
+    .replaceAll(/var\(--([abc])\)/g, (_, name) => tokens[name]);
   return Function(`"use strict"; return ${expression};`)();
 }
 
@@ -57,7 +57,7 @@ test('property: reduced expressions evaluate like their token substitution', () 
       const expected = evaluate(source, tokens);
       if (
         !Number.isFinite(expected) ||
-        /[a-z]/.test(output.replace(/calc\(|var\(--[abc]\)/g, ''))
+        /[a-z]/.test(output.replaceAll(/calc\(|var\(--[abc]\)/g, ''))
       ) {
         return; // degenerate result, serialized as a keyword
       }

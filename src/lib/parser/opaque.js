@@ -71,10 +71,11 @@ function customProperty(tokens, start, end) {
 /**
  * Append the component tree of `[start, end)` to `root` and return it.
  * Callers seed `root` so leading components need no copy or spread.
- * @param {ParseInput} input @param {number} start @param {number} end @param {ParseRange} parseRange @param {OpaqueComponent[]} root @return {OpaqueComponent[]}
+ * @param {ParseInput} input @param {number} start @param {number} rangeEnd @param {ParseRange} parseRange @param {OpaqueComponent[]} root @return {OpaqueComponent[]}
  */
-function componentTree(input, start, end, parseRange, root) {
+function componentTree(input, start, rangeEnd, parseRange, root) {
   /** @type {OpaqueComponent[]} */ let tree = root;
+  let end = rangeEnd;
   /** @type {{parent: OpaqueComponent[], tree: OpaqueComponent[], close: number, end: number}[]} */
   const frames = [];
   const { tokens } = input;

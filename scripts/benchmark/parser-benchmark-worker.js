@@ -47,7 +47,7 @@ function digest(value) {
       continue;
     }
     hash.update(`{${node.type ?? 'object'};`);
-    for (const key of Object.keys(node).sort().reverse()) {
+    for (const key of Object.keys(node).sort().toReversed()) {
       hash.update(`${key}:`);
       stack.push(node[key]);
     }

@@ -101,7 +101,7 @@ function mutateString(s, op, pos, replChar) {
       return s.slice(0, i) + s[i + 1] + s[i] + s.slice(i + 2);
     }
     default:
-      return s.replace(/[()]/g, ''); // strip all parens
+      return s.replaceAll(/[()]/g, ''); // strip all parens
   }
 }
 const mutatedCorpus = fc

@@ -12,10 +12,12 @@ import { isExact } from './exact.js';
  * @return {number}
  */
 function gcd(a, b) {
-  while (b !== 0) {
-    [a, b] = [b, a % b];
+  let x = a;
+  let y = b;
+  while (y !== 0) {
+    [x, y] = [y, x % y];
   }
-  return a || 1;
+  return x || 1;
 }
 
 /**

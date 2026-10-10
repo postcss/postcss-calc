@@ -25,7 +25,7 @@ describe('csstools exponential functions', () => {
   test('csstools pow: pow(8, 1 / 3) ≈ 2', () => {
     // csstools agrees on the cube-root identity within FP precision.
     const got = Number.parseFloat(
-      out('pow(8, 1 / 3)').replace(/^calc\(|\)$/g, '')
+      out('pow(8, 1 / 3)').replaceAll(/^calc\(|\)$/g, '')
     );
     assert.ok(Math.abs(got - 2) < 1e-9, `got ${got}`);
   });
