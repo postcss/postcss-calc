@@ -18,6 +18,7 @@ import {
   astArbWithDegenerate,
   numericAstArb,
 } from '../helpers/arbitraries.js';
+import reduceCalc from 'postcss-calc/reduce';
 import { parseSource } from '../helpers/parse-source.js';
 import { num, mkProduct, mkSum, negate } from '../../src/lib/node.js';
 const NUM_RUNS = 500;
@@ -52,6 +53,17 @@ for (const [label, arb] of [
     );
   });
 }
+// --- Reducer idempotence -------------------------------------------------
+// Reducing the reducer's own output must not change it.
+test('property: reduceCalc(reduceCalc(x)) === reduceCalc(x)', () => {
+  fc.assert(
+    fc.property(astArb(4), (ast) => {
+      const once = reduceCalc(`calc(${str(ast)})`);
+      return reduceCalc(once) === once;
+    }),
+    { numRuns: NUM_RUNS }
+  );
+});
 // --- Analysis/simplification contract -----------------------------------
 // Analysis summarizes the original tree, while simplification may refine
 // coarse unknown types. It must not invalidate a valid tree, change a known

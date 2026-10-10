@@ -77,25 +77,26 @@ declare function emitFiniteScalar(node: import('../node.js').Num | import('../no
  * @param {import('../node.js').Num | import('../node.js').Dim} node
  * @param {SerializeSession} session
  * @param {number} [value]
+ * @param {boolean} [bare] emit negative zero without its calc() wrapper
  * @return {void}
  */
-declare function emitScalar(node: import('../node.js').Num | import('../node.js').Dim, session: SerializeSession, value?: number): void;
+declare function emitScalar(node: import('../node.js').Num | import('../node.js').Dim, session: SerializeSession, value?: number, bare?: boolean): void;
 /**
  * @param {string[]} buffer
  * @param {import('../node.js').Num | import('../node.js').Dim} node
  * @return {void}
  */
 declare function emitSignedZero(buffer: string[], node: import('../node.js').Num | import('../node.js').Dim): void;
+/**
+ * Negative zero as an unwrapped product, valid only where a `<calc-product>`
+ * may appear without changing how the surrounding expression parses.
+ * @param {string[]} buffer
+ * @param {import('../node.js').Num | import('../node.js').Dim} node
+ * @return {void}
+ */
+declare function emitBareSignedZero(buffer: string[], node: import('../node.js').Num | import('../node.js').Dim): void;
 /** @param {Node} node @return {node is import('../node.js').Num | import('../node.js').Dim} */
 declare function isScalar(node: Node): node is import('../node.js').Num | import('../node.js').Dim;
 /** @param {Node} node @return {node is import('../node.js').Num | import('../node.js').Dim} */
 declare function isSignedZero(node: Node): node is import('../node.js').Num | import('../node.js').Dim;
-/**
- * Whether a scalar node is strictly negative after precision rounding
- * (excluding signed zero and sub-precision values that round to zero).
- * @param {Node} node
- * @param {number | false} precision
- * @return {node is import('../node.js').Num | import('../node.js').Dim}
- */
-declare function isEffectivelyNegative(node: Node, precision: number | false): node is import('../node.js').Num | import('../node.js').Dim;
-export { NOISE_FLOOR, divideByPowerOfTen, roundDecimal, round, isDegenerate, degenerateKeyword, serializeNumber, roundedScalarValue, emitRoundedScalar, emitFiniteScalar, emitScalar, emitSignedZero, isScalar, isSignedZero, isEffectivelyNegative, };
+export { NOISE_FLOOR, divideByPowerOfTen, roundDecimal, round, isDegenerate, degenerateKeyword, serializeNumber, roundedScalarValue, emitRoundedScalar, emitFiniteScalar, emitScalar, emitSignedZero, emitBareSignedZero, isScalar, isSignedZero, };

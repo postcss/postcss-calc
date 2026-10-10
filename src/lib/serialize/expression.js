@@ -1,61 +1,36 @@
 // Spec: https://www.w3.org/TR/css-values-4/#serialize-a-calculation-tree
-// Canonical AST expression emission: operator precedence, parenthesization,
-// sum terms, product factors, and function calls.
+// Canonical AST expression emission: node dispatch, sums, products, function
+// calls, and math results. These emitters recurse into each other, so they
+// share one module; precision and precedence rules live in sibling modules.
 
-import { serializeComponents } from '../opaque.js';
 import { num } from '../node.js';
+import { serializeComponents } from '../opaque.js';
 import {
-  round,
-  isDegenerate,
   degenerateKeyword,
-  roundedScalarValue,
+  emitBareSignedZero,
   emitRoundedScalar,
   emitScalar,
   emitSignedZero,
+  isDegenerate,
   isScalar,
   isSignedZero,
-  isEffectivelyNegative,
+  round,
+  roundedScalarValue,
 } from './precision.js';
+import {
+  needsParentheses,
+  PRODUCT_PRECEDENCE,
+  SUM_PRECEDENCE,
+  UNARY_PRECEDENCE,
+} from './precedence.js';
 
 /**
  * @typedef {import('../node.js').Node} Node
  * @typedef {import('../node.js').Sum} Sum
- * @typedef {import('../node.js').Product} Product
+ * @typedef {import('../node.js').SumTerm} SumTerm
  * @typedef {import('../node.js').ProductFactor} ProductFactor
  * @typedef {import('./precision.js').SerializeSession} SerializeSession
  */
-
-// The AST is canonical: sums and products are flat, except grouped nodes that
-// keep their parentheses, so these precedence levels cover every binary expression
-const SUM_PRECEDENCE = 1;
-const PRODUCT_PRECEDENCE = 2;
-const ATOMIC_PRECEDENCE = 3;
-// Negation (-1 * ...) binds more tightly than a sum but has the same atomic boundary
-// for deciding whether the operand needs parentheses.
-const UNARY_PRECEDENCE = ATOMIC_PRECEDENCE;
-
-/** @param {Node} node @return {number} */
-function precedence(node) {
-  if (node.type === 'Sum') return SUM_PRECEDENCE;
-  if (node.type === 'Product') return PRODUCT_PRECEDENCE;
-  return ATOMIC_PRECEDENCE;
-}
-
-/**
- * @param {Node} node
- * @param {number} parentPrecedence
- * @param {boolean} groupedRequired
- * @return {boolean}
- */
-function needsParentheses(node, parentPrecedence, groupedRequired) {
-  return (
-    precedence(node) < parentPrecedence ||
-    (node.type === 'Sum' &&
-      node.grouped === true &&
-      groupedRequired === true) ||
-    (node.type === 'Product' && node.grouped === true && parentPrecedence > 0)
-  );
-}
 
 /**
  * @param {Node} node
@@ -105,129 +80,89 @@ function emitNodeBody(node, session) {
       emitSum(node, session);
       return;
     case 'Product':
-      emitProduct(node, session);
+      emitProductFactors(node.factors, session);
       return;
-  }
-}
-
-/**
- * @param {import('../node.js').Call} node
- * @param {SerializeSession} session
- * @param {string} [callNameOverride]
- * @return {void}
- */
-function emitCall(node, session, callNameOverride) {
-  const buffer = session.buffer;
-  buffer.push(callNameOverride ?? node.rawName ?? node.name, '(');
-  for (let i = 0; i < node.args.length; i++) {
-    if (i > 0) buffer.push(', ');
-    emitNode(node.args[i], session);
-  }
-  buffer.push(')');
-}
-
-/**
- * @param {import('../node.js').OpaqueCall} node
- * @param {SerializeSession} session
- * @param {string} [callNameOverride]
- * @return {void}
- */
-function emitOpaqueCall(node, session, callNameOverride) {
-  const buffer = session.buffer;
-  buffer.push(callNameOverride ?? node.rawName ?? node.name, '(');
-  serializeComponents(node.components, buffer, (child, childBuffer) => {
-    emitNestedMathResult(child, session, childBuffer);
-  });
-  buffer.push(')');
-}
-
-/**
- * @param {import('../node.js').SumTerm} term
- * @param {1 | -1} multiplier
- * @param {number | false} precision
- * @return {1 | -1}
- */
-function termSign(term, multiplier, precision) {
-  let sign = /** @type {1 | -1} */ (term.sign * multiplier);
-  if (isEffectivelyNegative(term.node, precision)) {
-    sign = /** @type {1 | -1} */ (-sign);
-  }
-  return sign;
-}
-
-/**
- * @param {import('../node.js').SumTerm} term
- * @param {SerializeSession} session
- * @param {1 | -1} sign
- * @return {void}
- */
-function emitSumTerm(term, session, sign) {
-  if (sign === 1) {
-    emitNode(term.node, session, SUM_PRECEDENCE, true);
-  } else {
-    emitLeadingNeg(term.node, session);
   }
 }
 
 /**
  * @param {import('../node.js').Num | import('../node.js').Dim} termNode
  * @param {1 | -1} sign
- * @param {number} i
+ * @param {boolean} leading
  * @param {SerializeSession} session
  * @return {void}
  */
-function emitScalarSumTerm(termNode, sign, i, session) {
+function emitScalarSumTerm(termNode, sign, leading, session) {
   const buffer = session.buffer;
   const effectiveVal = sign * termNode.value;
   if (Object.is(effectiveVal, -0)) {
-    if (i > 0) buffer.push(' + ');
-    emitSignedZero(buffer, termNode);
+    // `x - 0` reparses as x + -(0), so subtraction round-trips negative zero.
+    // A leading term starts a <calc-product>, so `-1 * 0` needs no calc().
+    if (leading) {
+      emitBareSignedZero(buffer, termNode);
+    } else {
+      buffer.push(' - ');
+      emitRoundedScalar(termNode, buffer, 0);
+    }
     return;
   }
   if (isDegenerate(effectiveVal)) {
-    if (i === 0 && sign === -1) buffer.push('-');
-    else if (i > 0) buffer.push(sign === 1 ? ' + ' : ' - ');
+    if (!leading) buffer.push(sign === 1 ? ' + ' : ' - ');
+    else if (sign === -1) buffer.push('-');
     emitScalar(termNode, session);
     return;
   }
   const rounded = round(effectiveVal, session.precision);
   if (rounded < 0) {
-    buffer.push(i === 0 ? '-' : ' - ');
+    buffer.push(leading ? '-' : ' - ');
     emitRoundedScalar(termNode, buffer, -rounded);
   } else {
-    if (i > 0) buffer.push(' + ');
+    if (!leading) buffer.push(' + ');
     emitRoundedScalar(termNode, buffer, rounded);
   }
 }
 
 /**
- * @param {import('../node.js').SumTerm[]} terms
+ * @param {SumTerm} term
+ * @param {boolean} leading
  * @param {SerializeSession} session
- * @param {1 | -1} [multiplier]
  * @return {void}
  */
-function emitSumTerms(terms, session, multiplier = 1) {
-  const buffer = session.buffer;
-  for (let i = 0; i < terms.length; i++) {
-    const term = terms[i];
-    const termNode = term.node;
-    const sign = /** @type {1 | -1} */ (term.sign * multiplier);
-    if (isScalar(termNode)) {
-      emitScalarSumTerm(termNode, sign, i, session);
-      continue;
-    }
-    if (i === 0) {
-      emitSumTerm(term, session, sign);
-    } else {
-      buffer.push(sign === 1 ? ' + ' : ' - ');
-      emitNode(termNode, session, SUM_PRECEDENCE, true);
-    }
+function emitSumTerm(term, leading, session) {
+  const termNode = term.node;
+  if (isScalar(termNode)) {
+    emitScalarSumTerm(termNode, term.sign, leading, session);
+  } else if (leading && term.sign === -1) {
+    emitLeadingNeg(termNode, session);
+  } else {
+    if (!leading) session.buffer.push(term.sign === 1 ? ' + ' : ' - ');
+    emitNode(termNode, session, SUM_PRECEDENCE, true);
   }
 }
 
-/** @param {Sum} sum @param {SerializeSession} session @return {void} */
+/** @param {SumTerm} term @return {boolean} */
+function isNegativeZeroTerm(term) {
+  return isScalar(term.node) && Object.is(term.sign * term.node.value, -0);
+}
+
+/**
+ * @param {Sum} sum
+ * @param {SerializeSession} session
+ * @return {void}
+ */
 function emitSum(sum, session) {
-  emitSumTerms(sum.terms, session);
+  const terms = sum.terms;
+  // x + -0 is exactly x for every x, so leading negative zeros can move
+  // behind the first other term and use the shorter subtraction form. When
+  // every term is negative zero, keep the order so reducing again is stable.
+  const lead = Math.max(
+    0,
+    terms.findIndex((term) => !isNegativeZeroTerm(term))
+  );
+  emitSumTerm(terms[lead], true, session);
+  for (let i = 0; i < terms.length; i++) {
+    if (i !== lead) emitSumTerm(terms[i], false, session);
+  }
 }
 
 /**
@@ -269,34 +204,64 @@ function emitProductFactors(
   coefficientNode
 ) {
   const buffer = session.buffer;
-  let first = true;
+  // Only the product's first multiplied scalar may print negative zero as a
+  // bare `-1 * 0`: reparsing folds the `-1` back into that same coefficient.
+  // After any operator, the `-1` would bind to the preceding operand instead.
+  let leading = true;
   if (coefficientValue !== undefined && coefficientValue !== 1) {
-    emitScalar(
-      /** @type {import('../node.js').Num} */ (coefficientNode),
-      session,
-      coefficientValue
+    const coefficient = /** @type {import('../node.js').Num} */ (
+      coefficientNode
     );
-    first = false;
+    emitScalar(coefficient, session, coefficientValue, true);
+    leading = false;
   }
   for (let i = start; i < factors.length; i++) {
     const factor = factors[i];
     const factorNode = factor.node;
-    if (first) {
-      if (factor.exponent === -1) buffer.push('1 / ');
-      if (isScalar(factorNode)) emitScalar(factorNode, session);
-      else emitNode(factorNode, session, PRODUCT_PRECEDENCE);
-      first = false;
+    const multiplied = factor.exponent === 1;
+    if (!leading) buffer.push(multiplied ? ' * ' : ' / ');
+    else if (!multiplied) buffer.push('1 / ');
+    if (isScalar(factorNode)) {
+      emitScalar(factorNode, session, undefined, leading && multiplied);
     } else {
-      buffer.push(factor.exponent === 1 ? ' * ' : ' / ');
-      if (isScalar(factorNode)) emitScalar(factorNode, session);
-      else emitNode(factorNode, session, PRODUCT_PRECEDENCE);
+      emitNode(factorNode, session, PRODUCT_PRECEDENCE);
     }
+    leading = false;
   }
 }
 
-/** @param {Product} product @param {SerializeSession} session @return {void} */
-function emitProduct(product, session) {
-  emitProductFactors(product.factors, session);
+/**
+ * @param {import('../node.js').Call} node
+ * @param {SerializeSession} session
+ * @param {string} [callNameOverride]
+ * @return {void}
+ */
+function emitCall(node, session, callNameOverride) {
+  const buffer = session.buffer;
+  buffer.push(callNameOverride ?? node.rawName ?? node.name, '(');
+  for (let i = 0; i < node.args.length; i++) {
+    if (i > 0) buffer.push(', ');
+    const arg = node.args[i];
+    // Every math-function argument is a <calc-sum>, so it needs no calc()
+    if (isSignedZero(arg)) emitBareSignedZero(buffer, arg);
+    else emitNode(arg, session);
+  }
+  buffer.push(')');
+}
+
+/**
+ * @param {import('../node.js').OpaqueCall} node
+ * @param {SerializeSession} session
+ * @param {string} [callNameOverride]
+ * @return {void}
+ */
+function emitOpaqueCall(node, session, callNameOverride) {
+  const buffer = session.buffer;
+  buffer.push(callNameOverride ?? node.rawName ?? node.name, '(');
+  serializeComponents(node.components, buffer, (child, childBuffer) => {
+    emitNestedMathResult(child, session, childBuffer);
+  });
+  buffer.push(')');
 }
 
 /**
@@ -356,21 +321,10 @@ function emitNestedMathResult(node, session, buffer = session.buffer) {
 }
 
 export {
-  SUM_PRECEDENCE,
-  PRODUCT_PRECEDENCE,
-  ATOMIC_PRECEDENCE,
-  UNARY_PRECEDENCE,
-  precedence,
-  needsParentheses,
   emitNode,
+  emitLeadingNeg,
   emitCall,
   emitOpaqueCall,
-  termSign,
-  emitSumTerms,
-  emitSum,
-  emitLeadingNeg,
-  emitProductFactors,
-  emitProduct,
   emitMathResult,
   emitNestedMathResult,
 };

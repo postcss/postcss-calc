@@ -13,10 +13,10 @@ import {
 } from './serialize/precision.js';
 import {
   emitCall,
+  emitLeadingNeg,
   emitOpaqueCall,
   emitMathResult,
   emitNode,
-  emitLeadingNeg,
 } from './serialize/expression.js';
 
 /**

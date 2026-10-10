@@ -224,9 +224,9 @@ describe('serialize: core syntax and expressions', () => {
     assert.equal(serialize(ast), 'calc(-1 / 2px)');
   });
 
-  test('serialize: negating a Product with leading zero coefficient emits calc(-1 * 0) times the rest', () => {
+  test('serialize: negating a Product with leading zero coefficient emits -1 * 0 times the rest', () => {
     // The negated coefficient is -0, which must take the signed-zero path
-    // (calc(-1 * 0)) instead of collapsing to plain `0` or `1`.
+    // (-1 * 0) instead of collapsing to plain `0` or `1`.
     const ast = mkSum([
       {
         sign: -1,
@@ -236,7 +236,7 @@ describe('serialize: core syntax and expressions', () => {
         ]),
       },
     ]);
-    assert.equal(serialize(ast), 'calc(calc(-1 * 0) * var(--x))');
+    assert.equal(serialize(ast), 'calc(-1 * 0 * var(--x))');
   });
 
   test('serialize: negating a Product with leading -0 coefficient emits positive zero times the rest', () => {
