@@ -6,7 +6,6 @@ import { mathFunctions, isCalculationFunction } from '../functions.js';
 
 /** @typedef {import('../node.js').Node} Node */
 /** @typedef {import('../simplify.js').SimplifyFn} SimplifyFn */
-/** @typedef {(name: string, args: Node[]) => Node} MathSimplifier */
 
 /**
  * @param {Extract<Node, { type: 'Call' }>} node
@@ -27,7 +26,7 @@ function simplifyCall(node, simplify) {
 
   const simplifier = mathFunctions.get(name)?.simplify;
   if (simplifier) {
-    return simplifier(name, args);
+    return simplifier(args, name);
   }
 
   return call(node.name, args, node.rawName);

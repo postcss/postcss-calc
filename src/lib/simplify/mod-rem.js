@@ -4,11 +4,11 @@ import { foldConstArgs, foldResult } from './fold.js';
 /** @typedef {import('../node.js').Node} Node */
 
 /**
- * @param {'mod' | 'rem'} name
  * @param {Node[]} args
+ * @param {string} name
  * @return {Node}
  */
-function simplifyModRem(name, args) {
+function simplifyModRem(args, name) {
   if (args.length !== 2) {
     return call(name, args);
   }
@@ -27,7 +27,7 @@ function simplifyModRem(name, args) {
 }
 
 /**
- * @param {'mod' | 'rem'} name
+ * @param {string} name
  * @param {number} a
  * @param {number} b
  * @return {number}

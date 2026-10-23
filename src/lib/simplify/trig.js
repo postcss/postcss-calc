@@ -12,11 +12,11 @@ const TRIG_OPS = /** @type {const} */ ({
 });
 
 /**
- * @param {'sin' | 'cos' | 'tan'} name
  * @param {Node[]} args
+ * @param {string} name
  * @return {Node}
  */
-function simplifyTrig(name, args) {
+function simplifyTrig(args, name) {
   if (args.length !== 1) {
     return call(name, args);
   }
@@ -38,7 +38,7 @@ function simplifyTrig(name, args) {
   if (radians === null) {
     return call(name, args);
   }
-  return num(TRIG_OPS[name](radians));
+  return num(TRIG_OPS[/** @type {keyof typeof TRIG_OPS} */ (name)](radians));
 }
 
 export { simplifyTrig };

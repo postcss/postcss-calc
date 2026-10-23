@@ -15,7 +15,6 @@ import {
   isScalar,
   isSignedZero,
   round,
-  roundedScalarValue,
 } from './precision.js';
 import {
   needsParentheses,
@@ -271,7 +270,7 @@ function emitOpaqueCall(node, session, callNameOverride) {
  */
 function emitMathResult(node, session, wrapper) {
   if (isScalar(node)) {
-    const scalarValue = roundedScalarValue(node, session.precision);
+    const scalarValue = round(node.value, session.precision);
     const buffer = session.buffer;
     if (isDegenerate(scalarValue)) {
       buffer.push(wrapper, '(', degenerateKeyword(scalarValue));

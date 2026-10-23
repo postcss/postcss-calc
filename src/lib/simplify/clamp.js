@@ -1,6 +1,7 @@
 import { call } from '../node.js';
 import { foldConstArgs, chosenArg } from './fold.js';
 import { simplifyMinMax } from './min-max.js';
+import { isClampKeyword } from '../keywords.js';
 
 /** @typedef {import('../node.js').Node} Node */
 
@@ -10,17 +11,17 @@ import { simplifyMinMax } from './min-max.js';
  */
 function simplifyClamp(args) {
   if (args.length === 3) {
-    const minNone = isNone(args[0]);
-    const maxNone = isNone(args[2]);
+    const minNone = isClampKeyword(args[0], 0);
+    const maxNone = isClampKeyword(args[2], 2);
 
     if (minNone && maxNone) {
       return args[1];
     }
     if (minNone) {
-      return simplifyMinMax('min', [args[1], args[2]]);
+      return simplifyMinMax([args[1], args[2]], 'min');
     }
     if (maxNone) {
-      return simplifyMinMax('max', [args[0], args[1]]);
+      return simplifyMinMax([args[0], args[1]], 'max');
     }
 
     const fold = foldConstArgs(args);
@@ -33,14 +34,6 @@ function simplifyClamp(args) {
     }
   }
   return call('clamp', args);
-}
-
-/**
- * @param {Node} node
- * @return {boolean}
- */
-function isNone(node) {
-  return node.type === 'Ident' && node.name.toLowerCase() === 'none';
 }
 
 export { simplifyClamp };

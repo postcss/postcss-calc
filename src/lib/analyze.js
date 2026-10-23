@@ -13,21 +13,9 @@ import { assertDepth } from './limits.js';
 
 /** @typedef {import('./node.js').Node} Node */
 /** @typedef {import('./functions.js').CalculationType} CalculationType */
-/** @typedef {Extract<CalculationType, {kind: 'dimension'}>} DimensionType */
 
 /** @typedef {'number' | 'unknown' | {dimension: string | null}} AnalysisType */
 /** @typedef {{type: AnalysisType, valid: boolean, unresolved: boolean}} Analysis */
-/**
- * @typedef {Object} ProductFactors
- * @property {boolean} valid
- * @property {boolean} structurallyValid
- * @property {boolean} hasUnresolved
- * @property {DimensionType | null} numerator
- * @property {DimensionType | null} denominator
- * @property {boolean} hasOpaqueNumerator
- * @property {boolean} hasOpaqueDenominator
- */
-
 /**
  * Analyze the original complete tree and return its root summary. Analysis
  * validates and classifies the tree; it is not a rewrite plan.
@@ -142,35 +130,41 @@ function analyzeProduct(node, depth) {
   // Consume one such pair before judging the remaining unknowns so a
   // surrounding sum does not mistake `% / %` for a length-compatible term.
   const cancelled = Math.min(percentageNumerator, percentageDenominator);
-  const hasOpaqueNumerator = opaqueNumerator - cancelled > 0;
-  const hasOpaqueDenominator = opaqueDenominator - cancelled > 0;
-  return finishProduct({
-    valid,
-    structurallyValid,
+  return finishProduct(
+    valid && structurallyValid,
     hasUnresolved,
     numerator,
     denominator,
-    hasOpaqueNumerator,
-    hasOpaqueDenominator,
-  });
+    opaqueNumerator - cancelled > 0,
+    opaqueDenominator - cancelled > 0
+  );
 }
 
 /**
  * Classify a product once its factors are analyzed. Opaque factors can supply
  * missing type information, but they cannot make an already-invalid
  * combination of known dimensions valid.
- * @param {ProductFactors} factors
+ * @param {boolean} valid
+ * @param {boolean} hasUnresolved
+ * @param {Extract<CalculationType, {kind: 'dimension'}> | null} numerator
+ * @param {Extract<CalculationType, {kind: 'dimension'}> | null} denominator
+ * @param {boolean} hasOpaqueNumerator
+ * @param {boolean} hasOpaqueDenominator
  * @return {{type: CalculationType, valid: boolean, unresolved: boolean}}
  */
-function finishProduct(factors) {
-  const { valid, structurallyValid, hasUnresolved } = factors;
-  if (!valid) return finish(failureType, false, hasUnresolved);
-  if (!structurallyValid) return finish(failureType, false, hasUnresolved);
-  const { numerator, denominator } = factors;
+function finishProduct(
+  valid,
+  hasUnresolved,
+  numerator,
+  denominator,
+  hasOpaqueNumerator,
+  hasOpaqueDenominator
+) {
   if (
-    numerator !== null &&
-    denominator !== null &&
-    numerator.base !== denominator.base
+    !valid ||
+    (numerator !== null &&
+      denominator !== null &&
+      numerator.base !== denominator.base)
   ) {
     return finish(failureType, false, hasUnresolved);
   }
@@ -178,37 +172,24 @@ function finishProduct(factors) {
   // only leave that dimension in place (when it resolves to a number) or make
   // the product invalid. It can never make the product a bare number. Keep
   // that known constraint so a surrounding sum can reject `1px * 1% + 1`.
-  const constrained = constrainedNumerator(factors);
-  if (constrained !== null) {
-    return finish(constrained, true, hasUnresolved);
+  if (
+    hasOpaqueNumerator &&
+    !hasOpaqueDenominator &&
+    numerator !== null &&
+    denominator === null
+  ) {
+    return finish(numerator, true, hasUnresolved);
   }
   // Other opaque factors may supply type information that changes how the
   // known dimensions combine once the known factors are structurally valid.
-  if (factors.hasOpaqueNumerator || factors.hasOpaqueDenominator) {
+  if (hasOpaqueNumerator || hasOpaqueDenominator) {
     return finish(unknownType, true, hasUnresolved);
   }
   if (numerator !== null && denominator !== null) {
-    return finish(
-      numerator.base === denominator.base ? numberType : failureType,
-      valid && numerator.base === denominator.base,
-      hasUnresolved
-    );
+    return finish(numberType, true, hasUnresolved);
   }
   if (denominator !== null) return finish(failureType, false, hasUnresolved);
-  return finish(numerator ?? numberType, valid, hasUnresolved);
-}
-
-/**
- * @param {ProductFactors} factors
- * @return {DimensionType | null}
- */
-function constrainedNumerator(factors) {
-  return factors.hasOpaqueNumerator &&
-    !factors.hasOpaqueDenominator &&
-    factors.numerator !== null &&
-    factors.denominator === null
-    ? factors.numerator
-    : null;
+  return finish(numerator ?? numberType, true, hasUnresolved);
 }
 
 /** @param {Extract<Node, {type: 'Call'}>} node @param {number} depth @return {{type: CalculationType, valid: boolean, unresolved: boolean}} */

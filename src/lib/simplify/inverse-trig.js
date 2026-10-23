@@ -11,11 +11,11 @@ const INVERSE_TRIG_OPS = /** @type {const} */ ({
 });
 
 /**
- * @param {'asin' | 'acos' | 'atan'} name
  * @param {Node[]} args
+ * @param {string} name
  * @return {Node}
  */
-function simplifyInverseTrig(name, args) {
+function simplifyInverseTrig(args, name) {
   if (args.length !== 1) {
     return call(name, args);
   }
@@ -23,7 +23,9 @@ function simplifyInverseTrig(name, args) {
   if (a.type !== 'Num') {
     return call(name, args);
   }
-  const radians = INVERSE_TRIG_OPS[name](a.value);
+  const radians = INVERSE_TRIG_OPS[
+    /** @type {keyof typeof INVERSE_TRIG_OPS} */ (name)
+  ](a.value);
   if (Number.isNaN(radians)) {
     return num(Number.NaN);
   }

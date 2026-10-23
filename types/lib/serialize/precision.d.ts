@@ -54,25 +54,11 @@ declare function degenerateKeyword(v: number): string;
 declare function serializeNumber(v: number): string;
 /**
  * @param {import('../node.js').Num | import('../node.js').Dim} node
- * @param {number | false} precision
- * @param {number} [value]
- * @return {number}
- */
-declare function roundedScalarValue(node: import('../node.js').Num | import('../node.js').Dim, precision: number | false, value?: number): number;
-/**
- * @param {import('../node.js').Num | import('../node.js').Dim} node
  * @param {string[]} buffer
  * @param {number} value
  * @return {void}
  */
 declare function emitRoundedScalar(node: import('../node.js').Num | import('../node.js').Dim, buffer: string[], value: number): void;
-/**
- * @param {import('../node.js').Num | import('../node.js').Dim} node
- * @param {SerializeSession} session
- * @param {number} [value]
- * @return {number}
- */
-declare function emitFiniteScalar(node: import('../node.js').Num | import('../node.js').Dim, session: SerializeSession, value?: number): number;
 /**
  * @param {import('../node.js').Num | import('../node.js').Dim} node
  * @param {SerializeSession} session
@@ -99,4 +85,4 @@ declare function emitBareSignedZero(buffer: string[], node: import('../node.js')
 declare function isScalar(node: Node): node is import('../node.js').Num | import('../node.js').Dim;
 /** @param {Node} node @return {node is import('../node.js').Num | import('../node.js').Dim} */
 declare function isSignedZero(node: Node): node is import('../node.js').Num | import('../node.js').Dim;
-export { NOISE_FLOOR, divideByPowerOfTen, roundDecimal, round, isDegenerate, degenerateKeyword, serializeNumber, roundedScalarValue, emitRoundedScalar, emitFiniteScalar, emitScalar, emitSignedZero, emitBareSignedZero, isScalar, isSignedZero, };
+export { NOISE_FLOOR, divideByPowerOfTen, roundDecimal, round, isDegenerate, degenerateKeyword, serializeNumber, emitRoundedScalar, emitScalar, emitSignedZero, emitBareSignedZero, isScalar, isSignedZero, };

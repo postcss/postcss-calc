@@ -1,8 +1,8 @@
 export type Node = import('../node.js').Node;
 /**
- * @param {'sin' | 'cos' | 'tan'} name
  * @param {Node[]} args
+ * @param {string} name
  * @return {Node}
  */
-declare function simplifyTrig(name: 'sin' | 'cos' | 'tan', args: Node[]): Node;
+declare function simplifyTrig(args: Node[], name: string): Node;
 export { simplifyTrig };

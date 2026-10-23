@@ -8,18 +8,19 @@ import { isExact } from './exact.js';
  * denominator. Otherwise return null. Used by `simplifyProduct` for typed
  * division (§10.2). More complex cancellation (e.g. `px^2 / px`) is left
  * unreduced — consumers rarely rely on it and the spec doesn't require it.
- * @template {{ exponent: 1 | -1, value: number, unit: string }} D
- * @param {D[]} dims
+ * @param {{ exponent: 1 | -1, value: number, unit: string }[]} dims
  * @param {number | false} [precision] The denominator is converted into the
  *   numerator's unit when that is exact at this precision (`1px / 1in` →
  *   `1 / 96`); otherwise the numerator is converted (`1in / 1px` → `96 / 1`).
- * @return {{ numerator: number, denominator: number, remaining: D[] } | null}
+ * @return {{ numerator: number, denominator: number } | null}
  */
 function tryCancelPair(dims, precision = false) {
   if (dims.length !== 2) {
     return null;
   }
-  const [a, b] = /** @type {[D, D]} */ (dims);
+  const [a, b] = /** @type {[typeof dims[number], typeof dims[number]]} */ (
+    dims
+  );
   if (a.exponent === b.exponent) {
     return null;
   }
@@ -40,7 +41,6 @@ function tryCancelPair(dims, precision = false) {
     return {
       numerator: numerator.value,
       denominator: converted,
-      remaining: [],
     };
   }
   const numConverted = convert(
@@ -52,7 +52,6 @@ function tryCancelPair(dims, precision = false) {
     return {
       numerator: numConverted,
       denominator: denominator.value,
-      remaining: [],
     };
   }
   return null;

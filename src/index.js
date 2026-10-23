@@ -16,26 +16,19 @@ import { hasPotentialMathFunction } from './lib/functions.js';
 /**
  * Runs `reduceCalc` over one text property of a decl/atrule/rule node
  * and updates it in place.
- * `setProp` closes over the property name and the concrete node type at
- * each call site, since `Declaration`/`AtRule`/`Rule` don't share a typed
- * "text property" name to index generically.
  *
- * @param {import('postcss').ChildNode} node
- * @param {string} current
- * @param {(target: import('postcss').ChildNode, value: string) => void} setProp
+ * @param {import('postcss').Declaration | import('postcss').AtRule | import('postcss').Rule} node
+ * @param {'value' | 'params' | 'selector'} prop
  * @param {ResolvedOptions} options
  * @param {import('postcss').Result} result
- * @param {boolean} selectorContext
  * @return {void}
  */
-function applyTransform(
-  node,
-  current,
-  setProp,
-  options,
-  result,
-  selectorContext
-) {
+function applyTransform(node, prop, options, result) {
+  // `Declaration`/`AtRule`/`Rule` don't share a typed "text property" name.
+  const target = /** @type {Record<typeof prop, string>} */ (
+    /** @type {unknown} */ (node)
+  );
+  const current = target[prop];
   if (!hasPotentialMathFunction(current)) {
     return;
   }
@@ -51,10 +44,10 @@ function applyTransform(
       result.warn(message, { plugin: 'postcss-calc', node });
     },
     // Selectors cannot contain calc(), so they always unwrap resolved values.
-    unwrapSingleValue: selectorContext || options.unwrapSingleValue,
+    unwrapSingleValue: prop === 'selector' || options.unwrapSingleValue,
   });
   if (transformed !== current) {
-    setProp(node, transformed);
+    target[prop] = transformed;
   }
 }
 
@@ -83,42 +76,13 @@ function pluginCreator(opts) {
     OnceExit(css, { result }) {
       css.walk((node) => {
         if (node.type === 'decl') {
-          applyTransform(
-            node,
-            node.value,
-            (n, v) => {
-              /** @type {import('postcss').Declaration} */ (n).value = v;
-            },
-            options,
-            result,
-            false
-          );
-        }
-        if (node.type === 'atrule' && options.mediaQueries) {
-          applyTransform(
-            node,
-            node.params,
-            (n, v) => {
-              /** @type {import('postcss').AtRule} */ (n).params = v;
-            },
-            options,
-            result,
-            false
-          );
-        }
-        if (node.type === 'rule' && options.selectors) {
+          applyTransform(node, 'value', options, result);
+        } else if (node.type === 'atrule' && options.mediaQueries) {
+          applyTransform(node, 'params', options, result);
+        } else if (node.type === 'rule' && options.selectors) {
           // Reduces `:nth-child(calc(...))` via the function walk. calc() in a
           // quoted attribute value is a literal match, so it's left untouched.
-          applyTransform(
-            node,
-            node.selector,
-            (n, v) => {
-              /** @type {import('postcss').Rule} */ (n).selector = v;
-            },
-            options,
-            result,
-            true
-          );
+          applyTransform(node, 'selector', options, result);
         }
       });
     },

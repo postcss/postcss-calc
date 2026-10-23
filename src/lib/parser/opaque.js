@@ -1,10 +1,7 @@
 // Opaque function parsing: `var()`, unknown functions and their component trees.
 import { TokenType as CssType } from '@csstools/css-tokenizer';
 import { ident, opaqueCall } from '../node.js';
-import {
-  isCalculationFunction,
-  isSupportedMathFunction,
-} from '../functions.js';
+import { lookupMathFunction } from '../functions.js';
 import { assertDepth } from '../limits.js';
 import { eofPositionAt, sourceSpelling } from './tokens.js';
 
@@ -105,8 +102,7 @@ function componentTree(input, start, rangeEnd, parseRange, root) {
 
     const isMathFunction =
       token[0] === CssType.Function &&
-      (isCalculationFunction(token[4].value) ||
-        isSupportedMathFunction(token[4].value));
+      lookupMathFunction(token[4].value) !== undefined;
     if (isMathFunction) {
       try {
         pushComponent(tree, parseRange(input, i, close + 1));

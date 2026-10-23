@@ -75,7 +75,7 @@ function foldFactors(items, start, end, simplify, precision) {
     denominator *= cancelled.denominator;
   }
   const divides = denominator !== 1 || cancelled !== null;
-  const remainingDims = cancelled ? cancelled.remaining : dims;
+  const remainingDims = cancelled ? [] : dims;
   const loneDim =
     remainingDims.length === 1 &&
     remainingDims[0].exponent === 1 &&
