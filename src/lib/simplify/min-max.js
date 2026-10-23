@@ -4,11 +4,11 @@ import { foldConstArgs, chosenArg } from './fold.js';
 /** @typedef {import('../node.js').Node} Node */
 
 /**
- * @param {string} name
  * @param {Node[]} args
+ * @param {string} name
  * @return {Node}
  */
-function simplifyMinMax(name, args) {
+function simplifyMinMax(args, name) {
   const fold = foldConstArgs(args);
   if (fold !== null) {
     const fn = name.toLowerCase() === 'min' ? Math.min : Math.max;

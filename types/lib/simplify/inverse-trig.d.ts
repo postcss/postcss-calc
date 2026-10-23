@@ -1,8 +1,8 @@
 export type Node = import('../node.js').Node;
 /**
- * @param {'asin' | 'acos' | 'atan'} name
  * @param {Node[]} args
+ * @param {string} name
  * @return {Node}
  */
-declare function simplifyInverseTrig(name: 'asin' | 'acos' | 'atan', args: Node[]): Node;
+declare function simplifyInverseTrig(args: Node[], name: string): Node;
 export { simplifyInverseTrig };

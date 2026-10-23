@@ -131,16 +131,6 @@ function serializeNumber(v) {
 
 /**
  * @param {import('../node.js').Num | import('../node.js').Dim} node
- * @param {number | false} precision
- * @param {number} [value]
- * @return {number}
- */
-function roundedScalarValue(node, precision, value) {
-  return round(value ?? node.value, precision);
-}
-
-/**
- * @param {import('../node.js').Num | import('../node.js').Dim} node
  * @param {string[]} buffer
  * @param {number} value
  * @return {void}
@@ -150,18 +140,6 @@ function emitRoundedScalar(node, buffer, value) {
   if (node.type === 'Dim') {
     buffer.push(node.rawUnit ?? node.unit);
   }
-}
-
-/**
- * @param {import('../node.js').Num | import('../node.js').Dim} node
- * @param {SerializeSession} session
- * @param {number} [value]
- * @return {number}
- */
-function emitFiniteScalar(node, session, value) {
-  const rounded = roundedScalarValue(node, session.precision, value);
-  emitRoundedScalar(node, session.buffer, rounded);
-  return rounded;
 }
 
 /**
@@ -189,7 +167,9 @@ function emitScalar(node, session, value, bare = false) {
     } else {
       buffer.push(degenerateKeyword(effective));
     }
-  } else emitFiniteScalar(node, session, effective);
+  } else {
+    emitRoundedScalar(node, buffer, round(effective, session.precision));
+  }
 }
 
 /**
@@ -233,9 +213,7 @@ export {
   isDegenerate,
   degenerateKeyword,
   serializeNumber,
-  roundedScalarValue,
   emitRoundedScalar,
-  emitFiniteScalar,
   emitScalar,
   emitSignedZero,
   emitBareSignedZero,

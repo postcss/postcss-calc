@@ -1,7 +1,7 @@
 import { addTypes, failureType, isFailure, isPercentage, numberType, percentageType, unknownType } from './types.js';
 export type Node = import('./node.js').Node;
 export type CalculationType = import('./types.js').CalculationType;
-export type MathSimplifier = (name: string, args: Node[]) => Node;
+export type MathSimplifier = (args: Node[], name: string) => Node;
 export type TypeAnalyzer = (args: CalculationType[], nodes: Node[]) => CalculationType;
 export type MathFunction = {
     analyze: TypeAnalyzer;
@@ -11,7 +11,7 @@ export type MathFunction = {
 };
 /** @typedef {import('./node.js').Node} Node */
 /** @typedef {import('./types.js').CalculationType} CalculationType */
-/** @typedef {(name: string, args: Node[]) => Node} MathSimplifier */
+/** @typedef {(args: Node[], name: string) => Node} MathSimplifier */
 /** @typedef {(args: CalculationType[], nodes: Node[]) => CalculationType} TypeAnalyzer */
 /** @typedef {{analyze: TypeAnalyzer, simplify?: MathSimplifier, isKeyword?: (node: Node, index: number) => boolean, calculation?: boolean}} MathFunction */
 declare const mathFunctions: Map<string, MathFunction>;
@@ -26,8 +26,6 @@ declare function lookupMathFunction(name: string): {
 declare const QUICK_MATH_TEST: RegExp;
 /** @param {string} name @return {boolean} */
 declare function isCalculationFunction(name: string): boolean;
-/** @param {string} name @return {boolean} */
-declare function isSupportedMathFunction(name: string): boolean;
 /** @param {string} value @return {boolean} */
 declare function hasPotentialMathFunction(value: string): boolean;
 /**
@@ -39,4 +37,4 @@ declare function hasPotentialMathFunction(value: string): boolean;
  * @return {boolean}
  */
 declare function hasMathFunctionToken(tokens: import('@csstools/css-tokenizer').CSSToken[]): boolean;
-export { addTypes, failureType, hasMathFunctionToken, hasPotentialMathFunction, isCalculationFunction, isFailure, isPercentage, isSupportedMathFunction, lookupMathFunction, mathFunctions, numberType, percentageType, QUICK_MATH_TEST, unknownType, };
+export { addTypes, failureType, hasMathFunctionToken, hasPotentialMathFunction, isCalculationFunction, isFailure, isPercentage, lookupMathFunction, mathFunctions, numberType, percentageType, QUICK_MATH_TEST, unknownType, };

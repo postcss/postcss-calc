@@ -1,18 +1,16 @@
 export type CSSToken = import('@csstools/css-tokenizer').CSSToken;
 /**
- * Read-only delimiter navigation for one native token stream range.
+ * Read-only delimiter navigation for one native token stream.
  */
 declare class BlockIndex {
     #private;
     /**
-     * Build the delimiter index once for a token stream range. Matching remains
+     * Build the delimiter index once for a token stream. Matching remains
      * LIFO: a mismatched closer is ignored and does not disturb the open stack.
      *
      * @param {CSSToken[]} tokens
-     * @param {number} start
-     * @param {number} end
      */
-    constructor(tokens: CSSToken[], start: number, end: number);
+    constructor(tokens: CSSToken[]);
     /** @return {number} */
     get maxDepth(): number;
     /** @param {number} openPosition @param {number} [endPosition] @return {number} */
@@ -23,13 +21,11 @@ declare class BlockIndex {
     firstTopLevelComma(startPosition: number, endPosition: number): number;
 }
 /**
- * Build the delimiter index once for a token stream range. Matching remains
- * LIFO: a mismatched closer is ignored and does not disturb the open stack.
+ * Build the delimiter index once for a token stream. Matching remains LIFO: a
+ * mismatched closer is ignored and does not disturb the open stack.
  *
  * @param {CSSToken[]} tokens
- * @param {number} [start]
- * @param {number} [end]
  * @return {BlockIndex}
  */
-declare function indexBlocks(tokens: CSSToken[], start?: number, end?: number): BlockIndex;
+declare function indexBlocks(tokens: CSSToken[]): BlockIndex;
 export { indexBlocks };

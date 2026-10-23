@@ -1,8 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { isSupportedMathFunction } from '../../../src/lib/functions.js';
+import { lookupMathFunction } from '../../../src/lib/functions.js';
 
-test('isSupportedMathFunction: recognizes every implemented bare math function', () => {
+test('lookupMathFunction: recognizes every implemented bare math function', () => {
   const supported = [
     'min',
     'max',
@@ -27,11 +27,15 @@ test('isSupportedMathFunction: recognizes every implemented bare math function',
   ];
 
   for (const name of supported) {
-    assert.equal(isSupportedMathFunction(name), true, name);
-    assert.equal(isSupportedMathFunction(name.toUpperCase()), true, name);
+    assert.notEqual(lookupMathFunction(name), undefined, name);
+    assert.notEqual(lookupMathFunction(name.toUpperCase()), undefined, name);
   }
 
-  for (const name of ['calc', '-webkit-calc', '-moz-calc', 'var', 'unknown']) {
-    assert.equal(isSupportedMathFunction(name), false, name);
+  for (const name of ['calc', '-webkit-calc', '-moz-calc']) {
+    assert.notEqual(lookupMathFunction(name), undefined, name);
+  }
+
+  for (const name of ['var', 'unknown']) {
+    assert.equal(lookupMathFunction(name), undefined, name);
   }
 });

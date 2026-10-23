@@ -9,7 +9,7 @@ import {
   mkSum,
   num,
 } from './node.js';
-import { isCalculationFunction, isSupportedMathFunction } from './functions.js';
+import { lookupMathFunction } from './functions.js';
 import { assertDepth } from './limits.js';
 import { parseOpaqueCall, parseVar } from './parser/opaque.js';
 import {
@@ -160,7 +160,7 @@ function parseCall(input, cursor, t, depth) {
   const rawName = t.raw.slice(0, -1);
   if (name.toLowerCase() === 'var')
     return parseVar(input, cursor, t, name, rawName, parseRange);
-  if (!isCalculationFunction(name) && !isSupportedMathFunction(name))
+  if (lookupMathFunction(name) === undefined)
     return parseOpaqueCall(input, cursor, t, name, rawName, parseRange);
   /** @type {Node[]} */ const args = [];
   if (!isPunct(input, cursor, ')')) {

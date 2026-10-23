@@ -1,3 +1,4 @@
+import { isClampKeyword } from './keywords.js';
 import { ROUND_STRATEGIES } from './simplify/round.js';
 import {
   addTypes,
@@ -45,10 +46,7 @@ function analyzeSign(args) {
 
 /** @param {CalculationType[]} args @param {Node[]} nodes @return {CalculationType} */
 function analyzeRound(args, nodes) {
-  const strategy = nodes[0];
-  const hasStrategy =
-    strategy?.type === 'Ident' &&
-    ROUND_STRATEGIES.has(strategy.name.toLowerCase());
+  const hasStrategy = nodes.length > 0 && isRoundStrategy(nodes[0]);
   const start = hasStrategy ? 1 : 0;
   const valueCount = args.length - start;
   if (valueCount === 1) {
@@ -72,23 +70,9 @@ function analyzeAtan2(args) {
   return { kind: 'dimension', base: 'angle' };
 }
 
-/** @param {CalculationType[]} args @return {CalculationType} */
-function analyzeCalc(args) {
-  return args.length === 1 ? args[0] : failureType;
-}
-
 /** @param {Node} node @return {boolean} */
 function isRoundStrategy(node) {
   return node.type === 'Ident' && ROUND_STRATEGIES.has(node.name.toLowerCase());
-}
-
-/** @param {Node} node @param {number} index @return {boolean} */
-function isClampKeyword(node, index) {
-  return (
-    (index === 0 || index === 2) &&
-    node.type === 'Ident' &&
-    node.name.toLowerCase() === 'none'
-  );
 }
 
 /** @param {CalculationType[]} args @param {Node[]} nodes @return {CalculationType} */
@@ -107,13 +91,11 @@ function analyzeClamp(args, nodes) {
 
 export {
   analyzeAtan2,
-  analyzeCalc,
   analyzeClamp,
   analyzeIdentity,
   analyzeInverseTrig,
   analyzeRound,
   analyzeSign,
   analyzeTrig,
-  isClampKeyword,
   isRoundStrategy,
 };
