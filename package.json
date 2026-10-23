@@ -23,6 +23,10 @@
     "./reduce": {
       "types": "./types/reduce.d.ts",
       "default": "./src/reduce.js"
+    },
+    "./reduce-tokens": {
+      "types": "./types/reduce-tokens.d.ts",
+      "default": "./src/reduce-tokens.js"
     }
   },
   "files": [
@@ -37,6 +41,7 @@
     "benchmark:nested-fallbacks": "node scripts/benchmark/benchmark-parser.js nested-fallbacks",
     "benchmark:corpus": "node scripts/benchmark/benchmark-corpus.js",
     "benchmark:serialization": "node scripts/benchmark/benchmark-serialization.js",
+    "benchmark:token-ranges": "node scripts/benchmark/benchmark-token-ranges.js",
     "test:benchmark": "node --test 'test/unit/benchmark-*.test.js' test/unit/compare-parser-benchmarks.test.js test/unit/corpus-benchmark.test.js",
     "test:benchmark:simulation": "node test/benchmark/statistical-simulation.js",
     "benchmark:reanalyze": "node scripts/benchmark/compare-parser-benchmarks.js",

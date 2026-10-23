@@ -87,6 +87,56 @@ const result = reduceCalc('calc(100% + var(--gap))', {
 Unlike the PostCSS plugin, the standalone reducer does not show warnings
 by default; provide `onParseError` and/or `onWarn` if you want diagnostics.
 
+### Reduce a token list
+
+If you already hold the tokens of a value (from `@csstools/css-tokenizer`) and
+edit them in place, `postcss-calc/reduce-tokens` reduces them without going
+through a string. It reads only each token's type and raw text, never its
+source offsets, so the list may have been edited since it was tokenized. Its
+other fields must agree: a token's parsed value (`token[4]`) is read along
+with its type and raw text, so when you change a token's text, replace the
+token with one that `tokenize` produced from the new text. Only the source
+offsets may be stale. It returns the replacements that change the text: ordered, non-overlapping
+`{ start, end, tokens }` records that replace `tokens.slice(start, end)`. It
+does not modify the list; apply the replacements from last to first.
+
+```js
+import { tokenize } from '@csstools/css-tokenizer';
+import reduceTokens from 'postcss-calc/reduce-tokens';
+
+const tokens = tokenize({ css: 'calc(1px + 2px) 3px' });
+for (const { start, end, tokens: next } of reduceTokens(tokens).toReversed()) {
+  tokens.splice(start, end - start, ...next);
+}
+// tokens now spell 'calc(3px) 3px'
+```
+
+The replacement tokens are the tokenization of the result text on its own, so
+their source offsets (`token[2]`, `token[3]`) describe that text, not their
+place in your list. Do not rely on them. Tokens spliced next to unspaced
+neighbours can also merge or split when the list is tokenized again, as the
+string reducer's output can.
+
+To skip tokenizing values that cannot contain a math function, check the
+string first with the named export `hasPotentialMathFunction(value)`. It is
+the quick test `reduceCalc` runs before tokenizing. It may return `true` for a
+value with no reducible function, never `false` for one with a reducible
+function.
+
+```js
+import { hasPotentialMathFunction } from 'postcss-calc/reduce-tokens';
+
+if (hasPotentialMathFunction(value)) {
+  // tokenize and call reduceTokens
+}
+```
+
+End-of-file tokens in the list (for example from concatenating `tokenize`
+results) are ignored.
+
+It takes the same options as `reduceCalc`. `onParseError` and `onWarn` receive
+text built from the current tokens.
+
 ### Standalone reducer options
 
 #### `unwrapSingleValue` (default: `false`)
