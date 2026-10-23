@@ -23,6 +23,10 @@
     "./reduce": {
       "types": "./types/reduce.d.ts",
       "default": "./src/reduce.js"
+    },
+    "./reduce-tokens": {
+      "types": "./types/reduce-tokens.d.ts",
+      "default": "./src/reduce-tokens.js"
     }
   },
   "files": [

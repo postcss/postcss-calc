@@ -38,4 +38,24 @@ function joinTokens(tokens, start, end) {
   return text;
 }
 
-export { joinTokens, offsetLookup };
+/**
+ * Whether `text` equals the joined raw text of `tokens[start, end)`, without
+ * building that string.
+ *
+ * @param {CSSToken[]} tokens
+ * @param {number} start
+ * @param {number} end
+ * @param {string} text
+ * @return {boolean}
+ */
+function tokensMatchText(tokens, start, end, text) {
+  let position = 0;
+  for (let i = start; i < end; i++) {
+    const raw = tokens[i][1];
+    if (!text.startsWith(raw, position)) return false;
+    position += raw.length;
+  }
+  return position === text.length;
+}
+
+export { joinTokens, offsetLookup, tokensMatchText };

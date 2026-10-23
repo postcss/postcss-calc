@@ -17,4 +17,15 @@ declare function offsetLookup(tokens: CSSToken[]): (index: number) => number;
  * @return {string}
  */
 declare function joinTokens(tokens: CSSToken[], start: number, end: number): string;
-export { joinTokens, offsetLookup };
+/**
+ * Whether `text` equals the joined raw text of `tokens[start, end)`, without
+ * building that string.
+ *
+ * @param {CSSToken[]} tokens
+ * @param {number} start
+ * @param {number} end
+ * @param {string} text
+ * @return {boolean}
+ */
+declare function tokensMatchText(tokens: CSSToken[], start: number, end: number, text: string): boolean;
+export { joinTokens, offsetLookup, tokensMatchText };

@@ -1,6 +1,6 @@
 // The reducer core: scan a token list for supported math functions, compile
-// each one, and report every changed range. The string reducer owns
-// tokenizing and splicing; this module owns nothing else.
+// each one, and report every changed range. The string and token wrappers
+// own tokenizing and splicing; this module owns nothing else.
 import { parseRange } from './parser.js';
 import { ParseError, positionedError } from './parser/state.js';
 import { simplify } from './simplify.js';
@@ -93,11 +93,14 @@ function compileCandidate(tokens, close, start, end, lookup, options) {
  * candidate, so a nested function is never reduced on its own, and an invalid
  * outer function is reported without partial output.
  *
-
+ * Reads each token's type, raw text and parsed value (`token[4]`), never its
+ * source offsets (`token[2]`, `token[3]`), so the list may have been edited
+ * since it was tokenized.
+ *
  * @param {CSSToken[]} tokens
  * @param {ResolvedReduceCalcOptions} options
  * @param {EmitReplacement} emit
- * @param {string} source The joined token text.
+ * @param {string} [source] The joined token text, when the caller already has it.
  * @return {void}
  */
 function reduceTokenList(tokens, options, emit, source) {
@@ -109,12 +112,16 @@ function reduceTokenList(tokens, options, emit, source) {
     blocks = matchBlocks(tokens);
     assertDepth(blocks.maxDepth);
   } catch (error) {
-    options.onParseError?.(asError(error), source);
+    options.onParseError?.(
+      asError(error),
+      source ?? joinTokens(tokens, 0, tokens.length)
+    );
     return;
   }
   const { close } = blocks;
 
   const offsetOf = offsetLookup(tokens);
+  let wholeText = source;
   for (let i = 0; i < tokens.length; i++) {
     const lookup = mathFunctionAt(tokens, i);
     if (lookup === undefined) continue;
@@ -132,7 +139,8 @@ function reduceTokenList(tokens, options, emit, source) {
     }
     if (result !== undefined) {
       if (options.warnWhenCannotResolve && result.unresolved) {
-        options.onWarn?.('Could not reduce expression: ' + source);
+        wholeText ??= joinTokens(tokens, 0, tokens.length);
+        options.onWarn?.('Could not reduce expression: ' + wholeText);
       }
       if (result.text !== undefined) emit(i, end, result.text);
     }
