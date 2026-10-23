@@ -1,3 +1,4 @@
+import { TokenType as CssType } from '@csstools/css-tokenizer';
 import { simplifyMinMax } from './simplify/min-max.js';
 import { simplifyClamp } from './simplify/clamp.js';
 import { simplifyAbs } from './simplify/abs.js';
@@ -227,9 +228,27 @@ function hasPotentialMathFunction(value) {
   );
 }
 
+/**
+ * Token-level counterpart of `hasPotentialMathFunction`: whether any function
+ * token names a supported math function, as the scanner would find it. Math
+ * functions inside `url()` and similar are part of another token.
+ *
+ * @param {import('@csstools/css-tokenizer').CSSToken[]} tokens
+ * @return {boolean}
+ */
+function hasMathFunctionToken(tokens) {
+  for (const token of tokens) {
+    if (token[0] === CssType.Function && lookupMathFunction(token[4].value)) {
+      return true;
+    }
+  }
+  return false;
+}
+
 export {
   addTypes,
   failureType,
+  hasMathFunctionToken,
   hasPotentialMathFunction,
   isCalculationFunction,
   isFailure,

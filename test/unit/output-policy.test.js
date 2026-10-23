@@ -217,6 +217,21 @@ describe('v12 output policy', () => {
     }
   });
 
+  test('ignores deep nesting when math functions only appear inside url()', async () => {
+    const input = 'url(calc(1+2)) ' + '('.repeat(2000) + ')'.repeat(2000);
+    const errors = [];
+    assert.equal(
+      reduceCalc(input, { onParseError: (error) => errors.push(error) }),
+      input
+    );
+    const declaration = 'a{x:' + input + '}';
+    const result = await postcss(
+      plugin({ onParseError: (error) => errors.push(error) })
+    ).process(declaration, { from: undefined });
+    assert.equal(result.css, declaration);
+    assert.deepEqual(errors, []);
+  });
+
   test('applies the nesting limit through the plugin', async () => {
     const count = 1025;
     const input =
