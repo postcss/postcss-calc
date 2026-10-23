@@ -34,7 +34,8 @@ function checkCalculationDepth(node, depth = 0) {
       // components were nested arrays.
       for (const part of node.components) {
         assertDepth(depth + 1);
-        if (typeof part !== 'string') checkCalculationDepth(part, depth + 2);
+        if (typeof part === 'object' && !Array.isArray(part))
+          checkCalculationDepth(part, depth + 2);
       }
   }
 }

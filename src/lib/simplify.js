@@ -56,7 +56,8 @@ function simplify(node, precision = false, depth = 0) {
       return opaqueCall(
         node.name,
         simplifyComponents(node.components, child),
-        node.rawName
+        node.rawName,
+        node.source
       );
     case 'Sum':
       return simplifySum(node, (value) => operand(value, child), precision);

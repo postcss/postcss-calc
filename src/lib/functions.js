@@ -228,10 +228,13 @@ function hasPotentialMathFunction(value) {
  * functions inside `url()` and similar are part of another token.
  *
  * @param {import('@csstools/css-tokenizer').CSSToken[]} tokens
+ * @param {number} [start] First token to inspect.
+ * @param {number} [end] One past the last token to inspect (half-open).
  * @return {boolean}
  */
-function hasMathFunctionToken(tokens) {
-  for (const token of tokens) {
+function hasMathFunctionToken(tokens, start = 0, end = tokens.length) {
+  for (let i = start; i < end; i++) {
+    const token = tokens[i];
     if (token[0] === CssType.Function && lookupMathFunction(token[4].value)) {
       return true;
     }

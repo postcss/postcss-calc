@@ -1,3 +1,4 @@
+export type CSSToken = import('@csstools/css-tokenizer').CSSToken;
 export type Num = {
     type: 'Num';
     value: number;
@@ -19,12 +20,13 @@ export type Call = {
     args: Node[];
     rawName?: string;
 };
-export type OpaqueComponent = string | Node;
+export type OpaqueComponent = [number, number] | Node;
 export type OpaqueCall = {
     type: 'OpaqueCall';
     name: string;
     components: OpaqueComponent[];
     rawName?: string;
+    source?: CSSToken[];
 };
 export type SumTerm = {
     sign: 1 | -1;
@@ -46,12 +48,14 @@ export type Product = {
 };
 export type Node = Num | Dim | Ident | Call | OpaqueCall | Sum | Product;
 /**
+ * @typedef {import('@csstools/css-tokenizer').CSSToken} CSSToken
  * @typedef {{type: 'Num', value: number}} Num
  * @typedef {{type: 'Dim', value: number, unit: string, rawUnit?: string}} Dim
  * @typedef {{type: 'Ident', name: string, rawName?: string}} Ident
  * @typedef {{type: 'Call', name: string, args: Node[], rawName?: string}} Call
- * @typedef {string | Node} OpaqueComponent
- * @typedef {{type: 'OpaqueCall', name: string, components: OpaqueComponent[], rawName?: string}} OpaqueCall
+ * @typedef {[number, number] | Node} OpaqueComponent A `[start, end)` range
+ *   reads the call's `source` tokens.
+ * @typedef {{type: 'OpaqueCall', name: string, components: OpaqueComponent[], rawName?: string, source?: CSSToken[]}} OpaqueCall
  * @typedef {{sign: 1 | -1, node: Node}} SumTerm Sign is always +1 when node is Num or Dim.
  * @typedef {{type: 'Sum', terms: SumTerm[], grouped?: boolean}} Sum
  * @typedef {{exponent: 1 | -1, node: Node}} ProductFactor exponent +1 = numerator, -1 = denominator.
@@ -87,9 +91,10 @@ declare function call(name: string, args: Node[], rawName?: string): Call;
  * @param {string} name
  * @param {OpaqueComponent[]} components
  * @param {string} [rawName]
+ * @param {CSSToken[]} [source] The token list that the range components index.
  * @return {OpaqueCall}
  */
-declare function opaqueCall(name: string, components: OpaqueComponent[], rawName?: string): OpaqueCall;
+declare function opaqueCall(name: string, components: OpaqueComponent[], rawName?: string, source?: CSSToken[]): OpaqueCall;
 /**
  * @param {SumTerm[]} rawTerms
  * @return {Node}

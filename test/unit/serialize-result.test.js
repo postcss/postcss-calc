@@ -1,3 +1,4 @@
+import { tokenize } from '@csstools/css-tokenizer';
 import { describe, test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
@@ -18,6 +19,10 @@ const serialize = (node, opts = {}) => serializeSource(node, opts);
 const serializeResult = (result, opts = {}) =>
   serializeResultSource(result, opts);
 
+/** The comma and space that separate a fallback, as a range of source tokens. */
+const commaSource = tokenize({ css: ', ' });
+const comma = /** @type {[number, number]} */ ([0, 2]);
+
 /** @param {number} depth */
 function nestedOpaque(depth) {
   let tree = ident('--x');
@@ -32,7 +37,6 @@ function serializeResultInput(tree) {
     status: /** @type {'resolved'} */ ('resolved'),
     rootName: 'calc',
     rootSpelling: 'calc',
-    original: 'calc(var(--x))',
   };
 }
 
@@ -116,16 +120,15 @@ describe('serialize: degenerate numeric', () => {
 });
 
 describe('serializeResult: root planning', () => {
-  test('preserves the original unresolved non-root call', () => {
+  test('prints nothing for an unresolved non-root call', () => {
     assert.equal(
       serializeResult({
         tree: opaqueCall('sin', [ident('--x')]),
         status: 'unresolved',
         rootName: 'custom',
         rootSpelling: 'CUSTOM',
-        original: 'CUSTOM(var(--x))',
       }),
-      'CUSTOM(var(--x))'
+      undefined
     );
   });
 
@@ -136,7 +139,6 @@ describe('serializeResult: root planning', () => {
         status: 'unresolved',
         rootName: 'sin',
         rootSpelling: 'SIN',
-        original: 'SIN(var(--x))',
       }),
       'SIN(var(--x))'
     );
@@ -153,27 +155,30 @@ describe('serializeResult: root planning', () => {
         status: 'resolved',
         rootName: '-webkit-calc',
         rootSpelling: '-webkit-calc',
-        original: '-webkit-calc(1px + 2px)',
       }),
       '-webkit-calc(1px + 2px)'
     );
   });
 
   test('threads scalar policy through nested opaque fallbacks', () => {
-    const tree = opaqueCall('var', [
-      ident('--x'),
-      ', ',
-      mkSum([
-        { sign: 1, node: dim(1, 'px') },
-        { sign: 1, node: dim(2, 'px') },
-      ]),
-    ]);
+    const tree = opaqueCall(
+      'var',
+      [
+        ident('--x'),
+        comma,
+        mkSum([
+          { sign: 1, node: dim(1, 'px') },
+          { sign: 1, node: dim(2, 'px') },
+        ]),
+      ],
+      undefined,
+      commaSource
+    );
     const result = {
       tree,
       status: /** @type {'resolved'} */ ('resolved'),
       rootName: 'calc',
       rootSpelling: 'calc',
-      original: 'calc(var(--x, 1px + 2px))',
     };
     assert.equal(serializeResult(result), 'calc(var(--x, calc(1px + 2px)))');
     assert.equal(
@@ -199,25 +204,34 @@ describe('serializeResult: root planning', () => {
         status: 'unresolved',
         rootName: 'sin',
         rootSpelling: 'SIN',
-        original: 'SIN(cos(--x))',
       }),
       'SIN(cos(--x))'
     );
   });
 
   test('writes nested opaque fallbacks directly into the parent buffer', () => {
-    const ast = opaqueCall('var', [
-      ident('--outer'),
-      ', ',
-      opaqueCall('var', [
-        ident('--inner'),
-        ', ',
-        mkSum([
-          { sign: 1, node: dim(1, 'px') },
-          { sign: 1, node: dim(2, 'px') },
-        ]),
-      ]),
-    ]);
+    const ast = opaqueCall(
+      'var',
+      [
+        ident('--outer'),
+        comma,
+        opaqueCall(
+          'var',
+          [
+            ident('--inner'),
+            comma,
+            mkSum([
+              { sign: 1, node: dim(1, 'px') },
+              { sign: 1, node: dim(2, 'px') },
+            ]),
+          ],
+          undefined,
+          commaSource
+        ),
+      ],
+      undefined,
+      commaSource
+    );
     assert.equal(serialize(ast), 'var(--outer, var(--inner, calc(1px + 2px)))');
   });
 });

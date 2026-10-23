@@ -3,7 +3,6 @@ import { TokenType as CssType } from '@csstools/css-tokenizer';
 import { ident, opaqueCall } from '../node.js';
 import { lookupMathFunction } from '../functions.js';
 import { closeIn, firstTopLevelComma } from '../blocks.js';
-import { joinTokens } from '../offsets.js';
 import { ParseError, isTrivia } from './state.js';
 import { sourceSpelling } from './tokens.js';
 
@@ -13,11 +12,29 @@ import { sourceSpelling } from './tokens.js';
 /** @typedef {import('./state.js').ParseState} ParseState */
 /** @typedef {import('../parser.js').ParseRange} ParseRange */
 
-/** @param {OpaqueComponent[]} target @param {OpaqueComponent} part */
+/**
+ * Append `part`, extending the preceding range when the two are contiguous.
+ * Only ranges this module creates are extended in place.
+ *
+ * @param {OpaqueComponent[]} target
+ * @param {OpaqueComponent} part
+ */
 function pushComponent(target, part) {
-  if (typeof part === 'string' && typeof target.at(-1) === 'string')
-    target[target.length - 1] += part;
+  const last = target.at(-1);
+  if (Array.isArray(part) && Array.isArray(last) && last[1] === part[0])
+    last[1] = part[1];
   else target.push(part);
+}
+
+/**
+ * Append the source tokens `[start, end)` as one range, when there are any.
+ *
+ * @param {OpaqueComponent[]} target
+ * @param {number} start
+ * @param {number} end
+ */
+function pushRange(target, start, end) {
+  if (start < end) pushComponent(target, [start, end]);
 }
 
 /**
@@ -30,7 +47,7 @@ function pushComponent(target, part) {
  * @return {number}
  */
 function closeOfCall(state, index, name) {
-  const close = closeIn(state.close, index, state.end);
+  const close = closeIn(state.blocks, index, state.end);
   if (close === -1) throw new ParseError(`Unclosed ${name}(`, state.pos);
   return close;
 }
@@ -49,7 +66,8 @@ function parseOpaqueCall(state, index, name, rawName, parseRange) {
   return opaqueCall(
     name,
     componentTree(state, index + 1, close, parseRange, []),
-    sourceSpelling(rawName, name)
+    sourceSpelling(rawName, name),
+    state.tokens
   );
 }
 
@@ -79,10 +97,10 @@ function customProperty(tokens, start, end) {
 
 /**
  * Append the components of `[start, rangeEnd)` to `root` and return it. Raw
- * token text is merged into the preceding string. A supported math function
- * becomes a parsed node, or raw text when it does not parse, and the scan
- * resumes after its closer. Other blocks are plain text, so their contents
- * are scanned as ordinary tokens.
+ * tokens become a range of the source list, merged with the preceding range.
+ * A supported math function becomes a parsed node, or a range when it does
+ * not parse, and the scan resumes after its closer. Other blocks are plain
+ * text, so their contents are scanned as ordinary tokens.
  *
  * @param {ParseState} state
  * @param {number} start
@@ -92,27 +110,30 @@ function customProperty(tokens, start, end) {
  * @return {OpaqueComponent[]}
  */
 function componentTree(state, start, rangeEnd, parseRange, root) {
-  const { tokens, close: closers } = state;
+  const { tokens, blocks } = state;
+  let runStart = start;
   let i = start;
   while (i < rangeEnd) {
     const token = tokens[i];
-    const close = closeIn(closers, i, rangeEnd);
+    const close = closeIn(blocks, i, rangeEnd);
     if (
       close !== -1 &&
       token[0] === CssType.Function &&
       lookupMathFunction(token[4].value) !== undefined
     ) {
+      pushRange(root, runStart, i);
       try {
-        pushComponent(root, parseRange(tokens, closers, i, close + 1));
+        pushComponent(root, parseRange(tokens, blocks, i, close + 1));
       } catch {
-        pushComponent(root, joinTokens(tokens, i, close + 1));
+        pushRange(root, i, close + 1);
       }
       i = close + 1;
+      runStart = i;
       continue;
     }
-    pushComponent(root, token[1]);
     i++;
   }
+  pushRange(root, runStart, rangeEnd);
   return root;
 }
 
@@ -128,7 +149,7 @@ function parseVar(state, index, name, rawName, parseRange) {
   const { tokens } = state;
   const start = index + 1;
   const close = closeOfCall(state, index, name);
-  const comma = firstTopLevelComma(tokens, state.close, start, close);
+  const comma = firstTopLevelComma(tokens, state.blocks, start, close);
   const property = customProperty(tokens, start, comma === -1 ? close : comma);
   if (!property)
     throw new ParseError(`Invalid custom property in ${name}()`, start);
@@ -139,7 +160,12 @@ function parseVar(state, index, name, rawName, parseRange) {
   ];
   if (comma !== -1)
     componentTree(state, property.index + 1, close, parseRange, components);
-  return opaqueCall(name, components, sourceSpelling(rawName, name));
+  return opaqueCall(
+    name,
+    components,
+    sourceSpelling(rawName, name),
+    state.tokens
+  );
 }
 
 export { parseOpaqueCall, parseVar };

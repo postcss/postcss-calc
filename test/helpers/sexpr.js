@@ -31,11 +31,16 @@ export function sexpr(node) {
         ? `(${node.name})`
         : `(${node.name} ${node.args.map(sexpr).join(' ')})`;
     case 'OpaqueCall':
-      return `OpaqueCall(${node.name.toLowerCase()} [${node.components.map(opaqueComponentSexpr).join(' ')}])`;
+      return `OpaqueCall(${node.name.toLowerCase()} [${node.components.map((part) => opaqueComponentSexpr(part, node.source)).join(' ')}])`;
   }
 }
 
-function opaqueComponentSexpr(component) {
+function opaqueComponentSexpr(component, source) {
   if (typeof component === 'string') return JSON.stringify(component);
+  if (Array.isArray(component)) {
+    let text = '';
+    for (let i = component[0]; i < component[1]; i++) text += source[i][1];
+    return JSON.stringify(text);
+  }
   return sexpr(component);
 }

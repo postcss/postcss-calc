@@ -23,12 +23,14 @@
 //     Zero-valued Dims are kept — the unit carries type info.
 
 /**
+ * @typedef {import('@csstools/css-tokenizer').CSSToken} CSSToken
  * @typedef {{type: 'Num', value: number}} Num
  * @typedef {{type: 'Dim', value: number, unit: string, rawUnit?: string}} Dim
  * @typedef {{type: 'Ident', name: string, rawName?: string}} Ident
  * @typedef {{type: 'Call', name: string, args: Node[], rawName?: string}} Call
- * @typedef {string | Node} OpaqueComponent
- * @typedef {{type: 'OpaqueCall', name: string, components: OpaqueComponent[], rawName?: string}} OpaqueCall
+ * @typedef {[number, number] | Node} OpaqueComponent A `[start, end)` range
+ *   reads the call's `source` tokens.
+ * @typedef {{type: 'OpaqueCall', name: string, components: OpaqueComponent[], rawName?: string, source?: CSSToken[]}} OpaqueCall
  * @typedef {{sign: 1 | -1, node: Node}} SumTerm Sign is always +1 when node is Num or Dim.
  * @typedef {{type: 'Sum', terms: SumTerm[], grouped?: boolean}} Sum
  * @typedef {{exponent: 1 | -1, node: Node}} ProductFactor exponent +1 = numerator, -1 = denominator.
@@ -83,12 +85,18 @@ function call(name, args, rawName) {
  * @param {string} name
  * @param {OpaqueComponent[]} components
  * @param {string} [rawName]
+ * @param {CSSToken[]} [source] The token list that the range components index.
  * @return {OpaqueCall}
  */
-function opaqueCall(name, components, rawName) {
-  return rawName === undefined
-    ? { type: 'OpaqueCall', name, components }
-    : { type: 'OpaqueCall', name, components, rawName };
+function opaqueCall(name, components, rawName, source) {
+  if (source === undefined && components.some(Array.isArray)) {
+    throw new TypeError('An OpaqueCall with range components needs a source');
+  }
+  /** @type {OpaqueCall} */
+  const node = { type: 'OpaqueCall', name, components };
+  if (rawName !== undefined) node.rawName = rawName;
+  if (source !== undefined) node.source = source;
+  return node;
 }
 
 /**

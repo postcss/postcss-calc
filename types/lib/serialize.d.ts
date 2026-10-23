@@ -27,16 +27,28 @@ export type SerializeOptions = {
  */
 declare function serialize(node: Node, opts?: SerializeOptions): string;
 /**
- * @param {{tree: Node, status: 'resolved' | 'unresolved', rootName: string, rootSpelling: string, calculation?: boolean, original?: string}} result
- * @param {SerializeOptions} [opts]
- * @return {string}
+ * Print a result into `out`. An unresolved root that is not a calculation and
+ * does not match its own name prints nothing.
+ *
+ * @param {{tree: Node, status: 'resolved' | 'unresolved', rootName: string, rootSpelling: string, calculation?: boolean}} result
+ * @param {SerializeOptions} opts
+ * @param {import('./serialize/sink.js').Sink} out
+ * @return {boolean} Whether anything was printed.
  */
-declare function serializeResult(result: {
+declare function printResult(result: {
     tree: Node;
     status: 'resolved' | 'unresolved';
     rootName: string;
     rootSpelling: string;
     calculation?: boolean;
-    original?: string;
-}, opts?: SerializeOptions): string;
-export { serialize, serializeResult };
+}, opts: SerializeOptions, out: import('./serialize/sink.js').Sink): boolean;
+/**
+ * Returns `undefined` for an unresolved root that is not a calculation and
+ * does not match its own name: the caller keeps the source text as it is.
+ *
+ * @param {Parameters<typeof printResult>[0]} result
+ * @param {SerializeOptions} [opts]
+ * @return {string | undefined}
+ */
+declare function serializeResult(result: Parameters<typeof printResult>[0], opts?: SerializeOptions): string | undefined;
+export { printResult, serialize, serializeResult };

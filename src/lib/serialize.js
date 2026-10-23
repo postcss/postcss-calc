@@ -5,12 +5,12 @@
 import { checkCalculationDepth } from './limits.js';
 import { isCalculationFunction } from './functions.js';
 import { isScalar } from './serialize/precision.js';
+import { TextSink } from './serialize/sink.js';
 import {
   emitCall,
-  emitLeadingNeg,
   emitOpaqueCall,
   emitMathResult,
-  emitNode,
+  emitWrappedRoot,
 } from './serialize/expression.js';
 
 /**
@@ -34,23 +34,15 @@ function normalizeScalarPolicy(opts) {
 
 /**
  * @param {SerializeOptions} opts
+ * @param {import('./serialize/sink.js').Sink} out
  * @return {import('./serialize/precision.js').SerializeSession}
  */
-function makeSession(opts) {
+function makeSession(opts, out) {
   return {
-    buffer: [],
+    out,
     precision: opts.precision ?? 5,
     scalarPolicy: normalizeScalarPolicy(opts),
   };
-}
-
-/** @param {Node} node @param {import('./serialize/precision.js').SerializeSession} session @return {void} */
-function emitRootExpr(node, session) {
-  if (node.type === 'Sum' && node.terms.length === 1) {
-    emitLeadingNeg(node.terms[0].node, session);
-    return;
-  }
-  emitNode(node, session);
 }
 
 /**
@@ -60,21 +52,25 @@ function emitRootExpr(node, session) {
  */
 function serialize(node, opts = {}) {
   checkCalculationDepth(node);
-  const session = makeSession(opts);
-  emitMathResult(node, session, opts.calcName ?? 'calc');
-  return session.buffer.join('');
+  const out = new TextSink();
+  emitMathResult(node, makeSession(opts, out), opts.calcName ?? 'calc');
+  return out.join();
 }
 
 /**
- * @param {{tree: Node, status: 'resolved' | 'unresolved', rootName: string, rootSpelling: string, calculation?: boolean, original?: string}} result
- * @param {SerializeOptions} [opts]
- * @return {string}
+ * Print a result into `out`. An unresolved root that is not a calculation and
+ * does not match its own name prints nothing.
+ *
+ * @param {{tree: Node, status: 'resolved' | 'unresolved', rootName: string, rootSpelling: string, calculation?: boolean}} result
+ * @param {SerializeOptions} opts
+ * @param {import('./serialize/sink.js').Sink} out
+ * @return {boolean} Whether anything was printed.
  */
-function serializeResult(result, opts = {}) {
+function printResult(result, opts, out) {
   const node = result.tree;
   checkCalculationDepth(node);
   const isCalc = result.calculation ?? isCalculationFunction(result.rootName);
-  const session = makeSession(opts);
+  const session = makeSession(opts, out);
 
   if (!isCalc && result.status === 'unresolved') {
     const rootName =
@@ -87,9 +83,9 @@ function serializeResult(result, opts = {}) {
     ) {
       if (node.type === 'Call') emitCall(node, session, result.rootSpelling);
       else emitOpaqueCall(node, session, result.rootSpelling);
-      return session.buffer.join('');
+      return true;
     }
-    return result.original ?? '';
+    return false;
   }
 
   const wrapper = isCalc
@@ -97,13 +93,24 @@ function serializeResult(result, opts = {}) {
     : 'calc';
   // Under the standard policy a bare Ident/Call result still needs calc().
   if (session.scalarPolicy === 'standard' && !isScalar(node)) {
-    session.buffer.push(wrapper, '(');
-    emitRootExpr(node, session);
-    session.buffer.push(')');
+    emitWrappedRoot(node, session, wrapper);
   } else {
     emitMathResult(node, session, wrapper);
   }
-  return session.buffer.join('');
+  return true;
 }
 
-export { serialize, serializeResult };
+/**
+ * Returns `undefined` for an unresolved root that is not a calculation and
+ * does not match its own name: the caller keeps the source text as it is.
+ *
+ * @param {Parameters<typeof printResult>[0]} result
+ * @param {SerializeOptions} [opts]
+ * @return {string | undefined}
+ */
+function serializeResult(result, opts = {}) {
+  const out = new TextSink();
+  return printResult(result, opts, out) ? out.join() : undefined;
+}
+
+export { printResult, serialize, serializeResult };

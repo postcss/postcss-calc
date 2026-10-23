@@ -8,13 +8,39 @@ import { tokenize } from '@csstools/css-tokenizer';
 import { parse } from '../../src/lib/parser.js';
 import { simplify } from '../../src/lib/simplify.js';
 import { serialize } from '../../src/lib/serialize.js';
+import reduceCalc from 'postcss-calc/reduce';
 import { out } from '../helpers/out.js';
 import {
   cssMathSourceArb,
   opaqueGroupedCalcArb,
 } from '../helpers/arbitraries.js';
 
+// Sign-bearing groups around generated math: the sign must stay outside the
+// group, so these are the inputs most likely to distribute it wrongly.
+const signedGroupArb = fc
+  .tuple(
+    cssMathSourceArb,
+    fc.constantFrom(
+      (inner) => `calc(-1 * (${inner}))`,
+      (inner) => `calc((${inner}) * -1)`,
+      (inner) => `calc(${inner} - (${inner}))`
+    )
+  )
+  .map(([source, wrap]) => wrap(source));
+
 describe('opaque CSS math properties', () => {
+  test('property: reduceCalc output re-parses and reducing it again changes nothing', () => {
+    fc.assert(
+      fc.property(fc.oneof(cssMathSourceArb, signedGroupArb), (input) => {
+        const once = reduceCalc(input);
+        const tokens = tokenize({ css: once });
+        parse(tokens, 0, tokens.length);
+        return reduceCalc(once) === once;
+      }),
+      { numRuns: 300 }
+    );
+  });
+
   test('property: bounded CSS math grammar parses and round-trips', () => {
     fc.assert(
       fc.property(cssMathSourceArb, (input) => {

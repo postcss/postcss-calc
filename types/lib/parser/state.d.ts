@@ -1,6 +1,8 @@
 import { TokenType as CssType } from '@csstools/css-tokenizer';
 export type CSSToken = import('@csstools/css-tokenizer').CSSToken;
+export type Blocks = import('../blocks.js').Blocks;
 /** @typedef {import('@csstools/css-tokenizer').CSSToken} CSSToken */
+/** @typedef {import('../blocks.js').Blocks} Blocks */
 /**
  * A syntax error at a token. The position is not formatted here: a fallback
  * that fails to parse is discarded, so formatting it would be wasted work.
@@ -31,7 +33,7 @@ declare function positionedError(error: Error, offsetOf: (index: number) => numb
 declare function isTrivia(type: CssType): boolean;
 export type ParseState = {
     tokens: CSSToken[];
-    close: Int32Array;
+    blocks: Blocks;
     /**
      * First token of the range, for the leading-whitespace rule.
      */
@@ -51,12 +53,12 @@ export type ParseState = {
 declare function peek(state: ParseState): number;
 /**
  * @param {CSSToken[]} tokens
- * @param {Int32Array} close
+ * @param {Blocks} blocks
  * @param {number} start
  * @param {number} end
  * @return {ParseState}
  */
-declare function newState(tokens: CSSToken[], close: Int32Array, start: number, end: number): ParseState;
+declare function newState(tokens: CSSToken[], blocks: Blocks, start: number, end: number): ParseState;
 /**
  * The text a parse error shows for an expression token, as
  * `Expected ) ... got "..."`. Numbers show their value without the unit, and

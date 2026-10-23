@@ -51,7 +51,9 @@ function reduceCalc(value, opts) {
   reduceTokenList(
     tokens,
     options,
-    (start, end, text) => {
+    (start, end, printed) => {
+      // The string caller asks for text, so the printed value is a string.
+      const text = /** @type {string} */ (printed);
       const from = tokens[start][2];
       const to = tokens[end - 1][3] + 1;
       if (to - from === text.length && value.startsWith(text, from)) return;
@@ -59,6 +61,8 @@ function reduceCalc(value, opts) {
       lastIndex = to;
       changed = true;
     },
+    0,
+    tokens.length,
     value
   );
   return changed ? output + value.slice(lastIndex) : value;

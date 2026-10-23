@@ -17,7 +17,12 @@ const parser = await import(pathToFileURL(`${sourceRoot}/lib/parser.js`).href);
 const { matchBlocks } = await import(
   pathToFileURL(`${sourceRoot}/lib/blocks.js`).href
 );
-const buildCloser = (tokens) => matchBlocks(tokens).close;
+// The baseline revision returns its closer array as `close`; newer revisions
+// return a `Blocks` value as `blocks`. Either is what `parse()` takes.
+const buildCloser = (tokens) => {
+  const matched = matchBlocks(tokens);
+  return matched.blocks ?? matched.close;
+};
 if (typeof parser.parse !== 'function' || typeof matchBlocks !== 'function')
   throw new Error('incompatible baseline parser API');
 

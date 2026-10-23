@@ -13,11 +13,21 @@ import {
 } from '../../src/lib/node.js';
 
 test('opaqueCall: stores the component tree on the canonical node', () => {
-  assert.deepEqual(opaqueCall('var', [ident('--x'), ', 1px']), {
-    type: 'OpaqueCall',
-    name: 'var',
-    components: [{ type: 'Ident', name: '--x' }, ', 1px'],
-  });
+  const source = [];
+  assert.deepEqual(
+    opaqueCall('var', [ident('--x'), [0, 0]], undefined, source),
+    {
+      type: 'OpaqueCall',
+      name: 'var',
+      components: [{ type: 'Ident', name: '--x' }, [0, 0]],
+      source,
+    }
+  );
+});
+
+test('opaqueCall: rejects range components without a source', () => {
+  assert.throws(() => opaqueCall('var', [[0, 3]]), TypeError);
+  assert.doesNotThrow(() => opaqueCall('var', [[0, 3]], undefined, []));
 });
 
 // --- Leaf constructors ----------------------------------------------------

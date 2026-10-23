@@ -2,7 +2,7 @@ export type Node = import('../node.js').Node;
 export type Num = import('../node.js').Num;
 export type Dim = import('../node.js').Dim;
 export type SerializeSession = {
-    buffer: string[];
+    out: import('./sink.js').Sink;
     precision: number | false;
     scalarPolicy: 'standard' | 'unwrap-all';
 };
@@ -11,7 +11,7 @@ export type SerializeSession = {
  * @typedef {import('../node.js').Num} Num
  * @typedef {import('../node.js').Dim} Dim
  * @typedef {object} SerializeSession
- * @property {string[]} buffer
+ * @property {import('./sink.js').Sink} out
  * @property {number | false} precision
  * @property {'standard' | 'unwrap-all'} scalarPolicy
  */
@@ -54,11 +54,23 @@ declare function degenerateKeyword(v: number): string;
 declare function serializeNumber(v: number): string;
 /**
  * @param {import('../node.js').Num | import('../node.js').Dim} node
- * @param {string[]} buffer
+ * @param {SerializeSession['out']} out
  * @param {number} value
  * @return {void}
  */
-declare function emitRoundedScalar(node: import('../node.js').Num | import('../node.js').Dim, buffer: string[], value: number): void;
+declare function emitRoundedScalar(node: import('../node.js').Num | import('../node.js').Dim, out: SerializeSession['out'], value: number): void;
+/**
+ * A non-finite value as its keyword. A dimension keeps its unit as `* 1<unit>`
+ * so the keyword stays a valid calculation. `wrapper` names the function that
+ * wraps the keyword, or is omitted to emit the bare keyword.
+ *
+ * @param {SerializeSession['out']} out
+ * @param {number} value
+ * @param {import('../node.js').Num | import('../node.js').Dim} node
+ * @param {string} [wrapper]
+ * @return {void}
+ */
+declare function emitDegenerate(out: SerializeSession['out'], value: number, node: import('../node.js').Num | import('../node.js').Dim, wrapper?: string): void;
 /**
  * @param {import('../node.js').Num | import('../node.js').Dim} node
  * @param {SerializeSession} session
@@ -68,21 +80,21 @@ declare function emitRoundedScalar(node: import('../node.js').Num | import('../n
  */
 declare function emitScalar(node: import('../node.js').Num | import('../node.js').Dim, session: SerializeSession, value?: number, bare?: boolean): void;
 /**
- * @param {string[]} buffer
+ * @param {SerializeSession['out']} out
  * @param {import('../node.js').Num | import('../node.js').Dim} node
  * @return {void}
  */
-declare function emitSignedZero(buffer: string[], node: import('../node.js').Num | import('../node.js').Dim): void;
+declare function emitSignedZero(out: SerializeSession['out'], node: import('../node.js').Num | import('../node.js').Dim): void;
 /**
  * Negative zero as an unwrapped product, valid only where a `<calc-product>`
  * may appear without changing how the surrounding expression parses.
- * @param {string[]} buffer
+ * @param {SerializeSession['out']} out
  * @param {import('../node.js').Num | import('../node.js').Dim} node
  * @return {void}
  */
-declare function emitBareSignedZero(buffer: string[], node: import('../node.js').Num | import('../node.js').Dim): void;
+declare function emitBareSignedZero(out: SerializeSession['out'], node: import('../node.js').Num | import('../node.js').Dim): void;
 /** @param {Node} node @return {node is import('../node.js').Num | import('../node.js').Dim} */
 declare function isScalar(node: Node): node is import('../node.js').Num | import('../node.js').Dim;
 /** @param {Node} node @return {node is import('../node.js').Num | import('../node.js').Dim} */
 declare function isSignedZero(node: Node): node is import('../node.js').Num | import('../node.js').Dim;
-export { NOISE_FLOOR, divideByPowerOfTen, roundDecimal, round, isDegenerate, degenerateKeyword, serializeNumber, emitRoundedScalar, emitScalar, emitSignedZero, emitBareSignedZero, isScalar, isSignedZero, };
+export { NOISE_FLOOR, divideByPowerOfTen, roundDecimal, round, isDegenerate, degenerateKeyword, serializeNumber, emitDegenerate, emitRoundedScalar, emitScalar, emitSignedZero, emitBareSignedZero, isScalar, isSignedZero, };

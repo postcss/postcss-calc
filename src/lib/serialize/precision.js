@@ -7,7 +7,7 @@
  * @typedef {import('../node.js').Num} Num
  * @typedef {import('../node.js').Dim} Dim
  * @typedef {object} SerializeSession
- * @property {string[]} buffer
+ * @property {import('./sink.js').Sink} out
  * @property {number | false} precision
  * @property {'standard' | 'unwrap-all'} scalarPolicy
  */
@@ -131,15 +131,35 @@ function serializeNumber(v) {
 
 /**
  * @param {import('../node.js').Num | import('../node.js').Dim} node
- * @param {string[]} buffer
+ * @param {SerializeSession['out']} out
  * @param {number} value
  * @return {void}
  */
-function emitRoundedScalar(node, buffer, value) {
-  buffer.push(serializeNumber(value));
+function emitRoundedScalar(node, out, value) {
+  const text = serializeNumber(value);
+  if (node.type === 'Dim') out.dimension(text, node.rawUnit ?? node.unit);
+  else out.number(text);
+}
+
+/**
+ * A non-finite value as its keyword. A dimension keeps its unit as `* 1<unit>`
+ * so the keyword stays a valid calculation. `wrapper` names the function that
+ * wraps the keyword, or is omitted to emit the bare keyword.
+ *
+ * @param {SerializeSession['out']} out
+ * @param {number} value
+ * @param {import('../node.js').Num | import('../node.js').Dim} node
+ * @param {string} [wrapper]
+ * @return {void}
+ */
+function emitDegenerate(out, value, node, wrapper) {
+  if (wrapper !== undefined) out.fn(wrapper);
+  out.ident(degenerateKeyword(value));
   if (node.type === 'Dim') {
-    buffer.push(node.rawUnit ?? node.unit);
+    out.op('*');
+    out.dimension('1', node.rawUnit ?? node.unit);
   }
+  if (wrapper !== undefined) out.close();
 }
 
 /**
@@ -150,49 +170,48 @@ function emitRoundedScalar(node, buffer, value) {
  * @return {void}
  */
 function emitScalar(node, session, value, bare = false) {
-  const buffer = session.buffer;
+  const out = session.out;
   const effective = value ?? node.value;
   if (Object.is(effective, -0)) {
-    if (bare) emitBareSignedZero(buffer, node);
-    else emitSignedZero(buffer, node);
+    if (bare) emitBareSignedZero(out, node);
+    else emitSignedZero(out, node);
   } else if (isDegenerate(effective)) {
-    if (node.type === 'Dim') {
-      buffer.push(
-        'calc(',
-        degenerateKeyword(effective),
-        ' * 1',
-        node.rawUnit ?? node.unit,
-        ')'
-      );
-    } else {
-      buffer.push(degenerateKeyword(effective));
-    }
+    // A bare number keyword is valid in a sum or product, so only a dimension is wrapped.
+    emitDegenerate(
+      out,
+      effective,
+      node,
+      node.type === 'Dim' ? 'calc' : undefined
+    );
   } else {
-    emitRoundedScalar(node, buffer, round(effective, session.precision));
+    emitRoundedScalar(node, out, round(effective, session.precision));
   }
 }
 
 /**
- * @param {string[]} buffer
+ * @param {SerializeSession['out']} out
  * @param {import('../node.js').Num | import('../node.js').Dim} node
  * @return {void}
  */
-function emitSignedZero(buffer, node) {
-  buffer.push('calc(');
-  emitBareSignedZero(buffer, node);
-  buffer.push(')');
+function emitSignedZero(out, node) {
+  out.fn('calc');
+  emitBareSignedZero(out, node);
+  out.close();
 }
 
 /**
  * Negative zero as an unwrapped product, valid only where a `<calc-product>`
  * may appear without changing how the surrounding expression parses.
- * @param {string[]} buffer
+ * @param {SerializeSession['out']} out
  * @param {import('../node.js').Num | import('../node.js').Dim} node
  * @return {void}
  */
-function emitBareSignedZero(buffer, node) {
-  const unit = node.type === 'Dim' ? (node.rawUnit ?? node.unit) : '';
-  buffer.push('-1 * 0', unit);
+function emitBareSignedZero(out, node) {
+  out.minus();
+  out.number('1');
+  out.op('*');
+  if (node.type === 'Dim') out.dimension('0', node.rawUnit ?? node.unit);
+  else out.number('0');
 }
 
 /** @param {Node} node @return {node is import('../node.js').Num | import('../node.js').Dim} */
@@ -213,6 +232,7 @@ export {
   isDegenerate,
   degenerateKeyword,
   serializeNumber,
+  emitDegenerate,
   emitRoundedScalar,
   emitScalar,
   emitSignedZero,

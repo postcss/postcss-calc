@@ -4,10 +4,9 @@
 // share one module; precision and precedence rules live in sibling modules.
 
 import { num } from '../node.js';
-import { serializeComponents } from '../opaque.js';
 import {
-  degenerateKeyword,
   emitBareSignedZero,
+  emitDegenerate,
   emitRoundedScalar,
   emitScalar,
   emitSignedZero,
@@ -29,6 +28,7 @@ import {
  * @typedef {import('../node.js').SumTerm} SumTerm
  * @typedef {import('../node.js').ProductFactor} ProductFactor
  * @typedef {import('./precision.js').SerializeSession} SerializeSession
+ * @typedef {import('@csstools/css-tokenizer').CSSToken} CSSToken
  */
 
 /**
@@ -49,9 +49,9 @@ function emitNode(
     parentPrecedence,
     groupedRequired
   );
-  if (parenthesized) session.buffer.push('(');
+  if (parenthesized) session.out.open();
   emitNodeBody(node, session);
-  if (parenthesized) session.buffer.push(')');
+  if (parenthesized) session.out.close();
 }
 
 /**
@@ -60,14 +60,13 @@ function emitNode(
  * @return {void}
  */
 function emitNodeBody(node, session) {
-  const buffer = session.buffer;
   switch (node.type) {
     case 'Num':
     case 'Dim':
       emitScalar(node, session);
       return;
     case 'Ident':
-      buffer.push(node.rawName ?? node.name);
+      session.out.ident(node.rawName ?? node.name);
       return;
     case 'Call':
       emitCall(node, session);
@@ -92,32 +91,33 @@ function emitNodeBody(node, session) {
  * @return {void}
  */
 function emitScalarSumTerm(termNode, sign, leading, session) {
-  const buffer = session.buffer;
+  const out = session.out;
   const effectiveVal = sign * termNode.value;
   if (Object.is(effectiveVal, -0)) {
     // `x - 0` reparses as x + -(0), so subtraction round-trips negative zero.
     // A leading term starts a <calc-product>, so `-1 * 0` needs no calc().
     if (leading) {
-      emitBareSignedZero(buffer, termNode);
+      emitBareSignedZero(out, termNode);
     } else {
-      buffer.push(' - ');
-      emitRoundedScalar(termNode, buffer, 0);
+      out.op('-');
+      emitRoundedScalar(termNode, out, 0);
     }
     return;
   }
   if (isDegenerate(effectiveVal)) {
-    if (!leading) buffer.push(sign === 1 ? ' + ' : ' - ');
-    else if (sign === -1) buffer.push('-');
+    if (!leading) out.op(sign === 1 ? '+' : '-');
+    else if (sign === -1) out.minus();
     emitScalar(termNode, session);
     return;
   }
   const rounded = round(effectiveVal, session.precision);
   if (rounded < 0) {
-    buffer.push(leading ? '-' : ' - ');
-    emitRoundedScalar(termNode, buffer, -rounded);
+    if (leading) out.minus();
+    else out.op('-');
+    emitRoundedScalar(termNode, out, -rounded);
   } else {
-    if (!leading) buffer.push(' + ');
-    emitRoundedScalar(termNode, buffer, rounded);
+    if (!leading) out.op('+');
+    emitRoundedScalar(termNode, out, rounded);
   }
 }
 
@@ -134,7 +134,7 @@ function emitSumTerm(term, leading, session) {
   } else if (leading && term.sign === -1) {
     emitLeadingNeg(termNode, session);
   } else {
-    if (!leading) session.buffer.push(term.sign === 1 ? ' + ' : ' - ');
+    if (!leading) session.out.op(term.sign === 1 ? '+' : '-');
     emitNode(termNode, session, SUM_PRECEDENCE, true);
   }
 }
@@ -182,7 +182,9 @@ function emitLeadingNeg(node, session) {
     emitProductFactors(node.factors, session, 0, -1, num(-1));
     return;
   }
-  session.buffer.push('-1 * ');
+  session.out.minus();
+  session.out.number('1');
+  session.out.op('*');
   emitNode(node, session, UNARY_PRECEDENCE, false);
 }
 
@@ -201,7 +203,7 @@ function emitProductFactors(
   coefficientValue,
   coefficientNode
 ) {
-  const buffer = session.buffer;
+  const out = session.out;
   // Only the product's first multiplied scalar may print negative zero as a
   // bare `-1 * 0`: reparsing folds the `-1` back into that same coefficient.
   // After any operator, the `-1` would bind to the preceding operand instead.
@@ -217,8 +219,11 @@ function emitProductFactors(
     const factor = factors[i];
     const factorNode = factor.node;
     const multiplied = factor.exponent === 1;
-    if (!leading) buffer.push(multiplied ? ' * ' : ' / ');
-    else if (!multiplied) buffer.push('1 / ');
+    if (!leading) out.op(multiplied ? '*' : '/');
+    else if (!multiplied) {
+      out.number('1');
+      out.op('/');
+    }
     if (isScalar(factorNode)) {
       emitScalar(factorNode, session, undefined, leading && multiplied);
     } else {
@@ -235,16 +240,16 @@ function emitProductFactors(
  * @return {void}
  */
 function emitCall(node, session, callNameOverride) {
-  const buffer = session.buffer;
-  buffer.push(callNameOverride ?? node.rawName ?? node.name, '(');
+  const out = session.out;
+  out.fn(callNameOverride ?? node.rawName ?? node.name);
   for (let i = 0; i < node.args.length; i++) {
-    if (i > 0) buffer.push(', ');
+    if (i > 0) out.comma();
     const arg = node.args[i];
     // Every math-function argument is a <calc-sum>, so it needs no calc()
-    if (isSignedZero(arg)) emitBareSignedZero(buffer, arg);
+    if (isSignedZero(arg)) emitBareSignedZero(out, arg);
     else emitNode(arg, session);
   }
-  buffer.push(')');
+  out.close();
 }
 
 /**
@@ -254,12 +259,15 @@ function emitCall(node, session, callNameOverride) {
  * @return {void}
  */
 function emitOpaqueCall(node, session, callNameOverride) {
-  const buffer = session.buffer;
-  buffer.push(callNameOverride ?? node.rawName ?? node.name, '(');
-  serializeComponents(node.components, buffer, (child, childBuffer) => {
-    emitNestedMathResult(child, session, childBuffer);
-  });
-  buffer.push(')');
+  const out = session.out;
+  out.fn(callNameOverride ?? node.rawName ?? node.name);
+  for (const part of node.components) {
+    if (Array.isArray(part)) {
+      // `opaqueCall` guarantees a source for range components.
+      out.source(/** @type {CSSToken[]} */ (node.source), part[0], part[1]);
+    } else emitNestedMathResult(part, session);
+  }
+  out.close();
 }
 
 /**
@@ -271,17 +279,15 @@ function emitOpaqueCall(node, session, callNameOverride) {
 function emitMathResult(node, session, wrapper) {
   if (isScalar(node)) {
     const scalarValue = round(node.value, session.precision);
-    const buffer = session.buffer;
+    const out = session.out;
     if (isDegenerate(scalarValue)) {
-      buffer.push(wrapper, '(', degenerateKeyword(scalarValue));
-      if (node.type === 'Dim') buffer.push(' * 1', node.rawUnit ?? node.unit);
-      buffer.push(')');
+      emitDegenerate(out, scalarValue, node, wrapper);
     } else if (session.scalarPolicy === 'standard') {
-      buffer.push(wrapper, '(');
-      emitRoundedScalar(node, buffer, scalarValue);
-      buffer.push(')');
+      out.fn(wrapper);
+      emitRoundedScalar(node, out, scalarValue);
+      out.close();
     } else {
-      emitRoundedScalar(node, buffer, scalarValue);
+      emitRoundedScalar(node, out, scalarValue);
     }
     return;
   }
@@ -293,26 +299,36 @@ function emitMathResult(node, session, wrapper) {
     emitNode(node, session);
     return;
   }
+  emitWrappedRoot(node, session, wrapper);
+}
+
+/**
+ * Emit a non-scalar root inside `wrapper(...)`. A single-term sum emits its
+ * term as a leading term, so the term's sign stays a leading sign.
+ *
+ * @param {Node} node
+ * @param {SerializeSession} session
+ * @param {string} wrapper
+ * @return {void}
+ */
+function emitWrappedRoot(node, session, wrapper) {
+  session.out.fn(wrapper);
   if (node.type === 'Sum' && node.terms.length === 1) {
-    session.buffer.push(wrapper, '(');
     emitLeadingNeg(node.terms[0].node, session);
-    session.buffer.push(')');
-    return;
+  } else {
+    emitNode(node, session);
   }
-  session.buffer.push(wrapper, '(');
-  emitNode(node, session);
-  session.buffer.push(')');
+  session.out.close();
 }
 
 /**
  * @param {Node} node
  * @param {SerializeSession} session
- * @param {string[]} [buffer]
  * @return {void}
  */
-function emitNestedMathResult(node, session, buffer = session.buffer) {
+function emitNestedMathResult(node, session) {
   if (isSignedZero(node)) {
-    emitSignedZero(buffer, node);
+    emitSignedZero(session.out, node);
     return;
   }
   emitMathResult(node, session, 'calc');
@@ -325,4 +341,5 @@ export {
   emitOpaqueCall,
   emitMathResult,
   emitNestedMathResult,
+  emitWrappedRoot,
 };

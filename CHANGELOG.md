@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file. See [commit
 
 ## Unreleased
 
+### Features
+
+- add `postcss-calc/reduce-tokens`, which reduces a `@csstools/css-tokenizer`
+  token list and returns token replacements. It never reads token source
+  offsets, so it works on lists edited after tokenization. `postcss-calc/reduce`
+  shares its implementation and its output is unchanged.
+
 ### Bug fixes
 
 - `reduceCalc` and the plugin no longer report the nesting-limit error for a
