@@ -3,7 +3,6 @@ import assert from 'node:assert/strict';
 import { serialize as serializeSource } from '../../src/lib/serialize.js';
 import { num, dim } from '../../src/lib/node.js';
 import { tokenize } from '@csstools/css-tokenizer';
-import { indexBlocks } from '../../src/lib/block-index.js';
 import { parse } from '../../src/lib/parser.js';
 import { simplify } from '../../src/lib/simplify.js';
 
@@ -89,9 +88,7 @@ describe('serialize: scalar context policy', () => {
         assert.equal(output, scalarCase.expected[policyIndex]);
 
         const tokens = tokenize({ css: output });
-        const reparsed = simplify(
-          parse(tokens, 0, tokens.length, indexBlocks(tokens))
-        );
+        const reparsed = simplify(parse(tokens, 0, tokens.length));
         assert.equal(
           serialize(reparsed, policy.options),
           output,

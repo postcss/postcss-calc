@@ -1,6 +1,5 @@
 // Bucket github-pure corpus divergences against @csstools/css-calc.
 import { tokenize } from '@csstools/css-tokenizer';
-import { indexBlocks } from '../src/lib/block-index.js';
 import { parse } from '../src/lib/parser.js';
 import { simplify } from '../src/lib/simplify.js';
 import { serialize } from '../src/lib/serialize.js';
@@ -10,10 +9,9 @@ const lines = loadCorpus();
 const ours = (s) => {
   try {
     const tokens = tokenize({ css: s });
-    return serialize(
-      simplify(parse(tokens, 0, tokens.length, indexBlocks(tokens))),
-      { precision: 10 }
-    );
+    return serialize(simplify(parse(tokens, 0, tokens.length)), {
+      precision: 10,
+    });
   } catch {
     return null;
   }

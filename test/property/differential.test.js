@@ -10,7 +10,6 @@ import assert from 'node:assert/strict';
 import fc from 'fast-check';
 import { calc as csstoolsCalc } from '@csstools/css-calc';
 import { TokenType, tokenize } from '@csstools/css-tokenizer';
-import { indexBlocks } from '../../src/lib/block-index.js';
 import { parse } from '../../src/lib/parser.js';
 import { simplify } from '../../src/lib/simplify.js';
 import { serialize } from '../../src/lib/serialize.js';
@@ -32,12 +31,9 @@ const COMPARE_PRECISION = 9;
 const CSTOOLS_PRECISION = 24;
 function ourOut(input) {
   const tokens = tokenize({ css: input });
-  return serialize(
-    simplify(parse(tokens, 0, tokens.length, indexBlocks(tokens))),
-    {
-      precision: COMPARE_PRECISION,
-    }
-  );
+  return serialize(simplify(parse(tokens, 0, tokens.length)), {
+    precision: COMPARE_PRECISION,
+  });
 }
 function theirOut(input) {
   try {
@@ -86,12 +82,9 @@ function hasSignedZeroToken(input) {
 
 function canonicalize(s) {
   const tokens = tokenize({ css: s });
-  return serialize(
-    simplify(parse(tokens, 0, tokens.length, indexBlocks(tokens))),
-    {
-      precision: COMPARE_PRECISION,
-    }
-  );
+  return serialize(simplify(parse(tokens, 0, tokens.length)), {
+    precision: COMPARE_PRECISION,
+  });
 }
 // Generator depth 3 keeps the input small enough to debug counterexamples
 // by hand; fast-check still explores hundreds of variations in seconds.
@@ -111,21 +104,15 @@ const trigExpInputArb = trigExpFlatArb.map((ast) => astToCalc(ast));
 const COMPARE_PRECISION_LOOSE = 8;
 function ourOutLoose(input) {
   const tokens = tokenize({ css: input });
-  return serialize(
-    simplify(parse(tokens, 0, tokens.length, indexBlocks(tokens))),
-    {
-      precision: COMPARE_PRECISION_LOOSE,
-    }
-  );
+  return serialize(simplify(parse(tokens, 0, tokens.length)), {
+    precision: COMPARE_PRECISION_LOOSE,
+  });
 }
 function canonicalizeLoose(s) {
   const tokens = tokenize({ css: s });
-  return serialize(
-    simplify(parse(tokens, 0, tokens.length, indexBlocks(tokens))),
-    {
-      precision: COMPARE_PRECISION_LOOSE,
-    }
-  );
+  return serialize(simplify(parse(tokens, 0, tokens.length)), {
+    precision: COMPARE_PRECISION_LOOSE,
+  });
 }
 function checkAgreement(input) {
   const ours = ourOut(input);

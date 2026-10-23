@@ -19,24 +19,6 @@ export type ReduceCalcOptions = {
     onWarn?: (message: string) => void;
 };
 export type ResolvedReduceCalcOptions = Required<Omit<ReduceCalcOptions, 'onParseError' | 'onWarn'>> & Pick<ReduceCalcOptions, 'onParseError' | 'onWarn'>;
-export type TransformContext = {
-    options: ResolvedReduceCalcOptions;
-    value: string;
-    tokens: import('@csstools/css-tokenizer').CSSToken[];
-};
-export type Replacement = {
-    start: number;
-    end: number;
-    result: CalculationResult;
-};
-export type CalculationResult = {
-    tree: import('./lib/node.js').Node;
-    status: 'resolved' | 'unresolved';
-    rootName: string;
-    rootSpelling: string;
-    calculation: boolean;
-    original: string | undefined;
-};
 /**
  * @typedef {object} ReduceCalcOptions
  * @property {number | false} [precision]
@@ -47,29 +29,6 @@ export type CalculationResult = {
  * @property {(message: string) => void} [onWarn] Invoked when `warnWhenCannotResolve` is set and an expression cannot be reduced to a single value.
  */
 /** @typedef {Required<Omit<ReduceCalcOptions, 'onParseError' | 'onWarn'>> & Pick<ReduceCalcOptions, 'onParseError' | 'onWarn'>} ResolvedReduceCalcOptions */
-/**
- * Fields threaded through the internal token-range walk.
- *
- * @typedef {object} TransformContext
- * @property {ResolvedReduceCalcOptions} options
- * @property {string} value
- * @property {import('@csstools/css-tokenizer').CSSToken[]} tokens
- */
-/**
- * @typedef {object} Replacement
- * @property {number} start
- * @property {number} end
- * @property {CalculationResult} result
- */
-/**
- * @typedef {object} CalculationResult
- * @property {import('./lib/node.js').Node} tree
- * @property {'resolved' | 'unresolved'} status
- * @property {string} rootName
- * @property {string} rootSpelling
- * @property {boolean} calculation
- * @property {string | undefined} original
- */
 /**
  * Simplify every supported CSS math function in a component-value string.
  * Text outside those functions is preserved byte-for-byte.

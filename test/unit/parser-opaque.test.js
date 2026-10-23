@@ -1,7 +1,6 @@
 import { describe, test } from 'node:test';
 import assert from 'node:assert/strict';
 import { tokenize } from '@csstools/css-tokenizer';
-import { indexBlocks } from '../../src/lib/block-index.js';
 import { parse } from '../../src/lib/parser.js';
 import { serialize } from '../../src/lib/serialize.js';
 import { parseSource } from '../helpers/parse-source.js';
@@ -68,23 +67,17 @@ describe('parser: opaque expressions and invalid syntax', () => {
 
   test('parser: opaque calls expose their component trees', () => {
     const varTokens = tokenize({ css: 'var(--x, 1px)' });
-    assert.deepEqual(
-      parse(varTokens, 0, varTokens.length, indexBlocks(varTokens)),
-      {
-        type: 'OpaqueCall',
-        name: 'var',
-        components: [{ type: 'Ident', name: '--x' }, ', 1px'],
-      }
-    );
+    assert.deepEqual(parse(varTokens, 0, varTokens.length), {
+      type: 'OpaqueCall',
+      name: 'var',
+      components: [{ type: 'Ident', name: '--x' }, ', 1px'],
+    });
     const unknownTokens = tokenize({ css: 'unknown(1px + 2px)' });
-    assert.deepEqual(
-      parse(unknownTokens, 0, unknownTokens.length, indexBlocks(unknownTokens)),
-      {
-        type: 'OpaqueCall',
-        name: 'unknown',
-        components: ['1px + 2px'],
-      }
-    );
+    assert.deepEqual(parse(unknownTokens, 0, unknownTokens.length), {
+      type: 'OpaqueCall',
+      name: 'unknown',
+      components: ['1px + 2px'],
+    });
   });
 
   test('parser: opaque component trees retain nested math ASTs', () => {
@@ -110,9 +103,7 @@ describe('parser: opaque expressions and invalid syntax', () => {
       type: 'OpaqueCall',
       name: 'f',
       components: [
-        String.raw` /*lead*/ \66 oo\20 bar, raw(`,
-        ['[', ['x, y'], '], {', ['z: q'], '}'],
-        '), ',
+        String.raw` /*lead*/ \66 oo\20 bar, raw([x, y], {z: q}), `,
         {
           type: 'Call',
           name: 'calc',

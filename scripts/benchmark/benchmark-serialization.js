@@ -3,10 +3,9 @@
 // through both the worktree serializer and the serializer from HEAD.
 import { execFileSync } from 'node:child_process';
 import assert from 'node:assert/strict';
-import { mkdtempSync, rmSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { mkdirSync, mkdtempSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
-import { pathToFileURL } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { serialize as serializeWorktree } from '../../src/lib/serialize.js';
 import {
   num,
@@ -143,7 +142,12 @@ function benchmarkPair(worktreeSerializer, headSerializer, node, materialize) {
 
 /** @return {Promise<typeof import('../../src/lib/serialize.js')>} */
 async function loadHeadSerializer() {
-  const root = mkdtempSync(join(tmpdir(), 'postcss-calc-serialize-'));
+  // Extract under the repository so the HEAD sources resolve node_modules.
+  const cache = fileURLToPath(
+    new URL('../../node_modules/.cache/', import.meta.url)
+  );
+  mkdirSync(cache, { recursive: true });
+  const root = mkdtempSync(join(cache, 'postcss-calc-serialize-'));
   try {
     const archive = execFileSync('git', ['archive', 'HEAD', '--', 'src/lib']);
     execFileSync('tar', ['-x', '-f', '-', '-C', root], { input: archive });

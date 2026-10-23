@@ -5,7 +5,6 @@ import { describe, test } from 'node:test';
 import assert from 'node:assert/strict';
 import fc from 'fast-check';
 import { tokenize } from '@csstools/css-tokenizer';
-import { indexBlocks } from '../../src/lib/block-index.js';
 import { parse } from '../../src/lib/parser.js';
 import { simplify } from '../../src/lib/simplify.js';
 import { serialize } from '../../src/lib/serialize.js';
@@ -20,18 +19,11 @@ describe('opaque CSS math properties', () => {
     fc.assert(
       fc.property(cssMathSourceArb, (input) => {
         const tokens = tokenize({ css: input });
-        const output = serialize(
-          simplify(parse(tokens, 0, tokens.length, indexBlocks(tokens)))
-        );
+        const output = serialize(simplify(parse(tokens, 0, tokens.length)));
         const outputTokens = tokenize({ css: output });
         return (
           typeof output === 'string' &&
-          parse(
-            outputTokens,
-            0,
-            outputTokens.length,
-            indexBlocks(outputTokens)
-          ) !== null
+          parse(outputTokens, 0, outputTokens.length) !== null
         );
       }),
       { numRuns: 300 }

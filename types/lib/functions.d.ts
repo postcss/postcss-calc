@@ -37,4 +37,13 @@ declare function hasPotentialMathFunction(value: string): boolean;
  * @return {boolean}
  */
 declare function hasMathFunctionToken(tokens: import('@csstools/css-tokenizer').CSSToken[]): boolean;
-export { addTypes, failureType, hasMathFunctionToken, hasPotentialMathFunction, isCalculationFunction, isFailure, isPercentage, lookupMathFunction, mathFunctions, numberType, percentageType, QUICK_MATH_TEST, unknownType, };
+/**
+ * The supported math function named by the function token at `index`, or
+ * `undefined` when that token is not a supported math function.
+ *
+ * @param {import('@csstools/css-tokenizer').CSSToken[]} tokens
+ * @param {number} index
+ * @return {ReturnType<typeof lookupMathFunction>}
+ */
+declare function mathFunctionAt(tokens: import('@csstools/css-tokenizer').CSSToken[], index: number): ReturnType<typeof lookupMathFunction>;
+export { addTypes, failureType, hasMathFunctionToken, hasPotentialMathFunction, isCalculationFunction, isFailure, isPercentage, lookupMathFunction, mathFunctionAt, mathFunctions, numberType, percentageType, QUICK_MATH_TEST, unknownType, };

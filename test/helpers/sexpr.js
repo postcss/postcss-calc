@@ -37,7 +37,5 @@ export function sexpr(node) {
 
 function opaqueComponentSexpr(component) {
   if (typeof component === 'string') return JSON.stringify(component);
-  if (Array.isArray(component))
-    return `[${component.map(opaqueComponentSexpr).join(' ')}]`;
   return sexpr(component);
 }
