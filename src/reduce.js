@@ -3,7 +3,10 @@
 // at-rule parameters, or selector text.
 import { tokenize as cssTokenize } from '@csstools/css-tokenizer';
 import { indexBlocks } from './lib/block-index.js';
-import { hasPotentialMathFunction } from './lib/functions.js';
+import {
+  hasMathFunctionToken,
+  hasPotentialMathFunction,
+} from './lib/functions.js';
 import { assertDepth } from './lib/limits.js';
 import { findCalculations } from './lib/scan.js';
 import { compileCandidates } from './lib/compile.js';
@@ -74,6 +77,10 @@ function reduceCalc(value, opts) {
   let index;
   try {
     tokens = cssTokenize({ css: value });
+    // Nothing to reduce, so skip block indexing and its depth limit.
+    if (!hasMathFunctionToken(tokens)) {
+      return value;
+    }
     index = indexBlocks(tokens);
     assertDepth(index.maxDepth);
   } catch (error) {

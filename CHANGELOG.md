@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## Unreleased
+
+### Bug fixes
+
+- `reduceCalc` and the plugin no longer print an error for a
+  value nested more than 1024 levels deep which is not a math function, for
+  example when `calc(` only appears inside `url()`, a string or a comment. The
+  output is unchanged.
+
 ## 11.2.3 (2026-10-10)
 
 ### Bug fixes

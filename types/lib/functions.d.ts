@@ -30,4 +30,13 @@ declare function isCalculationFunction(name: string): boolean;
 declare function isSupportedMathFunction(name: string): boolean;
 /** @param {string} value @return {boolean} */
 declare function hasPotentialMathFunction(value: string): boolean;
-export { addTypes, failureType, hasPotentialMathFunction, isCalculationFunction, isFailure, isPercentage, isSupportedMathFunction, lookupMathFunction, mathFunctions, numberType, percentageType, QUICK_MATH_TEST, unknownType, };
+/**
+ * Token-level counterpart of `hasPotentialMathFunction`: whether any function
+ * token names a supported math function, as the scanner would find it. Math
+ * functions inside `url()` and similar are part of another token.
+ *
+ * @param {import('@csstools/css-tokenizer').CSSToken[]} tokens
+ * @return {boolean}
+ */
+declare function hasMathFunctionToken(tokens: import('@csstools/css-tokenizer').CSSToken[]): boolean;
+export { addTypes, failureType, hasMathFunctionToken, hasPotentialMathFunction, isCalculationFunction, isFailure, isPercentage, isSupportedMathFunction, lookupMathFunction, mathFunctions, numberType, percentageType, QUICK_MATH_TEST, unknownType, };
