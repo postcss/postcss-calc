@@ -400,6 +400,7 @@ infrastructure failures.
 | `pnpm benchmark:nested-fallbacks`            | Deeply nested `var()` fallbacks (depths 16–512)                            | Regression-gating for recursion and opaque call handling     |
 | `pnpm benchmark:corpus`                      | Real-world expressions harvested from GitHub vs. `@csstools/css-calc`      | Comparative reporting (not a gate) and practical equivalence |
 | `pnpm benchmark:serialization`               | Wide sums, products, and nested calls across serializers                   | In-process local profiling for serializer changes            |
+| `pnpm benchmark:token-ranges`                | One long token list reduced as many small `[start, end)` ranges            | In-process profiling of per-range block matching             |
 | `pnpm test:benchmark`                        | Unit tests for statistics, bootstrap, and schema validation                | Verifying benchmark harness logic                            |
 | `pnpm test:benchmark:simulation`             | Monte Carlo calibration across adversarial noise scenarios                 | Verifying bootstrap empirical coverage                       |
 | `node scripts/benchmark/benchmark-plugin.js` | PostCSS processing of generated stylesheets (no package script)            | In-process local profiling of the adapter                    |

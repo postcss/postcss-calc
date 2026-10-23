@@ -50,6 +50,10 @@ test('packed package exposes the standalone reducer with usable types', async ()
         "if (reduceCalc('calc(1px + 2px)') !== 'calc(3px)') throw new Error('reducer failed');",
         "if (reduceCalc('calc(1 - 2)', { unwrapSingleNegativeNumber: true }) !== '-1') throw new Error('bare negative option failed');",
         "if (reduceCalc('calc(1 / 2)', { unwrapSingleValue: true }) !== '.5') throw new Error('bare fractional option failed');",
+        "import reduceTokens from 'postcss-calc/reduce-tokens';",
+        "import { tokenize } from '@csstools/css-tokenizer';",
+        "const [replacement] = reduceTokens(tokenize({ css: 'calc(1px + 2px)' }));",
+        "if (replacement.start !== 0 || replacement.tokens.map((token) => token[1]).join('') !== 'calc(3px)') throw new Error('token reducer failed');",
       ].join('\n')
     );
     run(process.execPath, [runtime], { cwd: fixture });
@@ -59,6 +63,10 @@ test('packed package exposes the standalone reducer with usable types', async ()
       types,
       [
         "import reduceCalc, { type ReduceCalcOptions } from 'postcss-calc/reduce';",
+        "import reduceTokens, { type TokenReplacement } from 'postcss-calc/reduce-tokens';",
+        "import { tokenize } from '@csstools/css-tokenizer';",
+        "const replacements: TokenReplacement[] = reduceTokens(tokenize({ css: 'calc(1px + 2px)' }), { precision: 2 });",
+        'void replacements;',
         'const options: ReduceCalcOptions = { precision: false, unwrapSingleNegativeNumber: true, unwrapSingleValue: true };',
         "const reduced: string = reduceCalc('calc(1px + 2px)', options);",
         'void reduced;',
