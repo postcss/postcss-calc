@@ -239,6 +239,21 @@ function hasMathFunctionToken(tokens) {
   return false;
 }
 
+/**
+ * The supported math function named by the function token at `index`, or
+ * `undefined` when that token is not a supported math function.
+ *
+ * @param {import('@csstools/css-tokenizer').CSSToken[]} tokens
+ * @param {number} index
+ * @return {ReturnType<typeof lookupMathFunction>}
+ */
+function mathFunctionAt(tokens, index) {
+  const token = tokens[index];
+  return token[0] === CssType.Function
+    ? lookupMathFunction(token[4].value)
+    : undefined;
+}
+
 export {
   addTypes,
   failureType,
@@ -248,6 +263,7 @@ export {
   isFailure,
   isPercentage,
   lookupMathFunction,
+  mathFunctionAt,
   mathFunctions,
   numberType,
   percentageType,

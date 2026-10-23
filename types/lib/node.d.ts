@@ -19,7 +19,7 @@ export type Call = {
     args: Node[];
     rawName?: string;
 };
-export type OpaqueComponent = string | Node | OpaqueComponent[];
+export type OpaqueComponent = string | Node;
 export type OpaqueCall = {
     type: 'OpaqueCall';
     name: string;
@@ -50,7 +50,7 @@ export type Node = Num | Dim | Ident | Call | OpaqueCall | Sum | Product;
  * @typedef {{type: 'Dim', value: number, unit: string, rawUnit?: string}} Dim
  * @typedef {{type: 'Ident', name: string, rawName?: string}} Ident
  * @typedef {{type: 'Call', name: string, args: Node[], rawName?: string}} Call
- * @typedef {string | Node | OpaqueComponent[]} OpaqueComponent
+ * @typedef {string | Node} OpaqueComponent
  * @typedef {{type: 'OpaqueCall', name: string, components: OpaqueComponent[], rawName?: string}} OpaqueCall
  * @typedef {{sign: 1 | -1, node: Node}} SumTerm Sign is always +1 when node is Num or Dim.
  * @typedef {{type: 'Sum', terms: SumTerm[], grouped?: boolean}} Sum

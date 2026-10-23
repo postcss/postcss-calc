@@ -6,10 +6,17 @@ All notable changes to this project will be documented in this file. See [commit
 
 ### Bug fixes
 
-- `reduceCalc` and the plugin no longer print an error for a
-  value nested more than 1024 levels deep which is not a math function, for
-  example when `calc(` only appears inside `url()`, a string or a comment. The
+- `reduceCalc` and the plugin no longer report the nesting-limit error for a
+  value nested more than 1024 levels deep that has no supported math function
+  outside `url()`, a string or a comment, such as `url(calc(1+2))((((…`. The
   output is unchanged.
+
+### Changes
+
+- `onParseError` and `onWarn` are now called in source order, one candidate at
+  a time, instead of all parse errors first. A value with several errors may
+  report a different first error, for example `clamp(.5/*c*/+!;)` now reports
+  the `+` error at position 13 instead of the `!`. The output is unchanged.
 
 ## 11.2.3 (2026-10-10)
 

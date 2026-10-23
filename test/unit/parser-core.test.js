@@ -4,7 +4,6 @@
 import { describe, test } from 'node:test';
 import assert from 'node:assert/strict';
 import { TokenType, tokenize } from '@csstools/css-tokenizer';
-import { indexBlocks } from '../../src/lib/block-index.js';
 import { parse } from '../../src/lib/parser.js';
 import { serialize } from '../../src/lib/serialize.js';
 import { sexpr } from '../helpers/sexpr.js';
@@ -22,25 +21,19 @@ test('parser: accepts a bounded range of a shared native token stream', () => {
   const start = tokens.findIndex((token) => token[1] === '/* gap */');
   const end = tokens.findIndex((token) => token[1] === ')');
 
-  assert.equal(
-    sexpr(parse(tokens, start, end, indexBlocks(tokens))),
-    '(+ -2px 3px)'
-  );
+  assert.equal(sexpr(parse(tokens, start, end)), '(+ -2px 3px)');
 });
 
 test('parser: bounded virtual EOF keeps its source-relative position', () => {
   const { tokens, start, end } = boundedRange('prefix calc(1 *) suffix');
 
-  assert.throws(
-    () => parse(tokens, start, end, indexBlocks(tokens)),
-    /position 15/
-  );
+  assert.throws(() => parse(tokens, start, end), /position 15/);
 });
 
 test('parser: bounded virtual EOF scans trailing trivia before reporting its position', () => {
   const { tokens, start, end } = boundedRange('prefix calc(1 +   ) suffix');
 
-  assert.throws(() => parse(tokens, start, end, indexBlocks(tokens)), {
+  assert.throws(() => parse(tokens, start, end), {
     message: `Unexpected token "" at position ${tokens[end][2]}`,
   });
 });
@@ -63,7 +56,7 @@ test('parser: bounded range shares block boundaries through var fallbacks', () =
   );
 
   assert.equal(
-    serialize(parse(tokens, start + 1, end, indexBlocks(tokens))),
+    serialize(parse(tokens, start + 1, end)),
     'var(--x, [calc(1px + 2px), {a: calc(3px + 4px)}], calc(5px + 6px))'
   );
 });

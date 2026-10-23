@@ -2,15 +2,9 @@
 // dependency so it can also be used for individual declaration values,
 // at-rule parameters, or selector text.
 import { tokenize as cssTokenize } from '@csstools/css-tokenizer';
-import { indexBlocks } from './lib/block-index.js';
-import {
-  hasMathFunctionToken,
-  hasPotentialMathFunction,
-} from './lib/functions.js';
-import { assertDepth } from './lib/limits.js';
-import { findCalculations } from './lib/scan.js';
-import { compileCandidates } from './lib/compile.js';
-import { applyReplacements } from './lib/print.js';
+import { hasPotentialMathFunction } from './lib/functions.js';
+import { resolveOptions } from './lib/options.js';
+import { reduceTokenList } from './lib/core.js';
 
 /**
  * @typedef {object} ReduceCalcOptions
@@ -25,31 +19,6 @@ import { applyReplacements } from './lib/print.js';
 /** @typedef {Required<Omit<ReduceCalcOptions, 'onParseError' | 'onWarn'>> & Pick<ReduceCalcOptions, 'onParseError' | 'onWarn'>} ResolvedReduceCalcOptions */
 
 /**
- * Fields threaded through the internal token-range walk.
- *
- * @typedef {object} TransformContext
- * @property {ResolvedReduceCalcOptions} options
- * @property {string} value
- * @property {import('@csstools/css-tokenizer').CSSToken[]} tokens
- */
-
-/**
- * @typedef {object} Replacement
- * @property {number} start
- * @property {number} end
- * @property {CalculationResult} result
- */
-/**
- * @typedef {object} CalculationResult
- * @property {import('./lib/node.js').Node} tree
- * @property {'resolved' | 'unresolved'} status
- * @property {string} rootName
- * @property {string} rootSpelling
- * @property {boolean} calculation
- * @property {string | undefined} original
- */
-
-/**
  * Simplify every supported CSS math function in a component-value string.
  * Text outside those functions is preserved byte-for-byte.
  *
@@ -62,27 +31,11 @@ function reduceCalc(value, opts) {
     return value;
   }
 
-  /** @type {ResolvedReduceCalcOptions} */
-  const options = {
-    warnWhenCannotResolve: false,
-    unwrapSingleNegativeNumber: false,
-    unwrapSingleValue: false,
-    ...opts,
-    // An explicit `precision: undefined` keeps the default.
-    precision: opts?.precision ?? 5,
-  };
+  const options = resolveOptions(opts);
   /** @type {import('@csstools/css-tokenizer').CSSToken[]} */
   let tokens;
-  /** @type {ReturnType<typeof indexBlocks>} */
-  let index;
   try {
     tokens = cssTokenize({ css: value });
-    // Nothing to reduce, so skip block indexing and its depth limit.
-    if (!hasMathFunctionToken(tokens)) {
-      return value;
-    }
-    index = indexBlocks(tokens);
-    assertDepth(index.maxDepth);
   } catch (error) {
     options.onParseError?.(
       error instanceof Error ? error : new Error('Error', { cause: error }),
@@ -91,22 +44,24 @@ function reduceCalc(value, opts) {
     return value;
   }
 
-  const candidates = findCalculations(value, tokens, index);
-  const replacements = compileCandidates(candidates, {
-    options,
-    value,
+  // The tokens are fresh, so their offsets locate each range in `value`.
+  let output = '';
+  let lastIndex = 0;
+  let changed = false;
+  reduceTokenList(
     tokens,
-    index,
-  });
-  if (replacements.length === 0) {
-    return value;
-  }
-  const serializationOptions = {
-    precision: options.precision,
-    unwrapSingleNegativeNumber: options.unwrapSingleNegativeNumber,
-    unwrapSingleValue: options.unwrapSingleValue,
-  };
-  return applyReplacements(value, replacements, options, serializationOptions);
+    options,
+    (start, end, text) => {
+      const from = tokens[start][2];
+      const to = tokens[end - 1][3] + 1;
+      if (to - from === text.length && value.startsWith(text, from)) return;
+      output += value.slice(lastIndex, from) + text;
+      lastIndex = to;
+      changed = true;
+    },
+    value
+  );
+  return changed ? output + value.slice(lastIndex) : value;
 }
 
 export default reduceCalc;

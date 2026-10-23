@@ -1,7 +1,6 @@
 import { describe, test } from 'node:test';
 import assert from 'node:assert/strict';
 import { tokenize } from '@csstools/css-tokenizer';
-import { indexBlocks } from '../../src/lib/block-index.js';
 import { parse } from '../../src/lib/parser.js';
 import { parseSource, parseSexpr as ast } from '../helpers/parse-source.js';
 
@@ -58,13 +57,9 @@ test('parser: asymmetric additive whitespace reports the operator position', () 
 });
 test('parser: * / do not require whitespace (spec allows both)', () => {
   const productTokens = tokenize({ css: '1px*2' });
-  assert.doesNotThrow(() =>
-    parse(productTokens, 0, productTokens.length, indexBlocks(productTokens))
-  );
+  assert.doesNotThrow(() => parse(productTokens, 0, productTokens.length));
   const quotientTokens = tokenize({ css: '1px/2' });
-  assert.doesNotThrow(() =>
-    parse(quotientTokens, 0, quotientTokens.length, indexBlocks(quotientTokens))
-  );
+  assert.doesNotThrow(() => parse(quotientTokens, 0, quotientTokens.length));
 });
 test('parser: tab / newline satisfy the §10.1 whitespace rule', () => {
   assert.equal(ast('1\t+\n2'), '(+ 1 2)');
@@ -108,7 +103,7 @@ test('parser: unclosed call throws with expected-token message', () => {
 test('parser: unclosed var throws with unclosed message and position', () => {
   const tokens = tokenize({ css: 'var(--foo' });
   assert.throws(
-    () => parse(tokens, 0, tokens.length, indexBlocks(tokens)),
+    () => parse(tokens, 0, tokens.length),
     /Unclosed var\( at position 4/
   );
 });
@@ -150,19 +145,27 @@ describe('Trailing tokens', () => {
   test('parser: skipped blocks do not hide trailing tokens', () => {
     const varTokens = tokenize({ css: 'var(--x) 1px' });
     assert.throws(
-      () => parse(varTokens, 0, varTokens.length, indexBlocks(varTokens)),
+      () => parse(varTokens, 0, varTokens.length),
       /Unexpected token/
     );
     const unknownTokens = tokenize({ css: 'unknown(1px + 2px) 3px' });
     assert.throws(
-      () =>
-        parse(
-          unknownTokens,
-          0,
-          unknownTokens.length,
-          indexBlocks(unknownTokens)
-        ),
+      () => parse(unknownTokens, 0, unknownTokens.length),
       /Unexpected token/
     );
+  });
+});
+
+test('parse: plain nesting past the limit throws the nesting-limit error', () => {
+  // `calc(` plus 1023 parentheses is 1024 openers, the most that are allowed.
+  const accepted = tokenize({
+    css: `calc(${'('.repeat(1023)}1px${')'.repeat(1023)})`,
+  });
+  assert.doesNotThrow(() => parse(accepted, 0, accepted.length));
+  const rejected = tokenize({
+    css: `calc(${'('.repeat(1024)}1px${')'.repeat(1024)})`,
+  });
+  assert.throws(() => parse(rejected, 0, rejected.length), {
+    message: 'Calculation nesting exceeds the limit of 1024',
   });
 });

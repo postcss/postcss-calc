@@ -3,7 +3,6 @@
 import { createHash } from 'node:crypto';
 import { calc as csstoolsCalc } from '@csstools/css-calc';
 import { tokenize } from '@csstools/css-tokenizer';
-import { indexBlocks } from '../../src/lib/block-index.js';
 import { parse } from '../../src/lib/parser.js';
 import { simplify } from '../../src/lib/simplify.js';
 import { serialize } from '../../src/lib/serialize.js';
@@ -52,10 +51,9 @@ export const NEUTRAL_CORPUS_CATEGORIES = new Set([
 export function ourOutput(input) {
   try {
     const tokens = tokenize({ css: input });
-    return serialize(
-      simplify(parse(tokens, 0, tokens.length, indexBlocks(tokens))),
-      { precision: COMPARE_PRECISION }
-    );
+    return serialize(simplify(parse(tokens, 0, tokens.length)), {
+      precision: COMPARE_PRECISION,
+    });
   } catch {
     return null;
   }
@@ -137,7 +135,7 @@ export function stableHash(value) {
 
 export function rootShape(input) {
   const tokens = tokenize({ css: input });
-  const ast = parse(tokens, 0, tokens.length, indexBlocks(tokens));
+  const ast = parse(tokens, 0, tokens.length);
   const root =
     ast.type === 'Call' &&
     ast.name.toLowerCase().endsWith('calc') &&

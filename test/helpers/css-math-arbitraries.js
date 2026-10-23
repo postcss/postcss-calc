@@ -1,6 +1,5 @@
 import fc from 'fast-check';
 import { tokenize } from '@csstools/css-tokenizer';
-import { indexBlocks } from '../../src/lib/block-index.js';
 import { parse } from '../../src/lib/parser.js';
 // CSS Values & Units Level 4 math grammar, bounded to the functions exposed
 // by isSupportedMathFunction in this package.  This intentionally generates
@@ -23,7 +22,7 @@ function checkedSource(source) {
   // Keep the generator tied to the production grammar. Throwing here makes a
   // generator update fail immediately instead of silently reducing coverage.
   const tokens = tokenize({ css: source });
-  parse(tokens, 0, tokens.length, indexBlocks(tokens));
+  parse(tokens, 0, tokens.length);
   return source;
 }
 

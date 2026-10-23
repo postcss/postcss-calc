@@ -6,7 +6,6 @@
 // real parser rather than from source spelling so whitespace and literal
 // churn do not crowd out distinct calculation forms.
 import { tokenize } from '@csstools/css-tokenizer';
-import { indexBlocks } from '../../src/lib/block-index.js';
 import { baseOf, convert } from '../../src/lib/convertUnits.js';
 import { parse } from '../../src/lib/parser.js';
 
@@ -86,7 +85,7 @@ export function classifyCorpusExpression(input) {
   try {
     const literals = [];
     const tokens = tokenize({ css: input });
-    const ast = parse(tokens, 0, tokens.length, indexBlocks(tokens));
+    const ast = parse(tokens, 0, tokens.length);
     // A calc() function accepts exactly one expression. The harvested GitHub
     // pool also contains malformed calc-like calls; those remain covered by
     // invalid-corpus resilience tests instead of becoming differential noise.
