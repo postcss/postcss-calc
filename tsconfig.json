@@ -15,5 +15,10 @@
     "forceConsistentCasingInFileNames": true,
     "strict": true
   },
-  "include": ["src/index.js", "src/reduce.js", "src/lib/**/*.js"]
+  "include": [
+    "src/index.js",
+    "src/reduce.js",
+    "src/reduce-tokens.js",
+    "src/lib/**/*.js"
+  ]
 }
