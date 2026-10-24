@@ -14,16 +14,11 @@ if (typeof sourceRoot !== 'string')
   throw new Error('missing parser source root');
 
 const parser = await import(pathToFileURL(`${sourceRoot}/lib/parser.js`).href);
-// The candidate builds a closer array with `matchBlocks`; the baseline builds a
-// `BlockIndex` with `indexBlocks`. Either is passed to `parse` as the fourth
-// argument, so one timed closure serves both.
-const closerBuilder = await importOptional(`${sourceRoot}/lib/blocks.js`).then(
-  (blocks) => blocks && ((tokens) => blocks.matchBlocks(tokens).close)
+const { matchBlocks } = await import(
+  pathToFileURL(`${sourceRoot}/lib/blocks.js`).href
 );
-const buildCloser =
-  closerBuilder ??
-  (await importOptional(`${sourceRoot}/lib/block-index.js`))?.indexBlocks;
-if (typeof parser.parse !== 'function')
+const buildCloser = (tokens) => matchBlocks(tokens).close;
+if (typeof parser.parse !== 'function' || typeof matchBlocks !== 'function')
   throw new Error('incompatible baseline parser API');
 
 const TARGET_MS = payload.targetBatchMs ?? 25;
@@ -31,51 +26,7 @@ const MIN_WARMUPS = payload.warmupMinimum ?? 5;
 const MAX_WARMUPS = payload.warmupMaximum ?? 10;
 const MEASURED_BATCHES = payload.measuredBatchCount ?? 6;
 
-/** @param {string} url @return {Promise<any>} undefined when the module is absent */
-async function importOptional(url) {
-  try {
-    return await import(pathToFileURL(url).href);
-  } catch (error) {
-    if (
-      error instanceof Error &&
-      'code' in error &&
-      error.code === 'ERR_MODULE_NOT_FOUND'
-    ) {
-      return undefined;
-    }
-    throw error;
-  }
-}
-
-/**
- * Opaque components were nested arrays before the flat representation. Both
- * shapes describe the same text, so compare them by their flattened form:
- * arrays are spliced in and adjacent strings are merged.
- */
-function normalizeTree(value) {
-  if (value === null || typeof value !== 'object') return value;
-  if (Array.isArray(value)) return value.map(normalizeTree);
-  if (value.type === 'OpaqueCall') {
-    const parts = [];
-    const pushPart = (part) => {
-      if (Array.isArray(part)) {
-        for (const child of part) pushPart(child);
-      } else if (typeof part === 'string' && typeof parts.at(-1) === 'string') {
-        parts[parts.length - 1] += part;
-      } else {
-        parts.push(normalizeTree(part));
-      }
-    };
-    for (const part of value.components) pushPart(part);
-    return { ...value, components: parts };
-  }
-  return Object.fromEntries(
-    Object.entries(value).map(([key, child]) => [key, normalizeTree(child)])
-  );
-}
-
-function digest(input) {
-  const value = normalizeTree(input);
+function digest(value) {
   const hash = createHash('sha256');
   const stack = [value];
   while (stack.length) {
@@ -113,13 +64,10 @@ function consume(value) {
 
 function makeRun(workload) {
   const tokens = tokenize({ css: workload.source });
-  const shared = buildCloser && workload.mode === 'hot-shared-index';
-  const closer = shared ? buildCloser(tokens) : undefined;
-  return () => {
-    if (!buildCloser) return parser.parse(tokens, 0, tokens.length);
-    const current = closer ?? buildCloser(tokens);
-    return parser.parse(tokens, 0, tokens.length, current);
-  };
+  const closer =
+    workload.mode === 'hot-shared-index' ? buildCloser(tokens) : undefined;
+  return () =>
+    parser.parse(tokens, 0, tokens.length, closer ?? buildCloser(tokens));
 }
 
 function timedBatch(run, repetitions) {
