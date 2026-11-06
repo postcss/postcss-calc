@@ -1,95 +1,26 @@
 // The text output of the printer: a sink that collects the printed strings.
 // `sink.js` has the token-building counterpart.
 
-import { TokenType } from '@csstools/css-tokenizer';
+import { FUSE_SEPARATOR, firstCharOf, isEOF, wouldFuse } from './fuse.js';
 
 /** @typedef {import('@csstools/css-tokenizer').CSSToken} CSSToken */
+/** @typedef {import('./sink.js').Sink} Sink */
 
 /** The printed text of each binary operator, with the spaces the printer uses. */
 const OPERATOR_TEXT = { '+': ' + ', '-': ' - ', '*': ' * ', '/': ' / ' };
 
-/** A character that can continue or start an identifier, number or dimension. */
-const NAME_CHAR = /[\w\-.\u0080-\uffff]/;
-
-const DIGIT = /\d/;
-
-/**
- * Whether a token ending in `last` and a token starting with `first` would
- * read back as one token if written without a separator. The check is
- * conservative: it may ask for a separator that is not strictly needed.
- *
- * @param {string | undefined} last
- * @param {string | undefined} first
- * @return {boolean}
- */
-function wouldFuse(last, first) {
-  if (last === undefined || first === undefined) return false;
-  // A digit continues into `%`, and a backslash starts an escape that
-  // continues the name or unit before it.
-  if (first === '%') return DIGIT.test(last);
-  return (
-    NAME_CHAR.test(last) &&
-    (NAME_CHAR.test(first) || first === '(' || first === '\\')
-  );
-}
-
-/**
- * What keeps a replacement apart from a neighbour it would fuse with. A space
- * rather than the empty comment CSS Syntax 3 §9 allows, because tools that
- * strip comments from values (such as minifiers run after this plugin) would
- * fuse the tokens again.
- */
-const FUSE_SEPARATOR = ' ';
-
-/**
- * Whether `token` is an end-of-file token. It marks the end of a tokenized
- * string, so one inside a list (for example from concatenated `tokenize`
- * results) is not part of the CSS and is skipped.
- *
- * @param {CSSToken | undefined} token
- * @return {boolean}
- */
-function isEOF(token) {
-  return token?.[0] === TokenType.EOF;
-}
-
-/**
- * The first character of the first non-EOF token in `list[start, end)`.
- *
- * @param {CSSToken[]} list
- * @param {number} start
- * @param {number} end
- * @return {string | undefined}
- */
-function firstCharOf(list, start, end) {
-  for (let i = start; i < end; i++) {
-    if (!isEOF(list[i])) return list[i][1][0];
-  }
-  return undefined;
-}
-
-/**
- * The last character of the last non-EOF token in `list[0, end)`.
- *
- * @param {CSSToken[]} list
- * @param {number} end
- * @return {string | undefined}
- */
-function lastCharBefore(list, end) {
-  for (let i = end - 1; i >= 0; i--) {
-    if (!isEOF(list[i])) return list[i][1].at(-1);
-  }
-  return undefined;
-}
-
 /**
  * The output of a printer that keeps its printed text as strings.
+ *
+ * @implements {Sink}
  */
 class TextSink {
   /** @type {string[]} */
   parts = [];
   /** @type {boolean} */
   signed = false;
+  /** Text written before `parts`, set by `fit` to avoid shifting them. @type {string} */
+  leading = '';
 
   /**
    * Write a space when a token starting with `first` would fuse with the
@@ -181,17 +112,32 @@ class TextSink {
     }
   }
 
+  /**
+   * Keep the printed text apart from the text around it: `before` and `after`
+   * are the neighbours' adjacent characters.
+   *
+   * @param {string | undefined} before
+   * @param {string | undefined} after
+   * @return {void}
+   */
+  fit(before, after) {
+    const { parts } = this;
+    let first;
+    for (let i = 0; i < parts.length && first === undefined; i++) {
+      first = parts[i][0];
+    }
+    let last;
+    for (let i = parts.length - 1; i >= 0 && last === undefined; i--) {
+      last = parts[i].at(-1);
+    }
+    if (wouldFuse(before, first)) this.leading = FUSE_SEPARATOR;
+    if (wouldFuse(last, after)) parts.push(FUSE_SEPARATOR);
+  }
+
   /** @return {string} */
   join() {
-    return this.parts.join('');
+    return this.leading + this.parts.join('');
   }
 }
 
-export {
-  FUSE_SEPARATOR,
-  TextSink,
-  firstCharOf,
-  isEOF,
-  lastCharBefore,
-  wouldFuse,
-};
+export { TextSink };

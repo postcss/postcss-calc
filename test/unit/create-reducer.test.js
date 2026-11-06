@@ -3,15 +3,16 @@
 import { describe, test } from 'node:test';
 import assert from 'node:assert/strict';
 import { tokenize } from '@csstools/css-tokenizer';
+import postcss from 'postcss';
 import { createReducer } from 'postcss-calc/reduce-tokens';
 
-/** A target that records each `warn(message, plugin)` call. */
+/** A target that records each `warn(message, opts)` call. */
 function recordingTarget() {
   const calls = [];
   return {
     calls,
-    warn(message, plugin) {
-      calls.push([message, plugin]);
+    warn(message, opts) {
+      calls.push([message, opts]);
     },
   };
 }
@@ -22,8 +23,31 @@ describe('createReducer warnings', () => {
     const reduce = createReducer({ warnWhenCannotResolve: true });
     reduce(tokenize({ css: 'calc(1px + var(--a))' }), target);
     assert.deepEqual(target.calls, [
-      ['Could not reduce expression: calc(1px + var(--a))', 'postcss-calc'],
+      [
+        'Could not reduce expression: calc(1px + var(--a))',
+        { plugin: 'postcss-calc' },
+      ],
     ]);
+  });
+});
+
+describe('createReducer with a PostCSS Result', () => {
+  test('a warning reaches the Result with its plugin name, after another plugin ran', async () => {
+    const reduce = createReducer({ warnWhenCannotResolve: true });
+    const earlier = { postcssPlugin: 'earlier', Once() {} };
+    const probe = {
+      postcssPlugin: 'probe',
+      Once(_root, { result }) {
+        reduce(tokenize({ css: 'calc(1px + var(--a))' }), result);
+      },
+    };
+    const result = await postcss([earlier, probe]).process('a{}', {
+      from: undefined,
+    });
+    assert.deepEqual(
+      result.warnings().map((warning) => [warning.text, warning.plugin]),
+      [['Could not reduce expression: calc(1px + var(--a))', 'postcss-calc']]
+    );
   });
 });
 
@@ -62,7 +86,10 @@ describe('createReducer parse errors', () => {
     const reduce = createReducer();
     reduce(tokenize({ css: 'calc(1px +)' }), target);
     assert.deepEqual(target.calls, [
-      ['"+" must be surrounded by whitespace at position 9', 'postcss-calc'],
+      [
+        '"+" must be surrounded by whitespace at position 9',
+        { plugin: 'postcss-calc' },
+      ],
     ]);
   });
 });
@@ -88,5 +115,16 @@ describe('createReducer range', () => {
       replacements.map((replacement) => [replacement.start, replacement.end]),
       [[8, 15]]
     );
+  });
+
+  test('each call sends its warnings to the target it is given', () => {
+    const reduce = createReducer({ warnWhenCannotResolve: true });
+    const first = recordingTarget();
+    const second = recordingTarget();
+    const tokens = tokenize({ css: 'calc(1px + var(--a))' });
+    reduce(tokens, first);
+    reduce(tokens, second);
+    assert.equal(first.calls.length, 1);
+    assert.equal(second.calls.length, 1);
   });
 });

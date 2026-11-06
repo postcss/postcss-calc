@@ -18,7 +18,9 @@ export type ReduceCalcOptions = {
      */
     onWarn?: (message: string) => void;
 };
-export type ResolvedReduceCalcOptions = Required<Omit<ReduceCalcOptions, 'onParseError' | 'onWarn'>> & Pick<ReduceCalcOptions, 'onParseError' | 'onWarn'>;
+export type ReduceDiagnostics = Pick<ReduceCalcOptions, 'onParseError' | 'onWarn'>;
+export type ResolvedReduceCalcOptions = Required<Omit<ReduceCalcOptions, 'onParseError' | 'onWarn'>>;
+export type TextSink = import('./lib/serialize/text-sink.js').TextSink;
 /**
  * @typedef {object} ReduceCalcOptions
  * @property {number | false} [precision]
@@ -28,7 +30,14 @@ export type ResolvedReduceCalcOptions = Required<Omit<ReduceCalcOptions, 'onPars
  * @property {(error: Error, input: string) => void} [onParseError] Invoked when parse/simplify throws.
  * @property {(message: string) => void} [onWarn] Invoked when `warnWhenCannotResolve` is set and an expression cannot be reduced to a single value.
  */
-/** @typedef {Required<Omit<ReduceCalcOptions, 'onParseError' | 'onWarn'>> & Pick<ReduceCalcOptions, 'onParseError' | 'onWarn'>} ResolvedReduceCalcOptions */
+/**
+ * The callbacks of `ReduceCalcOptions`. A reducer call receives them apart from
+ * the options that shape the result.
+ *
+ * @typedef {Pick<ReduceCalcOptions, 'onParseError' | 'onWarn'>} ReduceDiagnostics
+ */
+/** @typedef {Required<Omit<ReduceCalcOptions, 'onParseError' | 'onWarn'>>} ResolvedReduceCalcOptions */
+/** @typedef {import('./lib/serialize/text-sink.js').TextSink} TextSink */
 /**
  * Simplify every supported CSS math function in a component-value string.
  * Text outside those functions is preserved byte-for-byte.

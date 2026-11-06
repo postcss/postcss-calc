@@ -6,10 +6,12 @@
 import { hasPotentialMathFunction } from './lib/functions.js';
 import { resolveOptions } from './lib/options.js';
 import { reduceTokenList } from './lib/core.js';
+import { TokenSink } from './lib/serialize/sink.js';
 
 /** @typedef {import('./reduce.js').ReduceCalcOptions} ReduceCalcOptions */
+/** @typedef {import('./reduce.js').ReduceDiagnostics} ReduceDiagnostics */
+/** @typedef {import('./reduce.js').ResolvedReduceCalcOptions} ResolvedReduceCalcOptions */
 /** @typedef {import('@csstools/css-tokenizer').CSSToken} CSSToken */
-/** @typedef {import('./lib/serialize/sink.js').TokenSink} TokenSink */
 
 /**
  * Replace `tokens.slice(start, end)` with `tokens`.
@@ -24,8 +26,11 @@ import { reduceTokenList } from './lib/core.js';
  * Where a reducer sends its warnings and parse errors. A parse error reaches
  * `warn` only when the reducer has no `onParseError` option.
  *
+ * The target has PostCSS's `Result.warn(text, opts)` shape, so a PostCSS
+ * `Result` can be passed directly.
+ *
  * @typedef {object} WarnTarget
- * @property {(message: string, plugin?: string) => void} warn
+ * @property {(message: string, opts?: { plugin?: string }) => void} warn
  */
 
 /**
@@ -36,7 +41,8 @@ import { reduceTokenList } from './lib/core.js';
  */
 
 /**
- * Check that `[start, end)` names a range of `tokens`.
+ * Check that `start` and `end` are indices into `tokens`, with `start` and
+ * `end` each in `[0, tokens.length]`. An inverted range passes this check.
  *
  * @param {CSSToken[]} tokens
  * @param {number} start
@@ -48,6 +54,8 @@ function assertRange(tokens, start, end) {
     !Number.isInteger(start) ||
     !Number.isInteger(end) ||
     start < 0 ||
+    end < 0 ||
+    start > tokens.length ||
     end > tokens.length
   ) {
     throw new RangeError(
@@ -57,101 +65,91 @@ function assertRange(tokens, start, end) {
 }
 
 /**
- * Reduce `tokens[start, end)` with resolved options whose callbacks are set.
+ * Reduce `tokens[start, end)` with the resolved options and diagnostics of
+ * one call.
  *
- * @param {import('./reduce.js').ResolvedReduceCalcOptions} options
+ * @param {ResolvedReduceCalcOptions} options
+ * @param {ReduceDiagnostics} diagnostics
  * @param {CSSToken[]} tokens
  * @param {number} start
  * @param {number} end
  * @return {TokenReplacement[]}
  */
-function run(options, tokens, start, end) {
+function run(options, diagnostics, tokens, start, end) {
   assertRange(tokens, start, end);
+  // An empty or inverted range names no tokens, so it has no replacements.
+  if (start >= end) return [];
   /** @type {TokenReplacement[]} */
   const replacements = [];
   reduceTokenList(
     tokens,
     options,
-    (from, to, printed) => {
-      // The reducer asks for tokens, so the printed value is a token sink.
-      const sink = /** @type {TokenSink} */ (printed);
-      if (sink.identical()) return;
-      replacements.push({
-        start: from,
-        end: to,
-        tokens: withOffsets(sink.tokens),
-      });
+    diagnostics,
+    {
+      createSink: (from, to) => new TokenSink(tokens, from, to),
+      emit: (from, to, sink) => {
+        if (sink.identical()) return;
+        replacements.push({
+          start: from,
+          end: to,
+          tokens: sink.build(),
+        });
+      },
     },
     start,
-    end,
-    undefined,
-    true
+    end
   );
   return replacements;
 }
 
 /**
- * The tokens with offsets that locate each one in their own joined text, as
- * `tokenize` of that text would give. Reused source tokens are copied, so the
- * source list is never shared with a replacement. The detail objects
- * (`token[4]`) are shared, so a caller must not edit them in place.
- *
- * @param {CSSToken[]} tokens
- * @return {CSSToken[]}
- */
-function withOffsets(tokens) {
-  let offset = 0;
-  return tokens.map((token) => {
-    const from = offset;
-    offset += token[1].length;
-    return /** @type {CSSToken} */ (
-      /** @type {unknown} */ ([token[0], token[1], from, offset - 1, token[4]])
-    );
-  });
-}
-
-/**
  * Build a reducer that resolves `opts` once, for a caller that reduces many
- * token lists with the same options. Each call sends its warnings to the
- * target it is given, unless `opts` has `onWarn`, which takes precedence as
- * `onParseError` does.
+ * token lists with the same options.
+ *
+ * Each call sends its warnings and parse errors to the `target` it is given.
+ * An `onWarn` or `onParseError` option takes precedence over the target.
  *
  * @param {ReduceCalcOptions} [opts]
  * @return {TokenReducer}
  */
 function createReducer(opts) {
   const options = resolveOptions(opts);
-  return (tokens, target, start = 0, end = tokens.length) =>
-    run(
-      {
-        ...options,
-        onWarn:
-          options.onWarn ??
-          ((/** @type {string} */ message) =>
-            target.warn(message, 'postcss-calc')),
-        onParseError:
-          options.onParseError ??
-          ((/** @type {Error} */ error) =>
-            target.warn(error.message, 'postcss-calc')),
-      },
-      tokens,
-      start,
-      end
-    );
+  return (tokens, target, start = 0, end = tokens.length) => {
+    /** @type {ReduceDiagnostics} */
+    const diagnostics = {
+      onWarn:
+        opts?.onWarn ??
+        ((message) => target.warn(message, { plugin: 'postcss-calc' })),
+      onParseError:
+        opts?.onParseError ??
+        ((error) => target.warn(error.message, { plugin: 'postcss-calc' })),
+    };
+    return run(options, diagnostics, tokens, start, end);
+  };
 }
 
 /** A parse error is dropped when the caller gives no `onParseError`. */
 function ignoreParseError() {}
 
 /**
- * Simplify every supported CSS math function in `tokens[start, end)`. Returns
- * the replacements that change the text, ordered and non-overlapping, and
- * leaves `tokens` untouched. Apply them from last to first, or build a new
- * list. Replacement indices are indices into `tokens`, and a range reads as
- * the list it names would. The offsets of a replacement's tokens locate them
- * in the replacement's own text, counting from 0. An empty or inverted
- * range has no replacements. Throws a `RangeError` for a range that is not
- * within `tokens`.
+ * Simplify every supported CSS math function in `tokens[start, end)`.
+ *
+ * Returns the replacements that change the text, ordered and non-overlapping.
+ * `tokens` is left untouched: apply the replacements from last to first, or
+ * build a new list.
+ *
+ * Replacement indices are indices into `tokens`. A range reads as the list it
+ * names would, with one exception: the token on each side of a replacement is
+ * read even when it lies outside the range, because a replacement that would
+ * fuse with it starts or ends with a whitespace token. EOF tokens in the list
+ * are skipped.
+ *
+ * The offsets of a replacement's tokens locate them in the replacement's own
+ * text, counting from 0. An empty or inverted range has no replacements.
+ *
+ * Throws a `RangeError` for a range that is not within `tokens`. A parse error
+ * is dropped unless `opts.onParseError` is set, as the standalone reducer drops
+ * warnings by default. `createReducer` sends it to its target instead.
  *
  * @param {CSSToken[]} tokens
  * @param {ReduceCalcOptions} [opts]
@@ -161,8 +159,12 @@ function ignoreParseError() {}
  */
 function reduceTokens(tokens, opts, start = 0, end = tokens.length) {
   const options = resolveOptions(opts);
-  options.onParseError ??= ignoreParseError;
-  return run(options, tokens, start, end);
+  /** @type {ReduceDiagnostics} */
+  const diagnostics = {
+    onWarn: opts?.onWarn,
+    onParseError: opts?.onParseError ?? ignoreParseError,
+  };
+  return run(options, diagnostics, tokens, start, end);
 }
 
 export default reduceTokens;
