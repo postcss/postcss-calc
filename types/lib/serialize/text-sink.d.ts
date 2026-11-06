@@ -1,55 +1,17 @@
 export type CSSToken = import('@csstools/css-tokenizer').CSSToken;
-/**
- * Whether a token ending in `last` and a token starting with `first` would
- * read back as one token if written without a separator. The check is
- * conservative: it may ask for a separator that is not strictly needed.
- *
- * @param {string | undefined} last
- * @param {string | undefined} first
- * @return {boolean}
- */
-declare function wouldFuse(last: string | undefined, first: string | undefined): boolean;
-/**
- * What keeps a replacement apart from a neighbour it would fuse with. A space
- * rather than the empty comment CSS Syntax 3 §9 allows, because tools that
- * strip comments from values (such as minifiers run after this plugin) would
- * fuse the tokens again.
- */
-declare const FUSE_SEPARATOR = " ";
-/**
- * Whether `token` is an end-of-file token. It marks the end of a tokenized
- * string, so one inside a list (for example from concatenated `tokenize`
- * results) is not part of the CSS and is skipped.
- *
- * @param {CSSToken | undefined} token
- * @return {boolean}
- */
-declare function isEOF(token: CSSToken | undefined): boolean;
-/**
- * The first character of the first non-EOF token in `list[start, end)`.
- *
- * @param {CSSToken[]} list
- * @param {number} start
- * @param {number} end
- * @return {string | undefined}
- */
-declare function firstCharOf(list: CSSToken[], start: number, end: number): string | undefined;
-/**
- * The last character of the last non-EOF token in `list[0, end)`.
- *
- * @param {CSSToken[]} list
- * @param {number} end
- * @return {string | undefined}
- */
-declare function lastCharBefore(list: CSSToken[], end: number): string | undefined;
+export type Sink = import('./sink.js').Sink;
 /**
  * The output of a printer that keeps its printed text as strings.
+ *
+ * @implements {Sink}
  */
-declare class TextSink {
+declare class TextSink implements Sink {
     /** @type {string[]} */
     parts: string[];
     /** @type {boolean} */
     signed: boolean;
+    /** Text written before `parts`, set by `fit` to avoid shifting them. @type {string} */
+    leading: string;
     /**
      * Write a space when a token starting with `first` would fuse with the
      * text before it. A sign belongs to the token that follows it.
@@ -94,7 +56,16 @@ declare class TextSink {
      * @return {void}
      */
     source(list: CSSToken[], start: number, end: number): void;
+    /**
+     * Keep the printed text apart from the text around it: `before` and `after`
+     * are the neighbours' adjacent characters.
+     *
+     * @param {string | undefined} before
+     * @param {string | undefined} after
+     * @return {void}
+     */
+    fit(before: string | undefined, after: string | undefined): void;
     /** @return {string} */
     join(): string;
 }
-export { FUSE_SEPARATOR, TextSink, firstCharOf, isEOF, lastCharBefore, wouldFuse, };
+export { TextSink };
