@@ -5,34 +5,29 @@ import { parseRange } from './parser.js';
 import { ParseError, positionedError } from './parser/state.js';
 import { simplify } from './simplify.js';
 import { analyze } from './analyze.js';
-import { printResult, serializeResult } from './serialize.js';
-import { TokenSink } from './serialize/sink.js';
-import {
-  FUSE_SEPARATOR,
-  firstCharOf,
-  lastCharBefore,
-  wouldFuse,
-} from './serialize/text-sink.js';
+import { printResult } from './serialize.js';
+import { firstCharOf, lastCharBefore } from './serialize/fuse.js';
 import { closerAt, matchBlocks } from './blocks.js';
 import { assertDepth } from './limits.js';
 import { hasMathFunctionToken, mathFunctionAt } from './functions.js';
 import { joinTokens, offsetLookup } from './offsets.js';
 
 /** @typedef {import('../reduce.js').ResolvedReduceCalcOptions} ResolvedReduceCalcOptions */
+/** @typedef {import('../reduce.js').ReduceDiagnostics} ReduceDiagnostics */
 /** @typedef {import('@csstools/css-tokenizer').CSSToken} CSSToken */
 /** @typedef {import('./blocks.js').Blocks} Blocks */
 /** @typedef {import('./functions.js').MathFunction} MathFunction */
+/** @typedef {import('./serialize/sink.js').Sink} Sink */
 
 /**
- * Receives one replaced range. `start` and `end` are token indices, `end`
- * exclusive. `printed` is the replacement text, or the token sink holding the
- * replacement tokens when the caller asked for tokens.
+ * Where `reduceTokenList` gets its sinks and sends its results. The printer
+ * writes into the sink that `createSink` makes for the candidate
+ * `[start, end)`, and `emit` receives each changed range with its sink.
  *
- * @callback EmitReplacement
- * @param {number} start
- * @param {number} end
- * @param {string | TokenSink} printed
- * @return {void}
+ * @template {Sink} S
+ * @typedef {object} ReplacementTarget
+ * @property {(start: number, end: number) => S} createSink
+ * @property {(start: number, end: number, printed: S) => void} emit
  */
 
 /**
@@ -44,9 +39,8 @@ function asError(error) {
 }
 
 /**
- * Parse, analyze and simplify one supported math function, then serialize it.
- * A throw from parsing or analysis means the range is not a valid calculation.
- * A throw from serialization is reported and yields no replacement text.
+ * Parse, analyze and simplify one supported math function. A throw means the
+ * range is not a valid calculation.
  *
  * @param {CSSToken[]} tokens
  * @param {Blocks} blocks
@@ -54,18 +48,8 @@ function asError(error) {
  * @param {number} end Index after its closer, or the end of the range when unclosed.
  * @param {{normalizedName: string, definition: MathFunction}} lookup
  * @param {ResolvedReduceCalcOptions} options
- * @param {boolean} printTokens Print into a token sink instead of a string.
- * @return {{text: string | TokenSink | undefined, unresolved: boolean}}
  */
-function compileCandidate(
-  tokens,
-  blocks,
-  start,
-  end,
-  lookup,
-  options,
-  printTokens
-) {
+function compileCandidate(tokens, blocks, start, end, lookup, options) {
   const name = /** @type {{value: string}} */ (tokens[start][4]).value;
   const isCalc = lookup.definition.calculation === true;
   const closer = closerAt(blocks, start);
@@ -82,28 +66,44 @@ function compileCandidate(
   const unresolved = analysis.unresolved;
   /** @type {'resolved' | 'unresolved'} */
   const status = unresolved ? 'unresolved' : 'resolved';
-  const result = {
-    tree,
-    status,
-    rootName: lookup.normalizedName,
-    rootSpelling: tokens[start][1].slice(0, -1),
-    calculation: isCalc,
+  return {
+    result: {
+      tree,
+      status,
+      rootName: lookup.normalizedName,
+      rootSpelling: tokens[start][1].slice(0, -1),
+      calculation: isCalc,
+    },
+    printOptions: {
+      precision: options.precision,
+      unwrapSingleNegativeNumber: options.unwrapSingleNegativeNumber,
+      unwrapSingleValue: options.unwrapSingleValue,
+    },
+    unresolved,
   };
-  const printOptions = {
-    precision: options.precision,
-    unwrapSingleNegativeNumber: options.unwrapSingleNegativeNumber,
-    unwrapSingleValue: options.unwrapSingleValue,
-  };
+}
+
+/**
+ * Print a compiled candidate into `sink`. A throw from the printer is reported
+ * and yields no replacement.
+ *
+ * @template {Sink} S
+ * @param {ReturnType<typeof compileCandidate>} compiled
+ * @param {S} sink
+ * @param {ReduceDiagnostics} diagnostics
+ * @param {CSSToken[]} tokens
+ * @param {number} start
+ * @param {number} end
+ * @return {S | undefined}
+ */
+function printCandidate(compiled, sink, diagnostics, tokens, start, end) {
   try {
-    if (printTokens) {
-      const sink = new TokenSink(tokens, start, end);
-      const printed = printResult(result, printOptions, sink);
-      return { text: printed ? sink : undefined, unresolved };
-    }
-    return { text: serializeResult(result, printOptions), unresolved };
+    return printResult(compiled.result, compiled.printOptions, sink)
+      ? sink
+      : undefined;
   } catch (error) {
-    options.onParseError?.(asError(error), joinTokens(tokens, start, end));
-    return { text: undefined, unresolved };
+    diagnostics.onParseError?.(asError(error), joinTokens(tokens, start, end));
+    return undefined;
   }
 }
 
@@ -115,25 +115,19 @@ function compileCandidate(
  * The neighbours are the tokens just outside the range, skipping EOF tokens,
  * because the replacement is spliced in between them.
  *
- * @template {string | TokenSink} T
- * @param {T} printed
+ * @template {Sink} S
+ * @param {S} printed
  * @param {CSSToken[]} tokens
  * @param {number} from
  * @param {number} to
- * @return {T | string}
+ * @return {S}
  */
 function fitted(printed, tokens, from, to) {
-  const before = lastCharBefore(tokens, from);
-  const after = firstCharOf(tokens, to, tokens.length);
-  if (typeof printed !== 'string') {
-    printed.fit(before, after);
-    return printed;
-  }
-  return (
-    (wouldFuse(before, printed[0]) ? FUSE_SEPARATOR : '') +
-    printed +
-    (wouldFuse(printed.at(-1), after) ? FUSE_SEPARATOR : '')
+  printed.fit(
+    lastCharBefore(tokens, from),
+    firstCharOf(tokens, to, tokens.length)
   );
+  return printed;
 }
 
 /**
@@ -149,23 +143,24 @@ function fitted(printed, tokens, from, to) {
  * source offsets (`token[2]`, `token[3]`), so the list may have been edited
  * since it was tokenized. Emitted indices are indices into `tokens`.
  *
+ * @template {Sink} S
  * @param {CSSToken[]} tokens
- * @param {ResolvedReduceCalcOptions} options
- * @param {EmitReplacement} emit
+ * @param {ResolvedReduceCalcOptions} options Shared by every call; never changed.
+ * @param {ReduceDiagnostics} diagnostics Warnings and parse errors for this call.
+ * @param {ReplacementTarget<S>} target
  * @param {number} start
  * @param {number} end
  * @param {string} [source] The joined text of the range, when the caller already has it.
- * @param {boolean} [printTokens] Emit token sinks instead of text.
  * @return {void}
  */
 function reduceTokenList(
   tokens,
   options,
-  emit,
+  diagnostics,
+  target,
   start,
   end,
-  source,
-  printTokens = false
+  source
 ) {
   if (!hasMathFunctionToken(tokens, start, end)) return;
 
@@ -176,7 +171,7 @@ function reduceTokenList(
     assertDepth(matched.maxDepth);
     blocks = matched.blocks;
   } catch (error) {
-    options.onParseError?.(
+    diagnostics.onParseError?.(
       asError(error),
       source ?? joinTokens(tokens, start, end)
     );
@@ -191,30 +186,37 @@ function reduceTokenList(
     const candidateEnd = closer === -1 ? end : closer + 1;
 
     /** @type {ReturnType<typeof compileCandidate> | undefined} */
-    let result;
+    let compiled;
     try {
-      result = compileCandidate(
+      compiled = compileCandidate(
         tokens,
         blocks,
         i,
         candidateEnd,
         lookup,
-        options,
-        printTokens
+        options
       );
     } catch (error) {
-      options.onParseError?.(
+      diagnostics.onParseError?.(
         positionedError(asError(error), offsetOf),
         joinTokens(tokens, i, candidateEnd)
       );
     }
-    if (result !== undefined) {
-      if (options.warnWhenCannotResolve && result.unresolved) {
+    if (compiled !== undefined) {
+      const printed = printCandidate(
+        compiled,
+        target.createSink(i, candidateEnd),
+        diagnostics,
+        tokens,
+        i,
+        candidateEnd
+      );
+      if (options.warnWhenCannotResolve && compiled.unresolved) {
         wholeText ??= joinTokens(tokens, start, end);
-        options.onWarn?.('Could not reduce expression: ' + wholeText);
+        diagnostics.onWarn?.('Could not reduce expression: ' + wholeText);
       }
-      if (result.text !== undefined) {
-        emit(i, candidateEnd, fitted(result.text, tokens, i, candidateEnd));
+      if (printed !== undefined) {
+        target.emit(i, candidateEnd, fitted(printed, tokens, i, candidateEnd));
       }
     }
     // A supported function is one candidate, so its nested calls are skipped.

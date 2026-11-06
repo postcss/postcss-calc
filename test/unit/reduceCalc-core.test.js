@@ -46,6 +46,15 @@ describe('reduceCalc: basic pipeline', () => {
     assert.equal(reduceCalc(String.raw`calc(1P\58  + 2px)`), 'calc(3px)');
   });
 
+  test('reduceCalc: a non-hex escape in a function name still names the calculation', () => {
+    // `\l` escapes a letter that is not a hex digit, so `ca\lc` reads `calc`
+    // and keeps its escaped spelling in the output.
+    assert.equal(
+      reduceCalc(String.raw`ca\lc(1px + 1px)`),
+      String.raw`ca\lc(2px)`
+    );
+  });
+
   test('reduceCalc: opaque escaped spellings survive simplification', () => {
     assert.equal(
       reduceCalc(String.raw`calc(var(--kendo-spacing-1\.5) + 1px)`),

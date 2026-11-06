@@ -9,7 +9,8 @@ All notable changes to this project will be documented in this file. See [commit
 - add `postcss-calc/reduce-tokens`, which reduces a `@csstools/css-tokenizer`
   token list and returns token replacements. It never reads token source
   offsets, so it works on lists edited after tokenization. `postcss-calc/reduce`
-  shares its implementation and its output is unchanged.
+  shares its implementation; its output is unchanged except as noted under
+  Bug fixes.
 
 ### Bug fixes
 

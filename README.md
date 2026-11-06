@@ -92,11 +92,14 @@ by default; provide `onParseError` and/or `onWarn` if you want diagnostics.
 If you already hold the tokens of a value (from `@csstools/css-tokenizer`) and
 edit them in place, `postcss-calc/reduce-tokens` reduces them without going
 through a string. It reads only each token's type and raw text, never its
-source offsets, so the list may have been edited since it was tokenized. Its
-other fields must agree: a token's parsed value (`token[4]`) is read along
+source offsets, so the list may have been edited since it was tokenized.
+
+Its other fields must agree: a token's parsed value (`token[4]`) is read along
 with its type and raw text, so when you change a token's text, replace the
 token with one that `tokenize` produced from the new text. Only the source
-offsets may be stale. It returns the replacements that change the text: ordered, non-overlapping
+offsets may be stale.
+
+It returns the replacements that change the text: ordered, non-overlapping
 `{ start, end, tokens }` records that replace `tokens.slice(start, end)`. It
 does not modify the list; apply the replacements from last to first.
 
@@ -113,9 +116,10 @@ for (const { start, end, tokens: next } of reduceTokens(tokens).toReversed()) {
 
 The replacement tokens are the tokenization of the result text on its own, so
 their source offsets (`token[2]`, `token[3]`) describe that text, not their
-place in your list. Do not rely on them. Tokens spliced next to unspaced
-neighbours can also merge or split when the list is tokenized again, as the
-string reducer's output can.
+place in your list. Do not rely on them. A replacement that would merge with
+the token beside it in `tokens` starts or ends with a whitespace token.
+For a sub-range, this reads the tokens just outside it, so splice
+the replacements into the same list you passed.
 
 To skip tokenizing values that cannot contain a math function, check the
 string first with the named export `hasPotentialMathFunction(value)`. It is
@@ -132,7 +136,8 @@ if (hasPotentialMathFunction(value)) {
 ```
 
 End-of-file tokens in the list (for example from concatenating `tokenize`
-results) are ignored.
+results) are ignored: they never appear in a replacement, and they do not hide
+the neighbouring token from that check.
 
 It takes the same options as `reduceCalc`. `onParseError` and `onWarn` receive
 text built from the current tokens.
