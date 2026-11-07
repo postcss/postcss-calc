@@ -70,13 +70,15 @@ describe('parser: opaque expressions and invalid syntax', () => {
     assert.deepEqual(parse(varTokens, 0, varTokens.length), {
       type: 'OpaqueCall',
       name: 'var',
-      components: [{ type: 'Ident', name: '--x' }, ', 1px'],
+      components: [{ type: 'Ident', name: '--x' }, [2, 5]],
+      source: varTokens,
     });
     const unknownTokens = tokenize({ css: 'unknown(1px + 2px)' });
     assert.deepEqual(parse(unknownTokens, 0, unknownTokens.length), {
       type: 'OpaqueCall',
       name: 'unknown',
-      components: ['1px + 2px'],
+      components: [[1, 6]],
+      source: unknownTokens,
     });
   });
 
@@ -97,13 +99,15 @@ describe('parser: opaque expressions and invalid syntax', () => {
 
   test('parser: opaque trees preserve raw and nested component structure', () => {
     const input = String.raw`f( /*lead*/ \66 oo\20 bar, raw([x, y], {z: q}), c\61 lc(1px + var(--x)), calc(1PX+2PX), calc(-(var(--x) + 1px)) )`;
-    const node = parseSource(input);
+    const tokens = tokenize({ css: input });
+    const node = parse(tokens, 0, tokens.length);
 
     assert.deepEqual(node, {
       type: 'OpaqueCall',
       name: 'f',
+      source: tokens,
       components: [
-        String.raw` /*lead*/ \66 oo\20 bar, raw([x, y], {z: q}), `,
+        [1, 25],
         {
           type: 'Call',
           name: 'calc',
@@ -119,13 +123,14 @@ describe('parser: opaque expressions and invalid syntax', () => {
                     type: 'OpaqueCall',
                     name: 'var',
                     components: [{ type: 'Ident', name: '--x' }],
+                    source: tokens,
                   },
                 },
               ],
             },
           ],
         },
-        ', calc(1PX+2PX), calc(-(var(--x) + 1px)) ',
+        [34, 55],
       ],
     });
     // `calc(-( ... ))` has no unary-minus production, so the nested calc()

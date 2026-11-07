@@ -3,12 +3,14 @@ export type Sum = import('../node.js').Sum;
 export type SumTerm = import('../node.js').SumTerm;
 export type ProductFactor = import('../node.js').ProductFactor;
 export type SerializeSession = import('./precision.js').SerializeSession;
+export type CSSToken = import('@csstools/css-tokenizer').CSSToken;
 /**
  * @typedef {import('../node.js').Node} Node
  * @typedef {import('../node.js').Sum} Sum
  * @typedef {import('../node.js').SumTerm} SumTerm
  * @typedef {import('../node.js').ProductFactor} ProductFactor
  * @typedef {import('./precision.js').SerializeSession} SerializeSession
+ * @typedef {import('@csstools/css-tokenizer').CSSToken} CSSToken
  */
 /**
  * @param {Node} node
@@ -46,10 +48,19 @@ declare function emitOpaqueCall(node: import('../node.js').OpaqueCall, session: 
  */
 declare function emitMathResult(node: Node, session: SerializeSession, wrapper: string): void;
 /**
+ * Emit a non-scalar root inside `wrapper(...)`. A single-term sum emits its
+ * term as a leading term, so the term's sign stays a leading sign.
+ *
  * @param {Node} node
  * @param {SerializeSession} session
- * @param {string[]} [buffer]
+ * @param {string} wrapper
  * @return {void}
  */
-declare function emitNestedMathResult(node: Node, session: SerializeSession, buffer?: string[]): void;
-export { emitNode, emitLeadingNeg, emitCall, emitOpaqueCall, emitMathResult, emitNestedMathResult, };
+declare function emitWrappedRoot(node: Node, session: SerializeSession, wrapper: string): void;
+/**
+ * @param {Node} node
+ * @param {SerializeSession} session
+ * @return {void}
+ */
+declare function emitNestedMathResult(node: Node, session: SerializeSession): void;
+export { emitNode, emitLeadingNeg, emitCall, emitOpaqueCall, emitMathResult, emitNestedMathResult, emitWrappedRoot, };

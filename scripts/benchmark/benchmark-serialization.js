@@ -6,6 +6,7 @@ import assert from 'node:assert/strict';
 import { mkdirSync, mkdtempSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { tokenize } from '@csstools/css-tokenizer';
 import { serialize as serializeWorktree } from '../../src/lib/serialize.js';
 import {
   num,
@@ -63,10 +64,22 @@ function nestedCalls(size) {
 
 /** @param {number} size @return {import('../../src/lib/node.js').Node} */
 function nestedOpaqueFallbacks(size) {
-  let node = opaqueCall('var', [ident('--x'), ', ', dim(1, 'px')]);
+  // The separator is the range `[0, 2)` of the source tokens `, `.
+  const source = tokenize({ css: ', ' });
+  let node = opaqueCall(
+    'var',
+    [ident('--x'), [0, 2], dim(1, 'px')],
+    undefined,
+    source
+  );
   const depth = Math.max(2, Math.ceil(size / 4));
   for (let i = 0; i < depth; i++) {
-    node = opaqueCall('var', [ident(`--x${i}`), ', ', node]);
+    node = opaqueCall(
+      'var',
+      [ident(`--x${i}`), [0, 2], node],
+      undefined,
+      source
+    );
   }
   return node;
 }

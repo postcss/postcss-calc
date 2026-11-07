@@ -21,14 +21,32 @@
 //     evaluation has finished, because it is an IEEE-754 value with observable
 //     math-function behavior.
 //     Zero-valued Dims are kept — the unit carries type info.
+//
+// Ownership rule (no runtime checks; test/property/immutability.test.js
+// enforces it on frozen trees):
+//
+//   - Nodes are immutable once construction finishes. No stage assigns to
+//     node fields, and no code writes to a range array after creating it.
+//   - Constructors may keep their arguments (children, factor and term
+//     objects) without copying, so subtrees can be shared between an input
+//     tree and the simplified output.
+//   - Code must not read or reuse a tree on the assumption that it owns it
+//     exclusively. In Rust, a constructor takes its children by value, and the
+//     simplifier consumes its input tree and returns a new one.
+//   - `OpaqueCall` range components are `[start, end)` indices into the
+//     `source` token list. They are token indices, not byte offsets, because
+//     the token list may be edited after tokenization (see the
+//     `reduceTokenList` doc comment in `src/lib/core.js`).
 
 /**
+ * @typedef {import('@csstools/css-tokenizer').CSSToken} CSSToken
  * @typedef {{type: 'Num', value: number}} Num
  * @typedef {{type: 'Dim', value: number, unit: string, rawUnit?: string}} Dim
  * @typedef {{type: 'Ident', name: string, rawName?: string}} Ident
  * @typedef {{type: 'Call', name: string, args: Node[], rawName?: string}} Call
- * @typedef {string | Node} OpaqueComponent
- * @typedef {{type: 'OpaqueCall', name: string, components: OpaqueComponent[], rawName?: string}} OpaqueCall
+ * @typedef {[number, number] | Node} OpaqueComponent A `[start, end)` range
+ *   reads the call's `source` tokens.
+ * @typedef {{type: 'OpaqueCall', name: string, components: OpaqueComponent[], rawName?: string, source?: CSSToken[]}} OpaqueCall
  * @typedef {{sign: 1 | -1, node: Node}} SumTerm Sign is always +1 when node is Num or Dim.
  * @typedef {{type: 'Sum', terms: SumTerm[], grouped?: boolean}} Sum
  * @typedef {{exponent: 1 | -1, node: Node}} ProductFactor exponent +1 = numerator, -1 = denominator.
@@ -83,12 +101,18 @@ function call(name, args, rawName) {
  * @param {string} name
  * @param {OpaqueComponent[]} components
  * @param {string} [rawName]
+ * @param {CSSToken[]} [source] The token list that the range components index.
  * @return {OpaqueCall}
  */
-function opaqueCall(name, components, rawName) {
-  return rawName === undefined
-    ? { type: 'OpaqueCall', name, components }
-    : { type: 'OpaqueCall', name, components, rawName };
+function opaqueCall(name, components, rawName, source) {
+  if (source === undefined && components.some(Array.isArray)) {
+    throw new TypeError('An OpaqueCall with range components needs a source');
+  }
+  /** @type {OpaqueCall} */
+  const node = { type: 'OpaqueCall', name, components };
+  if (rawName !== undefined) node.rawName = rawName;
+  if (source !== undefined) node.source = source;
+  return node;
 }
 
 /**

@@ -1,5 +1,6 @@
 import { describe, test } from 'node:test';
 import assert from 'node:assert/strict';
+import { tokenize } from '@csstools/css-tokenizer';
 import { serialize } from '../../src/lib/serialize.js';
 import {
   num,
@@ -280,4 +281,12 @@ describe('serialize: core syntax and expressions', () => {
     ]);
     assert.equal(serialize(ast), 'calc(infinity * var(--x))');
   });
+});
+
+test('serialize: an OpaqueCall with a range but no source fails with a TypeError', () => {
+  const node = {
+    ...opaqueCall('var', [[0, 1]], undefined, tokenize({ css: 'x' })),
+  };
+  delete node.source;
+  assert.throws(() => serialize(node), TypeError);
 });

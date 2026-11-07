@@ -97,6 +97,16 @@ describe('Subtraction from zero', () => {
     )
   );
 
+  // Characterization: this passes on master too. It pins the current grouping
+  // behaviour; it does not guard the sum.js change.
+  test(
+    'characterization: subtracting a simplified opaque group keeps its grouping',
+    testValue(
+      'calc(1px - (var(--a) + 1px + 1px))',
+      'calc(1px - (2px + var(--a)))'
+    )
+  );
+
   test(
     'should reduce nested expression',
     // zero bucket kept for type info.
@@ -201,4 +211,30 @@ describe('Minus', () => {
   test('minus sign (#3)', testValue('calc(200px * -1)', 'calc(-200px)'));
 
   test('minus sign (#4)', testValue('calc(200px / -1)', 'calc(-200px)'));
+});
+
+describe('Reduced value next to a neighbouring token', () => {
+  test(
+    'keeps a unit apart from a following name',
+    testValue('foo(calc(1px + 1px)b)', 'foo(2px b)', {
+      unwrapSingleValue: true,
+    })
+  );
+
+  test(
+    'keeps a number apart from a preceding name',
+    testValue('foo(b calc(1 + 1))', 'foo(b 2)', { unwrapSingleValue: true })
+  );
+
+  test(
+    'keeps a number apart from a following percent sign',
+    testValue('foo(calc(1 + 1)%)', 'foo(2 %)', { unwrapSingleValue: true })
+  );
+
+  test(
+    'adds no space when the neighbour is separate already',
+    testValue('foo(calc(1px + 1px) b)', 'foo(2px b)', {
+      unwrapSingleValue: true,
+    })
+  );
 });

@@ -1,4 +1,4 @@
-import { mkSum, num, dim } from '../node.js';
+import { mkSum, mkGroup, num, dim } from '../node.js';
 import { staticBaseOf } from '../convertUnits.js';
 import { mergeConvertibleBuckets } from './bucket.js';
 
@@ -126,7 +126,7 @@ function simplifySum(sum, simplify, precision = false) {
   // Keep the source grouping available to an enclosing subtraction. Numeric
   // groups have already folded and therefore do not need the marker.
   if (sum.grouped && result.type === 'Sum' && opaque.length > 0) {
-    return { ...result, grouped: true };
+    return mkGroup(result);
   }
   return result;
 }

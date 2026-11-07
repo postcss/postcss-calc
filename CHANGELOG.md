@@ -6,6 +6,9 @@ All notable changes to this project will be documented in this file. See [commit
 
 ### Bug fixes
 
+- A reduced value that would merge with a neighbouring token is now kept apart
+  by a space. For example, `foo(calc(1px + 1px)b)` becomes `foo(2px b)` instead
+  of `foo(2pxb)`, which reads as a different unit.
 - `reduceCalc` and the plugin no longer report the nesting-limit error for a
   value nested more than 1024 levels deep that has no supported math function
   outside `url()`, a string or a comment, such as `url(calc(1+2))((((…`. The
