@@ -11,7 +11,7 @@ const payload = JSON.parse(
 );
 const sourceRoot = payload.sourceRoot;
 if (typeof sourceRoot !== 'string')
-  throw new Error('missing parser source root');
+  throw new TypeError('missing parser source root');
 
 const parser = await import(pathToFileURL(`${sourceRoot}/lib/parser.js`).href);
 const { matchBlocks } = await import(
@@ -19,7 +19,7 @@ const { matchBlocks } = await import(
 );
 const buildCloser = (tokens) => matchBlocks(tokens).close;
 if (typeof parser.parse !== 'function' || typeof matchBlocks !== 'function')
-  throw new Error('incompatible baseline parser API');
+  throw new TypeError('incompatible baseline parser API');
 
 const TARGET_MS = payload.targetBatchMs ?? 25;
 const MIN_WARMUPS = payload.warmupMinimum ?? 5;
