@@ -38,11 +38,12 @@ import {
 /** @typedef {import('./node.js').Node} Node */
 /** @typedef {import('./node.js').SumTerm} SumTerm */
 /** @typedef {import('./node.js').ProductFactor} ProductFactor */
+/** @typedef {import('./blocks.js').Blocks} Blocks */
 
 /**
  * @callback ParseRange
  * @param {CSSToken[]} tokens
- * @param {Int32Array} close
+ * @param {Blocks} blocks
  * @param {number} start
  * @param {number} end
  * @return {Node}
@@ -214,7 +215,7 @@ function dimension(token) {
  * @return {Node}
  */
 function parseGroup(state, open, depth) {
-  const closer = closeIn(state.close, open, state.end);
+  const closer = closeIn(state.blocks, open, state.end);
   const sub = subRange(state, open, closer);
   const expression = parseSum(sub, depth + 1);
   expectCloser(sub, closer);
@@ -230,7 +231,7 @@ function parseGroup(state, open, depth) {
  */
 function subRange(state, open, closer) {
   const end = closer === -1 ? state.end : closer + 1;
-  return newState(state.tokens, state.close, open + 1, end);
+  return newState(state.tokens, state.blocks, open + 1, end);
 }
 
 /**
@@ -271,7 +272,7 @@ function parseCall(state, index, depth) {
     return parseVar(state, index, name, rawName, parseRange);
   if (lookupMathFunction(name) === undefined)
     return parseOpaqueCall(state, index, name, rawName, parseRange);
-  const closer = closeIn(state.close, index, state.end);
+  const closer = closeIn(state.blocks, index, state.end);
   const sub = subRange(state, index, closer);
   /** @type {Node[]} */
   const args = [];
@@ -295,13 +296,13 @@ function parseCall(state, index, depth) {
  * Parse `[start, end)` as one complete expression.
  *
  * @param {CSSToken[]} tokens
- * @param {Int32Array} close
+ * @param {Blocks} blocks
  * @param {number} start
  * @param {number} end
  * @return {Node}
  */
-function parseRange(tokens, close, start, end) {
-  const state = newState(tokens, close, start, end);
+function parseRange(tokens, blocks, start, end) {
+  const state = newState(tokens, blocks, start, end);
   const ast = parseSum(state, 0);
   const trailing = peek(state);
   if (trailing < end) {
@@ -315,28 +316,28 @@ function parseRange(tokens, close, start, end) {
  * `parse()` uses it when its caller supplies no closer array.
  *
  * @param {CSSToken[]} tokens
- * @return {Int32Array}
+ * @return {Blocks}
  */
 function closersWithinLimit(tokens) {
-  const { close, maxDepth } = matchBlocks(tokens);
+  const { blocks, maxDepth } = matchBlocks(tokens);
   assertDepth(maxDepth);
-  return close;
+  return blocks;
 }
 
 /**
  * Parse the token range `[start, end)` of `tokens` as one calculation.
- * `close` is the closer array from `matchBlocks(tokens)`; when omitted, it is
+ * `blocks` is the matching from `matchBlocks(tokens)`; when omitted, it is
  * built and depth-checked from `tokens`.
  *
  * @param {CSSToken[]} tokens
  * @param {number} start
  * @param {number} end
- * @param {Int32Array} [close]
+ * @param {Blocks} [blocks]
  * @return {Node}
  */
-function parse(tokens, start, end, close = closersWithinLimit(tokens)) {
+function parse(tokens, start, end, blocks = closersWithinLimit(tokens)) {
   try {
-    return parseRange(tokens, close, start, end);
+    return parseRange(tokens, blocks, start, end);
   } catch (error) {
     if (error instanceof ParseError) {
       throw positionedError(error, offsetLookup(tokens));

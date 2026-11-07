@@ -34,9 +34,11 @@ declare function hasPotentialMathFunction(value: string): boolean;
  * functions inside `url()` and similar are part of another token.
  *
  * @param {import('@csstools/css-tokenizer').CSSToken[]} tokens
+ * @param {number} [start] First token to inspect.
+ * @param {number} [end] One past the last token to inspect (half-open).
  * @return {boolean}
  */
-declare function hasMathFunctionToken(tokens: import('@csstools/css-tokenizer').CSSToken[]): boolean;
+declare function hasMathFunctionToken(tokens: import('@csstools/css-tokenizer').CSSToken[], start?: number, end?: number): boolean;
 /**
  * The supported math function named by the function token at `index`, or
  * `undefined` when that token is not a supported math function.

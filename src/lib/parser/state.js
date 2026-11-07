@@ -4,6 +4,7 @@
 import { TokenType as CssType } from '@csstools/css-tokenizer';
 
 /** @typedef {import('@csstools/css-tokenizer').CSSToken} CSSToken */
+/** @typedef {import('../blocks.js').Blocks} Blocks */
 
 /**
  * A syntax error at a token. The position is not formatted here: a fallback
@@ -49,12 +50,12 @@ function isTrivia(type) {
 }
 
 /**
- * One parse range. `pos` is the next token to read. `close` is the closer
- * array for the whole list, shared by every range.
+ * One parse range. `pos` is the next token to read. `blocks` is the closer
+ * matching for the whole list, shared by every range.
  *
  * @typedef {object} ParseState
  * @property {CSSToken[]} tokens
- * @property {Int32Array} close
+ * @property {Blocks} blocks
  * @property {number} start First token of the range, for the leading-whitespace rule.
  * @property {number} end Exclusive bound.
  * @property {number} pos
@@ -107,15 +108,15 @@ function peek(state) {
 
 /**
  * @param {CSSToken[]} tokens
- * @param {Int32Array} close
+ * @param {Blocks} blocks
  * @param {number} start
  * @param {number} end
  * @return {ParseState}
  */
-function newState(tokens, close, start, end) {
+function newState(tokens, blocks, start, end) {
   return {
     tokens,
-    close,
+    blocks,
     start,
     end,
     pos: start,
