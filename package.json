@@ -59,8 +59,8 @@
     "@csstools/css-calc": "^3.4.3",
     "@types/node": "^26.6.6",
     "fast-check": "^4.10.2",
-    "oxfmt": "^0.77.0",
-    "oxlint": "^1.92.0",
+    "oxfmt": "^0.78.0",
+    "oxlint": "^1.93.0",
     "postcss": "^8.5.32",
     "typescript": "~7.0.2"
   },
