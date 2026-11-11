@@ -5,8 +5,18 @@ updates:
     schedule:
       interval: 'weekly'
     cooldown:
-      default-days: 2
+      default-days: 7
     groups:
       github-actions:
         patterns:
           - '*'
+  - package-ecosystem: 'npm'
+    directory: '/'
+    schedule:
+      interval: 'weekly'
+    cooldown:
+      default-days: 7
+    groups:
+      development-dependencies:
+        dependency-type: 'development'
+    versioning-strategy: increase
