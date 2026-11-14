@@ -87,21 +87,15 @@ const result = reduceCalc('calc(100% + var(--gap))', {
 Unlike the PostCSS plugin, the standalone reducer does not show warnings
 by default; provide `onParseError` and/or `onWarn` if you want diagnostics.
 
-### Reduce a token list
+### Reduce a token list (experimental)
 
-If you already hold the tokens of a value (from `@csstools/css-tokenizer`) and
-edit them in place, `postcss-calc/reduce-tokens` reduces them without going
-through a string. It reads only each token's type and raw text, never its
-source offsets, so the list may have been edited since it was tokenized.
+> **Experimental:** this API may change in a minor release.
 
-Its other fields must agree: a token's parsed value (`token[4]`) is read along
-with its type and raw text, so when you change a token's text, replace the
-token with one that `tokenize` produced from the new text. Only the source
-offsets may be stale.
-
-It returns the replacements that change the text: ordered, non-overlapping
-`{ start, end, tokens }` records that replace `tokens.slice(start, end)`. It
-does not modify the list; apply the replacements from last to first.
+`postcss-calc/reduce-tokens` reduces a list of `@csstools/css-tokenizer`
+tokens directly, without converting to a string. It returns ordered,
+non-overlapping `{ start, end, tokens }` replacements for
+`tokens.slice(start, end)` and does not modify the list. Apply them from last
+to first:
 
 ```js
 import { tokenize } from '@csstools/css-tokenizer';
@@ -114,18 +108,30 @@ for (const { start, end, tokens: next } of reduceTokens(tokens).toReversed()) {
 // tokens now spell 'calc(3px) 3px'
 ```
 
-The replacement tokens are the tokenization of the result text on its own, so
-their source offsets (`token[2]`, `token[3]`) describe that text, not their
-place in your list. Do not rely on them. A replacement that would merge with
-the token beside it in `tokens` starts or ends with a whitespace token.
-For a sub-range, this reads the tokens just outside it, so splice
-the replacements into the same list you passed.
+`reduceTokens(tokens, options, start, end)` takes the same options as
+`reduceCalc`, plus an optional index range to reduce. Things to know:
 
-To skip tokenizing values that cannot contain a math function, check the
-string first with the named export `hasPotentialMathFunction(value)`. It is
-the quick test `reduceCalc` runs before tokenizing. It may return `true` for a
-value with no reducible function, never `false` for one with a reducible
-function.
+- **Edited lists are fine.** Source offsets (`token[2]`, `token[3]`) are
+  ignored, but the type, raw text, and parsed value (`token[4]`) must agree:
+  if you change a token's text, replace it with a token `tokenize` produced
+  from the new text.
+- **Replacement offsets are local.** Replacement tokens are tokenized from the
+  replacement text alone, so their offsets count from 0 within that text, not
+  from their place in your list.
+- **Replacements may add whitespace.** When a replacement would fuse with the
+  token before or after it, it starts or ends with a whitespace token. For
+  example, with `unwrapSingleValue: true`, `calc(1px)a` becomes `1px a`
+  rather than the single token `1pxa`. The tokens checked are the ones
+  next to the replacement in `tokens`, even outside `start`/`end`, so splice
+  the replacements into the same list you passed.
+- **EOF tokens are ignored.** They never appear in a replacement and are
+  skipped when finding the token next to one.
+- **Diagnostics** passed to `onParseError` and `onWarn` use text built from
+  the current tokens.
+
+To skip tokenizing values that cannot contain a math function, check them
+first with `hasPotentialMathFunction(value)`. It may return `true` for a value
+with nothing to reduce, but never `false` for one that has something.
 
 ```js
 import { hasPotentialMathFunction } from 'postcss-calc/reduce-tokens';
@@ -134,13 +140,6 @@ if (hasPotentialMathFunction(value)) {
   // tokenize and call reduceTokens
 }
 ```
-
-End-of-file tokens in the list (for example from concatenating `tokenize`
-results) are ignored: they never appear in a replacement, and they do not hide
-the neighbouring token from that check.
-
-It takes the same options as `reduceCalc`. `onParseError` and `onWarn` receive
-text built from the current tokens.
 
 ### Standalone reducer options
 
