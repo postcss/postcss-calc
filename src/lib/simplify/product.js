@@ -83,7 +83,10 @@ function foldFactors(items, start, end, simplify, precision) {
       ? remainingDims[0]
       : null;
   const value = loneDim === null ? coeff : chainValue(scalarChain);
-  const distributable = remainingDims.length === 0 && isScalarSum(opaque);
+  // A non-finite coefficient (division by zero) must not be spread over the
+  // terms: `infinity * 1em + -infinity * 1px` is NaN, not the sign of the sum.
+  const distributable =
+    remainingDims.length === 0 && Number.isFinite(coeff) && isScalarSum(opaque);
 
   // An inexact quotient stays symbolic when its numerator and denominator
   // print exactly; otherwise it is folded and rounded at serialization.

@@ -30,6 +30,8 @@ function wouldFuse(last, first) {
   // A digit continues into `%`, and a backslash starts an escape that
   // continues the name or unit before it.
   if (first === '%') return DIGIT.test(last);
+  // A `+` sign continues into a following number: `a+` then `50%` reads `+50%`.
+  if (last === '+') return DIGIT.test(first) || first === '.';
   return (
     NAME_CHAR.test(last) &&
     (NAME_CHAR.test(first) || first === '(' || first === '\\')

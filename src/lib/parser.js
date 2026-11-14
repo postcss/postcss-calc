@@ -62,6 +62,25 @@ function normalizeSourceZero(value) {
 }
 
 /**
+ * A literal `-0` divisor keeps its sign: `1 / -0` is `-infinity`, while the
+ * sign of a zero anywhere else cannot change a result and stays normalized.
+ *
+ * @param {ParseState} state
+ * @param {number} index Token index of the operand.
+ * @param {Node} node
+ * @return {Node}
+ */
+function keepDivisorSign(state, index, node) {
+  const token = state.tokens[index];
+  return node.type === 'Num' &&
+    token !== undefined &&
+    token[0] === CssType.Number &&
+    Object.is(token[4].value, -0)
+    ? num(-0)
+    : node;
+}
+
+/**
  * The delimiter at `index` when it is `a` or `b`, else undefined.
  *
  * @param {ParseState} state
@@ -117,9 +136,12 @@ function parseProduct(state, depth) {
     const op = delimAt(state, i, '*', '/');
     if (op === undefined) break;
     state.pos = i + 1;
+    const operandIndex = peek(state);
+    const operand = parseOperand(state, depth);
     factors.push({
       exponent: op === '*' ? 1 : -1,
-      node: parseOperand(state, depth),
+      node:
+        op === '/' ? keepDivisorSign(state, operandIndex, operand) : operand,
     });
   }
   return factors.length === 1 ? first : mkProduct(factors);

@@ -183,7 +183,7 @@ describe('serializeResult: root planning', () => {
     assert.equal(serializeResult(result), 'calc(var(--x, calc(1px + 2px)))');
     assert.equal(
       serializeResult(result, { unwrapSingleValue: true }),
-      'var(--x, calc(1px + 2px))'
+      'calc(var(--x, calc(1px + 2px)))'
     );
   });
 
