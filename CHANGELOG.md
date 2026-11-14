@@ -16,7 +16,21 @@ All notable changes to this project will be documented in this file. See [commit
 
 - A reduced value that would merge with a neighbouring token is now kept apart
   by a space. For example, `foo(calc(1px + 1px)b)` becomes `foo(2px b)` instead
-  of `foo(2pxb)`, which reads as a different unit.
+  of `foo(2pxb)`, which reads as a different unit. This now also applies after
+  a `+`: `a+calc(25% + 25%)` with `unwrapSingleValue` becomes `a+ 50%` instead
+  of `a+50%`, which reads as a signed number.
+- A bare `clamp()`, `min()`, `max()`, `round()` or other math function that
+  cannot be folded is no longer wrapped in `calc()`. For example,
+  `clamp(1rem, 2.5vw, 2rem)` stays as written instead of becoming
+  `calc(clamp(1rem, 2.5vw, 2rem))`.
+- `unwrapSingleValue` no longer removes `calc()` from opaque values.
+  `calc(var(--a))`, `calc(env(x))` and `calc(attr(x px))` keep their `calc()`,
+  as the option only applies to fully resolved finite scalars.
+- Division by zero is no longer distributed over a sum with mixed units.
+  `calc((2em - 2px) / 0)` becomes `calc(infinity * (2em - 2px))` instead of a
+  sum that is always `NaN`.
+- A literal `-0` divisor keeps its sign: `calc(1 / -0)` now gives
+  `calc(-infinity)` instead of `calc(infinity)`.
 - `reduceCalc` and the plugin no longer report the nesting-limit error for a
   value nested more than 1024 levels deep that has no supported math function
   outside `url()`, a string or a comment, such as `url(calc(1+2))((((…`. The

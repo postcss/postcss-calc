@@ -3,7 +3,7 @@
 // operator, or when a finite scalar needs context-sensitive CSS semantics.
 
 import { checkCalculationDepth } from './limits.js';
-import { isCalculationFunction } from './functions.js';
+import { isCalculationFunction, lookupMathFunction } from './functions.js';
 import { isScalar } from './serialize/precision.js';
 import { TextSink } from './serialize/sink.js';
 import {
@@ -91,8 +91,16 @@ function printResult(result, opts, out) {
   const wrapper = isCalc
     ? result.rootSpelling || opts.calcName || 'calc'
     : 'calc';
-  // Under the standard policy a bare Ident/Call result still needs calc().
-  if (session.scalarPolicy === 'standard' && !isScalar(node)) {
+  // A bare Ident/Call result still needs calc() under every policy, unless
+  // it is a math function (min(), clamp(), ...) that is valid on its own.
+  if (
+    !isScalar(node) &&
+    !(
+      !isCalc &&
+      node.type === 'Call' &&
+      lookupMathFunction(node.name) !== undefined
+    )
+  ) {
     emitWrappedRoot(node, session, wrapper);
   } else {
     emitMathResult(node, session, wrapper);
