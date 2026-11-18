@@ -29,10 +29,10 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
       - name: Lint
-        if: matrix.node-version == 24
+        if: matrix.node-version == 26
         run: pnpm lint
       - name: Check generated types are up to date
-        if: matrix.node-version == 24
+        if: matrix.node-version == 26
         run: |
           git add -f -A -- types
           git diff --cached --exit-code
